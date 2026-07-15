@@ -15,8 +15,8 @@
   --color-neutral-07: #141414;
 
   /* ── 유형별 테마 색 (사색러/미식러/예술러/기억러 매핑 미정) ──
-    TODO: 유형↔색 확정되면 아래에 의미 별칭 추가 (design)
-      예) --color-type-thinker: var(--color-theme-purple-01); */
+    TODO: 유형 ↔ 색 확정되면 아래에 의미 별칭 추가 (design)
+    예) --color-type-thinker: var(--color-theme-purple-01); */
   --color-theme-purple-01: #6e4de4;
   --color-theme-purple-02: #a07eea;
   --color-theme-green-01: #ecf4a2;
@@ -81,5 +81,16 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* 스크롤바 숨김 유틸 (스크롤 기능은 유지, 바만 비표시).
+   모바일에선 원래 얇게 자동 숨김되지만, 데스크톱 개발/사용 시에도 깔끔. */
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none; /* IE, Edge */
+  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
   }
 }
