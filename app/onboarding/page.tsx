@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { useGetPreferenceQuestionsQuery } from "@/features/onboarding/hooks/useGetPreferenceQuestionsQuery";
@@ -10,8 +9,6 @@ import AppHeader from "@/components/layout/AppHeader";
 import QuizIntro from "@/features/onboarding/components/QuizIntro";
 import QuizProgressBar from "@/features/onboarding/components/QuizProgressBar";
 import QuizQuestion from "@/features/onboarding/components/QuizQuestion";
-import { postPreferenceResult } from "@/services/api/preference/preferenceApi";
-import type { PreferenceSubmitRequest } from "@/types/preference";
 
 /**
  * 성향 검사 온보딩 페이지 (기능명세 1.1.2 / 1.2.1).
@@ -19,11 +16,13 @@ import type { PreferenceSubmitRequest } from "@/types/preference";
  * 흐름:
  * 1. 질문 로딩 중 → 로딩(인트로) 화면만 노출
  * 2. 질문 도착 → 질문 스크롤 컨테이너로 전환 (로딩 화면은 DOM에서 제거) → 로딩으로 되돌아갈 수 없음
- * 3. 질문끼리는 scroll-snap으로 진행. 답변 시 다음 섹션 자동 스크롤, 위로 스크롤하면 이전 답 수정 가능.
+ * 3. 질문끼리는 scroll-snap으로 진행.
+ *    답변 시 다음 섹션 자동 스크롤, 위로 스크롤하면 이전 답 수정 가능.
  */
 
 const OnboardingPage = () => {
   const router = useRouter();
+
   const { data, isLoading, isError, refetch } =
     useGetPreferenceQuestionsQuery();
 
@@ -31,7 +30,6 @@ const OnboardingPage = () => {
   const isReady = !isLoading && !isError && questions.length > 0;
 
   const {
-    answers,
     visibleQuestions,
     progress,
     isCompleted,
@@ -41,23 +39,6 @@ const OnboardingPage = () => {
 
   /** 각 문항 섹션 DOM 참조 → 답변 후 다음 섹션으로 스크롤 */
   const sectionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const hasSubmittedRef = useRef(false);
-
-  const { mutate: submitPreferenceResult } = useMutation({
-    mutationFn: ({
-      userId,
-      body,
-    }: {
-      userId: number;
-      body: PreferenceSubmitRequest;
-    }) => postPreferenceResult(userId, body),
-    onSuccess: () => {
-      router.replace("/onboarding/result");
-    },
-    onError: () => {
-      hasSubmittedRef.current = false;
-    },
-  });
 
   const handleSelect = (questionId: number, optionId: number): void => {
     const isNewAnswer = getSelectedOption(questionId) === null;
@@ -79,23 +60,17 @@ const OnboardingPage = () => {
     });
   };
 
+  // 마지막 문항까지 응답 완료되면 결과 로딩(계산 대기) 화면으로 이동.
+  // 약간의 지연을 두어 마지막 선택의 dimmed 전환이 보인 뒤 넘어가게 한다.
   useEffect(() => {
-    if (!isCompleted || hasSubmittedRef.current) {
-      return;
-    }
+    if (!isCompleted) return;
 
-    const storedUserId = localStorage.getItem("userId");
-    const userId = storedUserId === null ? NaN : Number(storedUserId);
-    if (!Number.isFinite(userId)) {
-      return;
-    }
+    const timer = setTimeout(() => {
+      router.push("/onboarding/result");
+    }, 600);
 
-    hasSubmittedRef.current = true;
-    submitPreferenceResult({
-      userId,
-      body: { answers },
-    });
-  }, [answers, isCompleted, submitPreferenceResult]);
+    return () => clearTimeout(timer);
+  }, [isCompleted, router]);
 
   // 로딩/에러 상태: 질문 준비 전에는 인트로(로딩) 화면만 출력.
   if (!isReady) {
@@ -128,7 +103,7 @@ const OnboardingPage = () => {
   return (
     <main className="scrollbar-hide bg-neutral-01 mx-auto h-[100dvh] w-full max-w-[430px] snap-y snap-mandatory overflow-y-scroll">
       {/* 진행률 바: 질문 화면 상단 고정 */}
-      <div className="bg-neutral-01/80 sticky top-0 z-10 px-6 pt-6 pb-10 backdrop-blur">
+      <div className="sticky top-0 z-10 px-6 pt-6 pb-10 backdrop-blur">
         <QuizProgressBar progress={progress} />
       </div>
 
