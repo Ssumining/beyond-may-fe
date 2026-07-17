@@ -8,9 +8,9 @@ import type { PreferenceQuestion } from "@/types/preference";
  *
  * 실제 서비스에서는 백엔드가 전체 문제 풀 중 랜덤으로 선별해 내려준다.
  * 이 mock은 그 동작을 흉내 내기 위해, 아래 풀에서 무작위 7개를 뽑아 반환.
- * 백엔드 응답이 확정되면 이 파일을 제거한다.
+ * 백엔드 응답이 확정되면 이 파일을 제거.
  *
- * 질문 데이터는 기획 확정본(백엔드 반영 리스트)과 동일하게 유지한다.
+ * 질문 데이터는 기획 확정본(백엔드 반영 리스트)과 동일하게 유지.
  *
  *
  * TODO: 실제 선별 개수(현재 7)·랜덤 규칙은 서버 소관. (backend)
@@ -345,6 +345,89 @@ const pickRandomQuestions = (count: number): PreferenceQuestion[] => {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
+// ── 결과(성향) mock ──────────────────────────────────────
+// 4유형 모두 정의하되, 장소·설명·태그는 동일하게 채운다 (텍스트는 추후 수정).
+// type과 mbtiName만 유형별로 다르며, 테마 색은 프론트가 type으로 결정.
+// TODO: 추천 장소 이미지 URL, 유형 설명 텍스트, userId 획득 경로 확정. (backend)
+
+/** 공통 추천 장소 5개 (사색러 기준, 모든 유형 동일) */
+const MOCK_RECOMMENDED_PLACES = [
+  {
+    placeId: 1,
+    placeImg: "",
+    placeIntro:
+      "느린 걸음으로 걷기 좋은 오래된 골목. 담벼락 사이로 시간이 멈춘 듯한 풍경.",
+    placeName: "양림동 근대골목",
+    address: "광주 남구 양림동",
+    category: "history",
+  },
+  {
+    placeId: 2,
+    placeImg: "",
+    placeIntro: "도심을 내려다보며 생각을 정리하기 좋은 조용한 전망 자리.",
+    placeName: "사직공원 전망타워",
+    address: "광주 남구 사직길",
+    category: "view",
+  },
+  {
+    placeId: 3,
+    placeImg: "",
+    placeIntro: "숲의 정취 속에서 혼자 오래 걷기 좋은 완만한 산책로.",
+    placeName: "무등산 자락 옛길",
+    address: "광주 동구 무등산",
+    category: "nature",
+  },
+  {
+    placeId: 4,
+    placeImg: "",
+    placeIntro: "물소리와 함께 마음을 비우며 걷는 강변 산책 코스.",
+    placeName: "광주천 억새길",
+    address: "광주 동구 광주천",
+    category: "nature",
+  },
+  {
+    placeId: 5,
+    placeImg: "",
+    placeIntro: "책과 빛이 흐르는 열린 공간, 오래 앉아 사색하기 좋은 곳.",
+    placeName: "ACC 라이브러리파크",
+    address: "광주 동구 국립아시아문화전당",
+    category: "culture",
+  },
+];
+
+/** 공통 설명·비율 (모든 유형 동일, 텍스트는 추후 수정) */
+const MOCK_DESCRIPTION =
+  "혼자만의 속도로 도시를 걷는 사람. 익숙한 골목에서 낯선 풍경을 발견하고, 조용한 자리에 오래 머물며 하루의 생각을 천천히 정리합니다. 광주의 느린 장소를 모아봤어요.";
+
+const MOCK_PERCENTAGES = {
+  thinker: 40,
+  foodie: 20,
+  artist: 20,
+  remember: 20,
+};
+
+/** 유형별 식별자 ↔ 유형명. 나머지 필드는 공통 */
+const MOCK_TYPES = [
+  { type: "thinker", mbtiName: "사색러", mbtiTag: ["성찰", "역사"] },
+  { type: "foodie", mbtiName: "미식러", mbtiTag: ["음식", "골목"] },
+  { type: "artist", mbtiName: "예술러", mbtiTag: ["문화", "예술"] },
+  { type: "remember", mbtiName: "기억러", mbtiTag: ["민주화", "추모"] },
+] as const;
+
+/** 4유형 중 랜덤 하나의 결과를 만든다 (mock). 새로고침마다 유형이 바뀌어 색 확인 가능. */
+const buildRandomResult = () => {
+  const picked = MOCK_TYPES[Math.floor(Math.random() * MOCK_TYPES.length)];
+  return {
+    type: picked.type,
+    mbtiName: picked.mbtiName,
+    mbtiTag: [...picked.mbtiTag],
+    mbtiImg: "",
+    mbtiDescription: MOCK_DESCRIPTION,
+    percentages: MOCK_PERCENTAGES,
+    recommendedPlaces: MOCK_RECOMMENDED_PLACES,
+  };
+};
+
 export const preferenceHandlers = [
   http.get(`${BASE_URL}${API_ENDPOINTS.preference.questions}`, async () => {
     // 로딩 화면 연출용 지연. 실제 백엔드 연결 시 제거.
@@ -352,6 +435,16 @@ export const preferenceHandlers = [
     return HttpResponse.json({
       code: 200,
       data: { questions: pickRandomQuestions(SERVED_QUESTION_COUNT) },
+      message: "OK",
+    });
+  }),
+
+  // 나의 성향(결과) 조회. userId는 어떤 값이 와도 mock 결과 반환.
+  http.get(`${BASE_URL}/api/users/:userId/preference`, async () => {
+    await delay(600);
+    return HttpResponse.json({
+      code: 200,
+      data: buildRandomResult(),
       message: "OK",
     });
   }),
