@@ -1,1 +1,96 @@
 @import "tailwindcss";
+
+@theme {
+  /* ── 기본 색 ── */
+  --color-black-01: #070707;
+  --color-white-01: #ffffff;
+
+  /* neutral: 디자인 시안 번호를 그대로 따름 (밝기 순서 아님에 주의) */
+  --color-neutral-01: #fdfff9;
+  --color-neutral-02: #ededed;
+  --color-neutral-03: #dddddd;
+  --color-neutral-04: #77797e;
+  --color-neutral-05: #bec2c0;
+  --color-neutral-06: #312f2d;
+  --color-neutral-07: #141414;
+
+  /* ── 유형별 테마 색 (사색러/미식러/예술러/기억러 매핑 미정) ──
+    TODO: 유형 ↔ 색 확정되면 아래에 의미 별칭 추가 (design)
+    예) --color-type-thinker: var(--color-theme-purple-01); */
+  --color-theme-purple-01: #6e4de4;
+  --color-theme-purple-02: #a07eea;
+  --color-theme-green-01: #ecf4a2;
+  --color-theme-green-02: #a4dd62;
+  --color-theme-blue-01: #b7caff;
+  --color-theme-blue-02: #4d7ae4;
+  --color-theme-orange-01: #ff9e28;
+  --color-theme-orange-02: #ffc28d;
+
+  /* ── 메인 그라디언트 팔레트 (Figma Selection colors) ──
+     그라디언트 배경(GradientBackground) 전용. 위 팔레트와 별개로 유지 */
+  --color-brand-violet: #7c25ff;
+  --color-brand-periwinkle: #969dff;
+  --color-brand-mint: #98ffc4;
+  --color-brand-sky: #a8ceff;
+  --color-brand-lilac: #b773ff;
+  --color-brand-orchid: #c642ff;
+  --color-brand-wisteria: #e1c3ff;
+  --color-brand-petal: #f2d1ff;
+  --color-brand-magenta: #fd76ff;
+  --color-brand-blossom: #ffaafb;
+  --color-brand-peach: #ffc1c1;
+
+  /* ── 폰트 ── */
+  --font-sans: var(--font-pretendard), system-ui, sans-serif;
+
+  /* ── 애니메이션 ── */
+  --animate-float: float var(--float-duration, 20s) ease-in-out infinite;
+  --animate-hint-bounce: hint-bounce 1.8s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(6%, -8%) scale(1.08);
+  }
+  66% {
+    transform: translate(-5%, 6%) scale(0.94);
+  }
+}
+
+@keyframes hint-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 1;
+  }
+}
+
+/* 접근성: OS에서 "동작 줄이기"를 켠 사용자는 모든 모션 정지 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 스크롤바 숨김 유틸 (스크롤 기능은 유지, 바만 비표시).
+   모바일에선 원래 얇게 자동 숨김되지만, 데스크톱 개발/사용 시에도 깔끔. */
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none; /* IE, Edge */
+  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
+}
