@@ -24,5 +24,7 @@ export const API_ENDPOINTS = {
      *   명세서: POST /api/users/{userId}/preference-test
      */
     submit: (userId: number) => `/api/users/${userId}/preference-test`,
+    /** 나의 성향(결과) 조회 (1.2.2) */
+    result: (userId: number) => `/api/users/${userId}/preference`,
   },
 } as const;

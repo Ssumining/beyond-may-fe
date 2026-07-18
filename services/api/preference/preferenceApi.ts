@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import type {
   PreferenceQuestionsResponse,
   PreferenceSubmitRequest,
+  PreferenceResultResponse,
 } from "@/types/preference";
 
 /**
@@ -29,4 +30,18 @@ export const postPreferenceResult = async (
   body: PreferenceSubmitRequest,
 ): Promise<void> => {
   await api.post<void>(API_ENDPOINTS.preference.submit(userId), body);
+};
+
+/**
+ * 나의 성향 검사 결과(유형 + 추천 장소)를 조회.
+ *
+ * TODO: userId 획득 경로 확정 필요 (닉네임 등록 전이라 userId 미확정 가능성). (backend)
+ */
+export const getPreferenceResult = async (
+  userId: number,
+): Promise<PreferenceResultResponse> => {
+  const res = await api.get<PreferenceResultResponse>(
+    API_ENDPOINTS.preference.result(userId),
+  );
+  return res.data;
 };

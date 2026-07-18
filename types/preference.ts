@@ -45,6 +45,59 @@ interface PreferenceSubmitRequest {
   answers: PreferenceAnswer[];
 }
 
+/**
+ * 성향 유형 식별자. ERD T-MBTI의 mbti_name에 대응.
+ * 4가지: 사색러(성찰·역사) / 미식러(음식·골목) / 예술러(문화·예술) / 기억러(민주화·추모)
+ */
+type PreferenceType = "thinker" | "foodie" | "artist" | "remember";
+
+/** 4유형 비율(%) — ERD User의 *_percentage. 결과 화면 참고용 */
+interface PreferencePercentages {
+  thinker: number;
+  foodie: number;
+  artist: number;
+  remember: number;
+}
+
+/**
+ * 유형별 추천 장소. ERD corePlaces 기반.
+ * TODO: 결과 조회에 포함할지, 별도 API로 뺄지 확정. (backend)
+ */
+interface RecommendedPlace {
+  placeId: number;
+  /** 장소 사진 (corePlaces.place_img) */
+  placeImg: string;
+  /** 간단한 소개 한 줄 (corePlaces.place_intro) */
+  placeIntro: string;
+  /** 장소명 — TODO: corePlaces에 이름 필드 확인 (현재 ERD엔 명시 없음) (backend) */
+  placeName: string;
+  address: string;
+  category: string;
+}
+
+/**
+ * GET /api/users/{userId}/preference 응답 데이터 (ApiResponse<T>의 T).
+ * 결정된 유형 정보 + 추천 장소.
+ *
+ * TODO: mbtiDescription은 ERD T-MBTI에 없는 필드 → 추가 요청 필요. (backend)
+ */
+interface PreferenceResultResponse {
+  /** 유형 식별자 */
+  type: PreferenceType;
+  /** 유형명 (T-MBTI.mbti_name) 예: "사색러" */
+  mbtiName: string;
+  /** 키워드 태그 (T-MBTI.mbti_tag, ARRAYLIST) 예: ["성찰", "역사"] */
+  mbtiTag: string[];
+  /** 대표 일러스트 (T-MBTI.mbti_img) */
+  mbtiImg: string;
+  /** 유형 설명 텍스트 — ERD에 없음, 백엔드 추가 필요 */
+  mbtiDescription: string;
+  /** 4유형 비율 */
+  percentages: PreferencePercentages;
+  /** 유형별 추천 장소 (5개 이상) */
+  recommendedPlaces: RecommendedPlace[];
+}
+
 export type {
   OptionLabel,
   PreferenceOption,
@@ -52,4 +105,8 @@ export type {
   PreferenceQuestionsResponse,
   PreferenceAnswer,
   PreferenceSubmitRequest,
+  PreferenceType,
+  PreferencePercentages,
+  RecommendedPlace,
+  PreferenceResultResponse,
 };
