@@ -24,7 +24,7 @@ const QuizIntro = ({ isLoading }: QuizIntroProps) => {
 
       {isLoading && (
         <span
-          className="border-neutral-07/20 border-t-neutral-07 mt-8 block h-[42px] w-[42px] animate-spin rounded-full border-2"
+          className="border-neutral-07/20 border-t-neutral-07 mt-2 block h-[42px] w-[42px] animate-spin rounded-full border-2"
           role="status"
           aria-label="질문을 불러오는 중"
         />
