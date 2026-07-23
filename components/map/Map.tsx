@@ -16,12 +16,12 @@ const ROUTE_STROKE_WEIGHT = 3;
 // 디자인에서 투명도 확정되면 globals.css에 --color-type-*-rgb 추가하고
 // rgba(var(--color-type-thinker-rgb), 투명도)로 이전할 것
 const CATEGORY_COLORS: Record<PlaceCategory, string> = {
-  SASEAK: "160, 126, 234", // 사색러 (purple-02)
-  MISIK: "255, 194, 141", // 미식러 (orange-02)
-  YESUL: "236, 244, 162", // 예술러 (green-01)
-  GIEOK: "183, 202, 255", // 기억러 (blue-01)
+  thinker: "160, 126, 234", // 사색러 (purple-02)
+  foodie: "255, 194, 141", // 미식러 (orange-02)
+  artist: "236, 244, 162", // 예술러 (green-01)
+  remember: "183, 202, 255", // 기억러 (blue-01)
 };
-const DEFAULT_COLOR = CATEGORY_COLORS.SASEAK; // category 미확정 장소용
+const DEFAULT_COLOR = CATEGORY_COLORS.thinker; // category 미확정 장소용
 
 const GLOW_SIZE = 250;
 const GLOW_OPACITY_INNER = 0.55;

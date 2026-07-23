@@ -5,7 +5,7 @@ export interface LatLng {
 }
 
 /** 장소 유형 (Curated Layer 4분류, 성향 검사의 personalityType과 동일 형식) */
-export type PlaceCategory = "SASEAK" | "MISIK" | "YESUL" | "GIEOK";
+export type PlaceCategory = "thinker" | "foodie" | "artist" | "remember";
 
 /* 지도에 찍는 핀 하나 */
 export interface MapMarker {
