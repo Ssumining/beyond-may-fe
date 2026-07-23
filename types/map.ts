@@ -4,6 +4,9 @@ export interface LatLng {
   lng: number;
 }
 
+/** 장소 유형 (Curated Layer 4분류, 성향 검사의 personalityType과 동일 형식) */
+export type PlaceCategory = "SASEAK" | "MISIK" | "YESUL" | "GIEOK";
+
 /* 지도에 찍는 핀 하나 */
 export interface MapMarker {
   id: string; // 장소 식별자 (클릭 시 어떤 장소인지 구분)
@@ -11,6 +14,9 @@ export interface MapMarker {
   order?: number; // 코스 순서 번호 (코스 지도용)
   visited?: boolean; // 방문 여부 (탐험·밝힌 지도용)
   label?: string; // 핀에 띄울 이름
+  // TODO(백엔드 확인): 4유형 값 형식 제안함, 확정되면 조정
+  category?: PlaceCategory; // 핀·glow 색상 결정
+  isCurrent?: boolean; // 다음 목적지 (프론트에서 order·visited로 계산)
 }
 
 /* <Map> 컴포넌트가 받는 props */
