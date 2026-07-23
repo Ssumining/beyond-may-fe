@@ -5,4 +5,9 @@ export const QUERY_KEYS = {
     RESULT: (userId: number) =>
       [...QUERY_KEYS.PREFERENCE.ALL, "result", userId] as const,
   },
+  COURSE: {
+    ALL: ["course"] as const,
+    DETAIL: (courseId: string) =>
+      [...QUERY_KEYS.COURSE.ALL, "detail", courseId] as const,
+  },
 } as const;
