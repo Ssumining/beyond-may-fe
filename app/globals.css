@@ -14,9 +14,7 @@
   --color-neutral-06: #312f2d;
   --color-neutral-07: #141414;
 
-  /* ── 유형별 테마 색 (사색러/미식러/예술러/기억러 매핑 미정) ──
-    TODO: 유형 ↔ 색 확정되면 아래에 의미 별칭 추가 (design)
-    예) --color-type-thinker: var(--color-theme-purple-01); */
+  /* ── 유형별 테마 색 (사색러/미식러/예술러/기억러 매핑 미정) ── */
   --color-theme-purple-01: #6e4de4;
   --color-theme-purple-02: #a07eea;
   --color-theme-green-01: #ecf4a2;
@@ -25,6 +23,19 @@
   --color-theme-blue-02: #4d7ae4;
   --color-theme-orange-01: #ff9e28;
   --color-theme-orange-02: #ffc28d;
+
+  /* ── 유형 ↔ 색 매핑 (Curated Layer 4분류) ──
+     사색러=보라 / 미식러=주황 / 예술러=초록 / 기억러=파랑
+     -01/-02는 밝기 순서가 아니므로 유형별로 대표색 지정 */
+  --color-type-thinker: var(--color-theme-purple-01);
+  --color-type-foodie: var(--color-theme-orange-01);
+  --color-type-artist: var(--color-theme-green-02);
+  --color-type-memory: var(--color-theme-blue-02);
+
+  /* ── 지도 전용 색 ── */
+  --color-accent-route: #ffc9d7; /* 경로선 */
+  --color-location: #e0305f; /* 내 위치 */
+  --color-location-rgb: 224, 48, 95; /* 내 위치 rgba 조합용 */
 
   /* ── 메인 그라디언트 팔레트 (Figma Selection colors) ──
      그라디언트 배경(GradientBackground) 전용. 위 팔레트와 별개로 유지 */
@@ -46,6 +57,7 @@
   /* ── 애니메이션 ── */
   --animate-float: float var(--float-duration, 20s) ease-in-out infinite;
   --animate-hint-bounce: hint-bounce 1.8s ease-in-out infinite;
+  --animate-location-pulse: location-pulse 1.8s ease-out infinite;
 }
 
 @keyframes float {
@@ -73,6 +85,17 @@
   }
 }
 
+@keyframes location-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
 /* 접근성: OS에서 "동작 줄이기"를 켠 사용자는 모든 모션 정지 */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -93,4 +116,10 @@
   &::-webkit-scrollbar {
     display: none; /* Chrome, Safari */
   }
+}
+
+/* 카카오맵 타일만 흑백 처리 (마커·오버레이·glow는 컬러 유지)
+   Color the City — 방문 시 컬러로 채워지는 연출을 위해 지도를 흑백으로 시작 */
+img[src*="mts.daumcdn.net"] {
+  filter: grayscale(1);
 }

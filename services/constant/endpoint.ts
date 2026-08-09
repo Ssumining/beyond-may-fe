@@ -6,14 +6,14 @@ export const API_ENDPOINTS = {
       `/api/users/nickname/check?nickname=${nickname}`,
   },
   place: {
-    detail: (placeId: number) => `/api/places/${placeId}`,
-    recommendations: (scheduleId: number) =>
-      `/api/schedules/${scheduleId}/recommendations`,
+    detail: (placeId: string) => `/api/v1/places/${placeId}`,
+    recommendations: "/api/v1/places/recommendations",
+    search: "/api/v1/places/search",
   },
   course: {
-    detail: (scheduleId: number) => `/api/schedules/${scheduleId}/course`,
-    timeline: (scheduleId: number) =>
-      `/api/schedules/${scheduleId}/course/timeline`,
+    detail: (courseId: string) => `/api/v1/courses/${courseId}`,
+    confirm: (courseId: string) => `/api/v1/courses/${courseId}/confirm`,
+    aiGeneration: "/api/v1/courses/ai-generation",
   },
   preference: {
     /** 성향 검사 질문 목록 조회 (기능명세 1.1.2 / 1.2.1) */

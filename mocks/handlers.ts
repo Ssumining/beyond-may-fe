@@ -1,3 +1,4 @@
+import { courseHandlers } from "./courseHandlers";
 import { preferenceHandlers } from "./preferenceHandlers";
 
-export const handlers = [...preferenceHandlers];
+export const handlers = [...preferenceHandlers, ...courseHandlers];
