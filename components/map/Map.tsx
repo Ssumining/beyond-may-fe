@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import type { MapProps, PlaceCategory } from "@/types/map";
 
 // 경로선 색상 (--color-accent-route와 동일)
+// 카카오맵 Polyline strokeColor는 CSS 변수를 못 받아 hex 직접 지정
 const ROUTE_STROKE_COLOR = "#ffc9d7";
 const ROUTE_STROKE_WEIGHT = 3;
 
@@ -26,9 +27,6 @@ const DEFAULT_COLOR = CATEGORY_COLORS.thinker; // category 미확정 장소용
 const GLOW_SIZE = 250;
 const GLOW_OPACITY_INNER = 0.55;
 const GLOW_OPACITY_MID = 0.2;
-
-// 내 위치 표시 (--color-location #E0305F)
-const MY_LOCATION_COLOR = "224, 48, 95";
 
 // 레이어 순서: glow(배경) < 경로선 < 내 위치 < 핀 < 다음 목적지(최상단)
 const Z_INDEX_GLOW = 1;
@@ -150,7 +148,7 @@ const KakaoMap = ({
               style={{
                 width: 36,
                 height: 36,
-                backgroundColor: `rgba(${MY_LOCATION_COLOR}, 0.35)`,
+                backgroundColor: "rgba(var(--color-location-rgb), 0.35)",
               }}
             />
             <span
@@ -158,7 +156,7 @@ const KakaoMap = ({
               style={{
                 width: 16,
                 height: 16,
-                backgroundColor: `rgb(${MY_LOCATION_COLOR})`,
+                backgroundColor: "var(--color-location)",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
               }}
             />

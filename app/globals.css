@@ -35,6 +35,7 @@
   /* ── 지도 전용 색 ── */
   --color-accent-route: #ffc9d7; /* 경로선 */
   --color-location: #e0305f; /* 내 위치 */
+  --color-location-rgb: 224, 48, 95; /* 내 위치 rgba 조합용 */
 
   /* ── 메인 그라디언트 팔레트 (Figma Selection colors) ──
      그라디언트 배경(GradientBackground) 전용. 위 팔레트와 별개로 유지 */
