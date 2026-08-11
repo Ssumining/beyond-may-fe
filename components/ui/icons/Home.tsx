@@ -1,22 +1,34 @@
-interface HomeProps {
-  className?: string;
-}
+import type { IconProps } from "./types";
 
 /**
- * 홈(집) 아이콘. 색은 currentColor를 따르므로 부모에서 text-* 로 제어.
+ * 홈(집) 아이콘.
+ * 색은 currentColor를 따르므로 부모에서 text-* 또는 text-[color]로 제어.
  * 크기는 className의 w-* / h-* 로 지정.
  */
-
-const Home = ({ className }: HomeProps) => {
+const Home = ({ className }: IconProps) => {
   return (
     <svg
-      viewBox="0 0 24 25"
-      fill="currentColor"
+      className={className}
+      viewBox="0 0 24 27"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      className={className}
+      focusable="false"
     >
-      <path d="M13.3333 22.3309H21.3333V10.2904L12 3.02505L2.66667 10.2904V22.3309H10.6667V14.3235H13.3333V22.3309ZM24 23.6654C24 24.0194 23.8595 24.3588 23.6095 24.6091C23.3594 24.8594 23.0203 25 22.6667 25H1.33333C0.979712 25 0.640573 24.8594 0.390525 24.6091C0.140476 24.3588 3.20947e-07 24.0194 3.20947e-07 23.6654V9.63915C-0.000140645 9.43578 0.0461562 9.23507 0.135355 9.05235C0.224553 8.86962 0.354294 8.70972 0.514667 8.58485L11.1813 0.281185C11.4154 0.0989436 11.7035 0 12 0C12.2965 0 12.5846 0.0989436 12.8187 0.281185L23.4853 8.58485C23.6457 8.70972 23.7754 8.86962 23.8646 9.05235C23.9538 9.23507 24.0001 9.43578 24 9.63915V23.6654Z" />
+      <path
+        d="M1 9.55556L12 1L23 9.55556V23C23 23.6483 22.7425 24.2701 22.284 24.7285C21.8256 25.1869 21.2039 25.4444 20.5556 25.4444H3.44444C2.79614 25.4444 2.17438 25.1869 1.71596 24.7285C1.25754 24.2701 1 23.6483 1 23V9.55556Z"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.3335 25.4445V13.2222H15.6668V25.4445"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 };

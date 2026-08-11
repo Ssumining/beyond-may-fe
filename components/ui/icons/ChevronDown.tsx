@@ -1,6 +1,4 @@
-interface ChevronDownProps {
-  className?: string;
-}
+import type { IconProps } from "./types";
 
 /**
  * 아래를 가리키는 삼각형(▼) 아이콘. 스크롤 힌트에 사용.
@@ -9,7 +7,7 @@ interface ChevronDownProps {
  * 위쪽(▲)이 필요하면 사용하는 쪽에서 rotate-180 을 적용.
  */
 
-const ChevronDown = ({ className }: ChevronDownProps) => {
+const ChevronDown = ({ className }: IconProps) => {
   return (
     <svg
       viewBox="0 0 15 9"
