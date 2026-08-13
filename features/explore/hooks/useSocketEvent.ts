@@ -1,33 +1,52 @@
-import { useEffect, useRef } from "react";
-import { getSocket } from "@/lib/socket";
-import type { ServerToClientEvents } from "@/types/socket";
+import { useEffect } from "react";
+import { connectSocket, disconnectSocket } from "@/lib/socket";
+import type { ExplorationJoinPayload } from "@/types/socket";
+
+interface UseExplorationSocketParams {
+  explorationId: number;
+  /** 세션 토큰 (query로 전달됨) */
+  token?: string;
+  /** 소켓을 실제로 연결할지 여부 (탐험 진입 시 true) */
+  enabled?: boolean;
+}
 
 /**
- * 서버 수신 이벤트 하나를 구독하고 언마운트 시 자동 해제.
- * handler가 매 렌더 바뀌어도 재구독하지 않도록 ref로 최신값 유지.
+ * 탐험 화면 진입 시 소켓 연결 + 방 합류, 이탈 시 방 나가기 + 연결 해제.
+ * 실시간 이벤트 구독은 각 화면에서 useSocketEvent로 처리.
+ *
+ * userId는 서버가 인증 handshake로 식별하므로 payload에 넣지 않는다.
+ * 재연결 시에도 exploration:join을 보내면 서버가 exploration:state를 돌려준다.
  */
-const useSocketEvent = <EventName extends keyof ServerToClientEvents>(
-  event: EventName,
-  handler: ServerToClientEvents[EventName],
-): void => {
-  const handlerRef = useRef(handler);
-
+const useExplorationSocket = ({
+  explorationId,
+  token,
+  enabled = true,
+}: UseExplorationSocketParams): void => {
   useEffect(() => {
-    handlerRef.current = handler;
-  }, [handler]);
+    if (!enabled) {
+      return;
+    }
 
-  useEffect(() => {
-    const socket = getSocket();
-    const listener = ((...args: unknown[]) => {
-      (handlerRef.current as (...args: unknown[]) => void)(...args);
-    }) as ServerToClientEvents[EventName];
+    const socket = connectSocket(token);
 
-    socket.on(event, listener as never);
+    const joinPayload: ExplorationJoinPayload = { explorationId };
+
+    const handleConnect = (): void => {
+      socket.emit("exploration:join", joinPayload);
+    };
+
+    if (socket.connected) {
+      handleConnect();
+    } else {
+      socket.on("connect", handleConnect);
+    }
 
     return () => {
-      socket.off(event, listener as never);
+      socket.off("connect", handleConnect);
+      socket.emit("exploration:leave", { explorationId });
+      disconnectSocket();
     };
-  }, [event]);
+  }, [enabled, explorationId, token]);
 };
 
-export default useSocketEvent;
+export default useExplorationSocket;
