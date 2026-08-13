@@ -9,12 +9,14 @@ type ExploreSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 let socket: ExploreSocket | null = null;
 
-const createSocket = (): ExploreSocket =>
+/** 토큰을 query로 실어 소켓 생성 (netty-socketio는 handshake query에서 토큰 검증) */
+const createSocket = (token?: string): ExploreSocket =>
   io(ENV.SOCKET_URL, {
-    autoConnect: false, // 탐험 진입 시 명시적으로 연결
+    autoConnect: false,
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
+    query: token ? { token } : undefined,
   });
 
 /** 단일 인스턴스 반환 (없으면 생성) */
@@ -25,13 +27,20 @@ export const getSocket = (): ExploreSocket => {
   return socket;
 };
 
-/** 연결 시작. 세션 토큰은 핸드셰이크 auth로 전달 */
+/**
+ * 연결 시작. 토큰을 query로 전달해야 하므로,
+ * 토큰이 있으면 기존 인스턴스를 버리고 토큰을 실어 새로 생성한다.
+ */
 export const connectSocket = (token?: string): ExploreSocket => {
-  const current = getSocket();
+  // 토큰이 주어졌는데 기존 소켓이 없거나 이미 연결돼 있으면 새로 만든다
   if (token) {
-    // TODO: 소켓 인증 방식(핸드셰이크 auth token) 확인 (backend)
-    current.auth = { token };
+    if (socket?.connected) {
+      socket.disconnect();
+    }
+    socket = createSocket(token);
   }
+
+  const current = getSocket();
   if (!current.connected) {
     current.connect();
   }
