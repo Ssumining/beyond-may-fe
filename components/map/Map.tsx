@@ -12,17 +12,14 @@ import type { MapProps, PlaceCategory } from "@/types/map";
 const ROUTE_STROKE_COLOR = "#ffc9d7";
 const ROUTE_STROKE_WEIGHT = 3;
 
-// 유형 ↔ 색 매핑
-// TODO(임시): 색을 RGB로 관리 중.
-// 디자인에서 투명도 확정되면 globals.css에 --color-type-*-rgb 추가하고
-// rgba(var(--color-type-thinker-rgb), 투명도)로 이전할 것
+// 유형 ↔ 핀·glow 색 (연한 세트, globals.css --color-pin-*-rgb)
 const CATEGORY_COLORS: Record<PlaceCategory, string> = {
-  thinker: "160, 126, 234", // 사색러 (purple-02)
-  foodie: "255, 194, 141", // 미식러 (orange-02)
-  artist: "236, 244, 162", // 예술러 (green-01)
-  remember: "183, 202, 255", // 기억러 (blue-01)
+  thinker: "var(--color-pin-thinker-rgb)",
+  foodie: "var(--color-pin-foodie-rgb)",
+  artist: "var(--color-pin-artist-rgb)",
+  remember: "var(--color-pin-remember-rgb)",
 };
-const DEFAULT_COLOR = CATEGORY_COLORS.thinker; // category 미확정 장소용
+const DEFAULT_COLOR = CATEGORY_COLORS.thinker;
 
 const GLOW_SIZE = 250;
 const GLOW_OPACITY_INNER = 0.55;
