@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   motion,
+  useMotionValueEvent,
   useReducedMotion,
   useScroll,
   useTransform,
@@ -11,13 +13,16 @@ import {
 import GradientBackground from "@/components/ui/GradientBackground";
 import ScrollIndicator from "@/components/ui/ScrollIndicator";
 import AppHeader from "@/components/layout/AppHeader";
-import QuizIntro from "@/features/onboarding/components/QuizIntro";
+
+/** 스크롤 한 번으로 모션이 끝까지 재생되도록 하는 가상 스크롤 트랙 길이 */
+const SCROLL_TRACK_HEIGHT = "240dvh";
 
 /**
  * 서비스 시작 화면 (기능명세 1.1.1).
  *
- * 히어로 섹션을 스크롤해 내려가면 다음 섹션(성향 검사 인트로 프리뷰)이 이어진다.
- * 스크롤 진행도에 따라 배경의 아치·태양 원과 타이틀 텍스트가 위로 이동하며 페이드아웃된다.
+ * 화면은 한 화면(히어로)에 고정(sticky)되어 있고, 그 뒤에 깔린 가상 스크롤 트랙을
+ * 끝까지 스크롤하면 배경의 아치·태양 원과 타이틀 텍스트가 위로 이동하며 페이드아웃되고,
+ * 모션이 끝나는 시점에 자동으로 성향 검사 온보딩(/onboarding)으로 전환된다.
  *
  * TODO(1.1.1): 로컬 스토리지 세션 검사 후 분기 처리 (인증 방식 확정 후 별도 이슈)
  *   - 세션 없음        → 이 화면 유지
@@ -29,12 +34,20 @@ const HomePage = () => {
   // TODO: 사이드바 내용(설정/위치 이동 등) 확정 후 실제 사이드바 컴포넌트와 연결
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const heroRef = useRef<HTMLElement>(null);
+  const router = useRouter();
+  const trackRef = useRef<HTMLDivElement>(null);
+  const hasNavigated = useRef(false);
   const prefersReducedMotion = useReducedMotion();
 
   const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
+    target: trackRef,
+    offset: ["start start", "end end"],
+  });
+
+  useMotionValueEvent(scrollYProgress, "change", (value) => {
+    if (value < 0.98 || hasNavigated.current) return;
+    hasNavigated.current = true;
+    router.push("/onboarding");
   });
 
   const titleY = useTransform(scrollYProgress, [0, 1], [0, -80]);
@@ -44,11 +57,12 @@ const HomePage = () => {
     : { y: titleY, opacity: titleOpacity };
 
   return (
-    <main className="mx-auto w-full max-w-[430px]">
-      <section
-        ref={heroRef}
-        className="relative flex min-h-[100dvh] flex-col overflow-hidden pb-10"
-      >
+    <main
+      ref={trackRef}
+      className="relative mx-auto w-full max-w-[430px]"
+      style={{ height: SCROLL_TRACK_HEIGHT }}
+    >
+      <div className="sticky top-0 flex h-dvh flex-col overflow-hidden pb-10">
         <GradientBackground progress={scrollYProgress} />
 
         <AppHeader onOpenMenu={() => setIsMenuOpen(true)} />
@@ -71,11 +85,6 @@ const HomePage = () => {
         </div>
 
         {/* TODO: isMenuOpen 시 사이드바 렌더. 내용 확정 후 별도 컴포넌트로 분리 */}
-      </section>
-
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden text-center">
-        {/* TODO(#21 후속): 실제 질문 API 연동·자동 화면 전환은 onboarding 담당자와 협의 후 진행. 지금은 시각적 프리뷰만 노출 */}
-        <QuizIntro isLoading={false} />
       </div>
     </main>
   );
