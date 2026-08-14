@@ -14,7 +14,7 @@ interface QuizIntroProps {
 const QuizIntro = ({ isLoading }: QuizIntroProps) => {
   return (
     <section className="relative flex flex-1 flex-col items-center justify-center overflow-hidden text-center">
-      <GradientBackground interactive={false} className="opacity-70" />
+      <GradientBackground className="opacity-70" />
 
       <p className="text-neutral-07 text-[20px] leading-relaxed font-medium">
         몇 가지 질문을 통해서

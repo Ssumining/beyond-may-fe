@@ -29,7 +29,7 @@ const ResultPage = () => {
   if (isLoading || isError || !data) {
     return (
       <main className="bg-neutral-01 relative mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
-        <GradientBackground interactive={false} className="opacity-70" />
+        <GradientBackground className="opacity-70" />
 
         {/* 상단 헤더 (Home). 로딩 화면 디자인 기준 */}
         <AppHeader showMenu={false} className="text-neutral-04" />
