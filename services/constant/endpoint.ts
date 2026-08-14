@@ -27,4 +27,17 @@ export const API_ENDPOINTS = {
     /** 나의 성향(결과) 조회 (1.2.2) */
     result: (userId: number) => `/api/users/${userId}/preference`,
   },
+  exploration: {
+    /** 공유 링크로 팀 합류 (4.1.1) */
+    join: (courseId: string) => `/api/v1/courses/${courseId}/join`,
+    /** 탐험 시작 (4.2.4) */
+    start: (explorationId: string) =>
+      `/api/v1/explorations/${explorationId}/start`,
+    /** 팀원 목록 조회 - 방문 수 포함 (4.3.2) */
+    members: (explorationId: string) =>
+      `/api/v1/explorations/${explorationId}/members`,
+    /** 방문 인증 (4.3.3) */
+    visit: (explorationId: string, placeId: string) =>
+      `/api/v1/explorations/${explorationId}/places/${placeId}/visits`,
+  },
 } as const;
