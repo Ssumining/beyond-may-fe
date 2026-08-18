@@ -59,9 +59,9 @@ AI 코딩 어시스턴트(Claude, Gemini, Cursor 등)가 이 프로젝트에서 
 - 모든 응답은 공통 래퍼 { code, data, message }로 온다 → types/common.ts의 ApiResponse<T>
 - 응답 인터셉터는 response.data(래퍼)까지만 반환. 실제 데이터는 함수에서 res.data로 꺼냄
   (이유: 함수에서 code·message를 확인해야 하므로 data까지 벗기지 않음)
-- 요청 인터셉터: 세션 토큰 자동 첨부 / 응답 인터셉터: 공통 에러 + 401 처리
+- 요청 인터셉터: 세션 토큰 자동 첨부 (Authorization: Bearer {token}) / 응답 인터셉터: 공통 에러 + 401 처리
 - 백엔드 응답 키는 camelCase (placeImg, visitedAt). 타입도 camelCase로 맞춤
-- 날짜는 Unix 타임스탬프(number), 화면 표시는 date-fns로 변환
+- 날짜는 Unix 타임스탬프 밀리초(epoch milliseconds, number), 화면 표시는 date-fns로 변환
 
 ## React Query 규칙 (v5 객체 문법)
 
@@ -75,6 +75,10 @@ AI 코딩 어시스턴트(Claude, Gemini, Cursor 등)가 이 프로젝트에서 
 - socket.io-client 사용, 인스턴스는 lib/socket.ts 단일 생성
 - 이벤트 이름은 백엔드와 합의한 스키마를 따름 (types/socket.ts)
 - 이벤트 핸들러는 컴포넌트 언마운트 시 반드시 off
+- 소켓 인증: 토큰은 query로 전달 (io(url, { query: { token } })).
+- netty-socketio 서버가 auth: {} 를 읽지 못하므로 query 방식 필수
+- 소켓 room 기준: exploration:{explorationId}
+- 소켓 payload에서 userId는 서버가 handshake 인증으로 식별 (클라이언트가 보낸 값 무시)
 
 ## Import 규칙
 
@@ -158,7 +162,7 @@ git checkout -b type/이슈번호-설명
 - A/B/C가 주고받는 공유 타입(지도 props, 소켓 이벤트, 방문 데이터 등)은
   types/에 정의하고 "계약"으로 취급한다. 계약 변경 시 관련 담당자와 합의 후 수정한다.
 - 백엔드 응답은 공통 래퍼 ApiResponse<T>({ code, data, message })를 전제로 한다.
-- 응답 키는 camelCase, 날짜는 Unix 타임스탬프(number).
+- 응답 키는 camelCase, 날짜는 Unix 타임스탬프 밀리초(number).
 - 백엔드와 주고받는 타입은 API 응답 예시(JSON)를 근거로 정의한다.
 
 ## 3. 구현 순서
