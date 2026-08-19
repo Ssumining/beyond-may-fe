@@ -11,7 +11,7 @@ AI 코딩 어시스턴트(Claude, Gemini, Cursor 등)가 이 프로젝트에서 
 
 - 상태: 서버=React Query(@tanstack/react-query) / 클라이언트=Zustand
 - HTTP: axios (services/lib/axios.ts 인스턴스 사용, fetch 금지)
-- 실시간: socket.io-client (lib/socket.ts 단일 인스턴스)
+- 실시간: @stomp/stompjs (STOMP, lib/socket.ts 단일 클라이언트)
 - 스타일: Tailwind + cn() 헬퍼(clsx+tailwind-merge). 별도 CSS 파일 금지
 - 폼: react-hook-form + zod (+ @hookform/resolvers)
 - 지도: react-kakao-maps-sdk
@@ -70,15 +70,16 @@ AI 코딩 어시스턴트(Claude, Gemini, Cursor 등)가 이 프로젝트에서 
 - 훅 네이밍: use + 행위 + 대상 + Query / Mutation (useGetUserListQuery, useCreateUserMutation)
 - 토큰 저장 등 side effect는 onSuccess/onError에서 처리
 
-## 실시간(WebSocket) 규칙
+## 실시간(STOMP) 규칙
 
-- socket.io-client 사용, 인스턴스는 lib/socket.ts 단일 생성
-- 이벤트 이름은 백엔드와 합의한 스키마를 따름 (types/socket.ts)
-- 이벤트 핸들러는 컴포넌트 언마운트 시 반드시 off
-- 소켓 인증: 토큰은 query로 전달 (io(url, { query: { token } })).
-- netty-socketio 서버가 auth: {} 를 읽지 못하므로 query 방식 필수
-- 소켓 room 기준: exploration:{explorationId}
-- 소켓 payload에서 userId는 서버가 handshake 인증으로 식별 (클라이언트가 보낸 값 무시)
+- @stomp/stompjs 사용, 클라이언트는 lib/socket.ts 단일 생성
+- STOMP destination 구조는 백엔드 확정 채널을 따름 (types/socket.ts)
+  - 구독(SUBSCRIBE): /topic/explorations/{explorationId}/{visits|locations|events}
+  - 발행(SEND): /app/explorations/{explorationId}/locations
+- 연결: CONNECT /ws (SockJS 미사용)
+- 인증: STOMP CONNECT 프레임 헤더에 토큰 (Authorization: Bearer)
+- STOMP 메시지 body는 문자열 → 수신 시 JSON.parse, 송신 시 JSON.stringify
+- 구독은 컴포넌트 언마운트 시 반드시 unsubscribe (또는 연결 해제로 정리)
 
 ## Import 규칙
 
