@@ -53,6 +53,7 @@ const KakaoMap = ({
   fitBounds = true,
   glow = false,
   onMarkerClick,
+  onError,
   className,
 }: MapProps) => {
   const [loading, error] = useKakaoLoader();
@@ -77,6 +78,11 @@ const KakaoMap = ({
     map.setBounds(bounds);
     hasFitted.current = true;
   }, [map, fitBounds, markers, route]);
+
+  // 지도 로드 실패를 부모에 알린다 (부모가 폴백 화면으로 교체)
+  useEffect(() => {
+    if (error) onError?.();
+  }, [error, onError]);
 
   if (error)
     return <div className="p-4 text-red-500">지도를 불러오지 못했어요.</div>;
