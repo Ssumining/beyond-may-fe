@@ -1,85 +1,58 @@
 /**
- * 팀 탐험 실시간 통신 이벤트 계약 (Socket.IO).
+ * 팀 탐험 실시간 통신 계약 (STOMP).
  * 백엔드 확정 반영.
  *
- * 연결: io(SOCKET_URL, { query: { token: authToken } })  // auth: {} 아님 (netty-socketio 제약)
- * room: exploration:{explorationId}
- * 표기: camelCase / visitedAt: epoch milliseconds
+ * 연결: CONNECT /ws (SockJS 미사용), 인증은 CONNECT 프레임 헤더에 Authorization: Bearer
+ * 구독(SUBSCRIBE): /topic/explorations/{explorationId}/{visits|locations|events}
+ * 발행(SEND): /app/explorations/{explorationId}/locations
+ * 표기: camelCase
+ *
+ * STOMP 메시지는 문자열(body)로 오고 가므로, 아래 타입은 JSON.parse/stringify 대상의 형태를 정의.
  */
 
-/* ---------------- Server -> Client ---------------- */
+/* ---------------- 구독 수신 payload (/topic/...) ---------------- */
 
-/** 방문 인증이 팀에 전파될 때 */
+/**
+ * 방문 인증 전파 (/topic/explorations/{id}/visits).
+ * TODO: 소켓 payload의 visitedAt 형식 확인 (REST는 ISO 8601 문자열) (backend)
+ */
 export interface VisitConfirmedPayload {
   placeId: number;
   userId: number;
   displayName: string;
-  visitedAt: number; // epoch milliseconds
+  visitedAt: string; // ISO 8601 (REST 기준, 소켓 확인 필요)
 }
 
-/** 팀원 개인 진행상태 갱신 */
+/** 팀원 개인 진행상태 갱신 (/topic/.../events 또는 visits 파생) */
 export interface MemberProgressPayload {
   userId: number;
   displayName: string;
   visitedCount: number;
 }
 
-/** 팀원 위치 (위치 공유 옵트인한 팀원만) */
+/** 팀원 위치 (/topic/explorations/{id}/locations) */
 export interface MemberLocationPayload {
   userId: number;
   latitude: number;
   longitude: number;
 }
 
-/** 팀원 합류 알림 (member:left는 미구현 — REST 재조회로 대체) */
+/** 팀원 합류/상태 이벤트 (/topic/explorations/{id}/events) */
 export interface MemberPresencePayload {
   userId: number;
   displayName: string;
 }
 
-/** (재)연결 시 현재 탐험 전체 상태 스냅샷 */
+/** 재연결 시 현재 탐험 전체 상태 스냅샷 */
 export interface ExplorationStatePayload {
   visitedPlaceIds: number[];
   members: MemberProgressPayload[];
 }
 
-export interface ServerToClientEvents {
-  "visit:confirmed": (payload: VisitConfirmedPayload) => void;
-  "member:progress": (payload: MemberProgressPayload) => void;
-  "member:location": (payload: MemberLocationPayload) => void;
-  "member:joined": (payload: MemberPresencePayload) => void;
-  // "member:left"는 아직 미구현 — 트리거 REST가 없음. 추가 시 반영
-  "exploration:state": (payload: ExplorationStatePayload) => void;
-}
+/* ---------------- 발행 송신 payload (/app/...) ---------------- */
 
-/* ---------------- Client -> Server ---------------- */
-
-/**
- * 탐험 방 합류.
- * courseId·userId는 서버가 무시함 — userId는 인증 handshake로만 식별.
- */
-export interface ExplorationJoinPayload {
-  explorationId: number;
-}
-
-export interface ExplorationLeavePayload {
-  explorationId: number;
-}
-
+/** 내 위치 전송 (/app/explorations/{id}/locations) */
 export interface LocationUpdatePayload {
-  explorationId: number;
   latitude: number;
   longitude: number;
-}
-
-export interface LocationOptInPayload {
-  explorationId: number;
-  enabled: boolean;
-}
-
-export interface ClientToServerEvents {
-  "exploration:join": (payload: ExplorationJoinPayload) => void;
-  "exploration:leave": (payload: ExplorationLeavePayload) => void;
-  "location:update": (payload: LocationUpdatePayload) => void;
-  "location:optIn": (payload: LocationOptInPayload) => void;
 }
