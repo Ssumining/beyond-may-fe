@@ -58,6 +58,21 @@
   --color-brand-blossom: #ffaafb;
   --color-brand-peach: #ffc1c1;
 
+  /* ── Primary Color ──
+     그라디언트 배경(GradientBackground) 전용. 위 팔레트와 별개로 유지 */
+  --color-primary-01: #bfbaff;
+  --color-primary-02: #8076ff;
+  --color-primary-03: #5a4eff;
+  --color-primary-04: #ffe0bf;
+  --color-primary-05: #ffb274;
+  --color-primary-06: #ff7640;
+  --color-primary-07: #ff5d1d;
+  --color-primary-08: #e74d22;
+
+  /* ── Caution ── */
+  --color-caution-01: #ffebe8;
+  --color-caution-02: #c53637;
+
   /* ── 폰트 ── */
   --font-sans: var(--font-pretendard), system-ui, sans-serif;
 

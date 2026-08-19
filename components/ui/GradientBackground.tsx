@@ -1,243 +1,167 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import type { MotionValue } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+} from "framer-motion";
 
 import { cn } from "@/lib/cn";
 
-/** 배경을 구성하는 그라디언트 원 하나의 정의 */
-interface GradientBlob {
-  /** Tailwind 색상 토큰 (globals.css @theme 에 등록됨) */
-  color: string;
-  /** 컨테이너 대비 지름(%) */
-  size: number;
-  /** 중심 좌표(%) — left, top */
-  x: number;
-  y: number;
-  /** 클수록 앞쪽 레이어 → 포인터를 더 많이 따라옴 (px) */
-  depth: number;
-  /** 부유 애니메이션 주기(초) — 서로 다르게 두어야 유기적으로 보임 */
-  duration: number;
-  /** 애니메이션 시작 지연(초) */
-  delay: number;
-}
-
-/**
- * Figma 메인 화면의 메시 그라디언트를 재현한 blob 배치.
- * 색상은 디자인 Selection colors 11개를 그대로 사용한다.
- */
-const BLOBS: readonly GradientBlob[] = [
-  {
-    color: "bg-brand-magenta",
-    size: 95,
-    x: 8,
-    y: 6,
-    depth: 34,
-    duration: 19,
-    delay: 0,
-  },
-  {
-    color: "bg-brand-orchid",
-    size: 105,
-    x: 92,
-    y: 4,
-    depth: 28,
-    duration: 23,
-    delay: -4,
-  },
-  {
-    color: "bg-brand-violet",
-    size: 88,
-    x: 96,
-    y: 34,
-    depth: 20,
-    duration: 27,
-    delay: -9,
-  },
-  {
-    color: "bg-brand-sky",
-    size: 78,
-    x: 2,
-    y: 38,
-    depth: 30,
-    duration: 21,
-    delay: -2,
-  },
-  {
-    color: "bg-brand-periwinkle",
-    size: 70,
-    x: 20,
-    y: 30,
-    depth: 16,
-    duration: 25,
-    delay: -13,
-  },
-  {
-    color: "bg-brand-peach",
-    size: 92,
-    x: 52,
-    y: 44,
-    depth: 38,
-    duration: 17,
-    delay: -6,
-  },
-  {
-    color: "bg-brand-blossom",
-    size: 80,
-    x: 80,
-    y: 58,
-    depth: 24,
-    duration: 29,
-    delay: -17,
-  },
-  {
-    color: "bg-brand-mint",
-    size: 46,
-    x: 12,
-    y: 62,
-    depth: 12,
-    duration: 24,
-    delay: -11,
-  },
-  {
-    color: "bg-brand-petal",
-    size: 100,
-    x: 24,
-    y: 86,
-    depth: 22,
-    duration: 20,
-    delay: -7,
-  },
-  {
-    color: "bg-brand-wisteria",
-    size: 86,
-    x: 74,
-    y: 96,
-    depth: 14,
-    duration: 26,
-    delay: -15,
-  },
-  {
-    color: "bg-brand-lilac",
-    size: 74,
-    x: 50,
-    y: 74,
-    depth: 10,
-    duration: 22,
-    delay: -19,
-  },
-] as const;
-
-/** 포인터 목표 지점까지 매 프레임 접근하는 비율 (0~1). 낮을수록 부드럽고 느리게 따라옴 */
-const EASING = 0.06;
-
 interface GradientBackgroundProps {
-  /** 포인터(마우스·터치) 반응 여부. 배경으로만 쓸 땐 false */
-  interactive?: boolean;
+  /**
+   * 스크롤 진행도(0~1)를 담은 framer-motion MotionValue.
+   * 미지정 시 정적 첫 프레임(원본 Figma 목업의 스크롤 0% 상태)으로 렌더.
+   */
+  progress?: MotionValue<number>;
   className?: string;
 }
 
+/** Figma 목업 캔버스 기준 좌표계 (390×868) */
+const VIEW_WIDTH = 390;
+const VIEW_HEIGHT = 868;
+
+/**
+ * 동심원 3개(반투명 보라 그라디언트, 위쪽이 진하고 아래로 갈수록 투명)를
+ * 주황 배경 위에 겹쳐 주황→보라 경계가 곡선으로 보이도록 한다.
+ * cy는 스크롤 0% / 50% / 100% 세 프레임에서 Figma가 실제로 그 값이었다.
+ */
+const RING_A = { cx: 195.22, r: 315.76, cy: [526.59, 408.76, 408.76] };
+const RING_B = { cx: 195.22, r: 449.22, cy: [526.59, 526.59, 419.22] };
+const RING_C = { cx: 195.22, r: 236.2, cy: [526.59, 329.2, 221.83] };
+
+/** 태양 뒤로 뻗어나가는 빛줄기(쐐기). x는 고정, y만 프레임별로 위로 이동 */
+const RAY_PATH = "M-173.9 493.26L189 2278.5L559.71 493.26Z";
+const RAY_Y = [0, -258.26, -475.26];
+
+/** 태양: 배경과 같은 주황색 원 — 보라 링 위에 "구멍"처럼 얹혀 보인다 */
+const SUN = { cx: 192.91, r: 34.75, cy: [355.07, 157.68, 50.31] };
+const SUN_OPACITY = [1, 1, 0];
+
 /**
  * 메인·성향검사 등에서 공통으로 쓰는 그라디언트 배경.
+ * Figma 목업(390×868, 스크롤 0%/50%/100% 3프레임)의 실제 좌표를 그대로 이식했다.
  *
  * 의도:
- * - 권한이 필요한 기기 기울기(deviceorientation) 대신, 자동 부유 + 포인터 패럴랙스로 "살아있는" 느낌을 냄
- * - blob마다 depth가 달라 레이어감이 생김
- * - prefers-reduced-motion 사용자는 CSS에서 자동 정지 (globals.css)
+ * - 주황 배경 위 보라 동심원·빛줄기·태양이 스크롤에 따라 위로 이동하며 사라짐
+ * - progress가 없는 정적 사용처(QuizIntro, 결과 로딩 등)는 첫 프레임 그대로 노출
+ * - prefers-reduced-motion 사용자는 progress와 무관하게 첫 프레임 고정
  */
 const GradientBackground = ({
-  interactive = true,
+  progress,
   className,
 }: GradientBackgroundProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const target = useRef({ x: 0, y: 0 });
-  const current = useRef({ x: 0, y: 0 });
-  const frameId = useRef<number>(0);
+  const prefersReducedMotion = useReducedMotion();
+  const staticProgress = useMotionValue(0);
+  const scroll = progress ?? staticProgress;
 
-  useEffect(() => {
-    if (!interactive) return;
+  const ringACy = useTransform(scroll, [0, 0.5, 1], RING_A.cy);
+  const ringBCy = useTransform(scroll, [0, 0.5, 1], RING_B.cy);
+  const ringCCy = useTransform(scroll, [0, 0.5, 1], RING_C.cy);
+  const rayY = useTransform(scroll, [0, 0.5, 1], RAY_Y);
+  const sunCy = useTransform(scroll, [0, 0.5, 1], SUN.cy);
+  const sunOpacity = useTransform(scroll, [0, 0.7, 1], SUN_OPACITY);
 
-    const container = containerRef.current;
-    if (!container) return;
-
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (prefersReducedMotion) return;
-
-    /** 포인터 위치를 -0.5 ~ 0.5 범위로 정규화해 저장 */
-    const updateTarget = (clientX: number, clientY: number): void => {
-      const { left, top, width, height } = container.getBoundingClientRect();
-      target.current = {
-        x: (clientX - left) / width - 0.5,
-        y: (clientY - top) / height - 0.5,
-      };
-    };
-
-    const handlePointerMove = (event: PointerEvent): void => {
-      updateTarget(event.clientX, event.clientY);
-    };
-
-    /** 포인터가 벗어나면 서서히 중앙으로 복귀 */
-    const handlePointerLeave = (): void => {
-      target.current = { x: 0, y: 0 };
-    };
-
-    const tick = (): void => {
-      current.current.x += (target.current.x - current.current.x) * EASING;
-      current.current.y += (target.current.y - current.current.y) * EASING;
-
-      container.style.setProperty("--pointer-x", String(current.current.x));
-      container.style.setProperty("--pointer-y", String(current.current.y));
-
-      frameId.current = requestAnimationFrame(tick);
-    };
-
-    container.addEventListener("pointermove", handlePointerMove);
-    container.addEventListener("pointerleave", handlePointerLeave);
-    frameId.current = requestAnimationFrame(tick);
-
-    return () => {
-      container.removeEventListener("pointermove", handlePointerMove);
-      container.removeEventListener("pointerleave", handlePointerLeave);
-      cancelAnimationFrame(frameId.current);
-    };
-  }, [interactive]);
+  const showStatic = prefersReducedMotion || !progress;
 
   return (
-    <div
-      ref={containerRef}
+    <svg
       aria-hidden="true"
-      className={cn(
-        "bg-brand-petal pointer-events-none absolute inset-0 -z-10 overflow-hidden",
-        interactive && "pointer-events-auto",
-        className,
-      )}
+      viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+      preserveAspectRatio="xMidYMin slice"
+      className={cn("pointer-events-none absolute inset-0 -z-10", className)}
     >
-      {BLOBS.map((blob) => (
-        <div
-          key={`${blob.color}-${blob.x}-${blob.y}`}
-          className={cn(
-            "absolute rounded-full mix-blend-normal blur-[64px]",
-            "animate-float",
-            blob.color,
-          )}
-          style={{
-            width: `${blob.size}%`,
-            aspectRatio: "1 / 1",
-            left: `${blob.x}%`,
-            top: `${blob.y}%`,
-            // 자체 부유 애니메이션(transform)과 포인터 이동(translate)이 겹치지 않도록
-            // translate 프로퍼티를 따로 사용한다.
-            translate: `calc(-50% + (var(--pointer-x, 0) * ${blob.depth}px)) calc(-50% + (var(--pointer-y, 0) * ${blob.depth}px))`,
-            animationDuration: `${blob.duration}s`,
-            animationDelay: `${blob.delay}s`,
-          }}
-        />
-      ))}
+      <defs>
+        <linearGradient id="hero-glow" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="white" stopOpacity="0" />
+          <stop offset="0.54" stopColor="white" stopOpacity="0.54" />
+          <stop offset="1" stopColor="var(--color-primary-01)" />
+        </linearGradient>
+      </defs>
 
-      {/* 텍스트 가독성 확보용 아주 옅은 밝기 레이어 */}
-      <div className="absolute inset-0 bg-white/10" />
-    </div>
+      <rect
+        width={VIEW_WIDTH}
+        height={VIEW_HEIGHT}
+        fill="var(--color-primary-08)"
+      />
+
+      {showStatic ? (
+        <path
+          d={RAY_PATH}
+          fill="url(#hero-glow)"
+          transform={`translate(0, ${RAY_Y[0]})`}
+        />
+      ) : (
+        <motion.path d={RAY_PATH} fill="url(#hero-glow)" style={{ y: rayY }} />
+      )}
+
+      {showStatic ? (
+        <circle
+          cx={RING_A.cx}
+          cy={RING_A.cy[0]}
+          r={RING_A.r}
+          fill="url(#hero-glow)"
+        />
+      ) : (
+        <motion.circle
+          cx={RING_A.cx}
+          cy={ringACy}
+          r={RING_A.r}
+          fill="url(#hero-glow)"
+        />
+      )}
+
+      {showStatic ? (
+        <circle
+          cx={RING_B.cx}
+          cy={RING_B.cy[0]}
+          r={RING_B.r}
+          fill="url(#hero-glow)"
+        />
+      ) : (
+        <motion.circle
+          cx={RING_B.cx}
+          cy={ringBCy}
+          r={RING_B.r}
+          fill="url(#hero-glow)"
+        />
+      )}
+
+      {showStatic ? (
+        <circle
+          cx={RING_C.cx}
+          cy={RING_C.cy[0]}
+          r={RING_C.r}
+          fill="url(#hero-glow)"
+        />
+      ) : (
+        <motion.circle
+          cx={RING_C.cx}
+          cy={ringCCy}
+          r={RING_C.r}
+          fill="url(#hero-glow)"
+        />
+      )}
+
+      {showStatic ? (
+        <circle
+          cx={SUN.cx}
+          cy={SUN.cy[0]}
+          r={SUN.r}
+          fill="var(--color-primary-08)"
+        />
+      ) : (
+        <motion.circle
+          cx={SUN.cx}
+          cy={sunCy}
+          r={SUN.r}
+          fill="var(--color-primary-08)"
+          style={{ opacity: sunOpacity }}
+        />
+      )}
+    </svg>
   );
 };
 
