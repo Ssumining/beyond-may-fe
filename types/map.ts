@@ -28,6 +28,7 @@ export interface MapProps {
   level?: number; // 확대 레벨 (작을수록 확대, 1~14)
   fitBounds?: boolean; // 최초 1회 마커·경로가 모두 보이도록 범위 자동 조정 (기본 true)
   onMarkerClick?: (markerId: string) => void; // 핀 클릭 시 동작
+  onError?: () => void; // 지도 로드 실패 시 (부모가 폴백 처리)
   glow?: boolean; // 방문 핀에 빛 효과 (탐험 지도만 켬)
   className?: string; // 크기·여백 등 스타일 주입
 }

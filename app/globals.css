@@ -24,13 +24,20 @@
   --color-theme-orange-01: #ff9e28;
   --color-theme-orange-02: #ffc28d;
 
-  /* ── 유형 ↔ 색 매핑 (Curated Layer 4분류) ──
+  /* ── 유형 ↔ 색: 용도별 2세트 (Curated Layer 4분류) ──
      사색러=보라 / 미식러=주황 / 예술러=초록 / 기억러=파랑
-     -01/-02는 밝기 순서가 아니므로 유형별로 대표색 지정 */
+     type-*     : 유형 대표색(진한 쪽). 뱃지·유형 텍스트·그라디언트용
+     pin-*-rgb  : 지도 핀·glow 전용(연한 쪽). 흰 테두리+검은 글씨+halo에 맞춤.
+                  rgba() 합성용이라 R,G,B 트리플로 보관 (--color-location-rgb와 동일 방식) */
   --color-type-thinker: var(--color-theme-purple-01);
   --color-type-foodie: var(--color-theme-orange-01);
   --color-type-artist: var(--color-theme-green-02);
-  --color-type-memory: var(--color-theme-blue-02);
+  --color-type-remember: var(--color-theme-blue-02);
+
+  --color-pin-thinker-rgb: 160, 126, 234; /* purple-02 */
+  --color-pin-foodie-rgb: 255, 194, 141; /* orange-02 */
+  --color-pin-artist-rgb: 236, 244, 162; /* green-01 */
+  --color-pin-remember-rgb: 183, 202, 255; /* blue-01 */
 
   /* ── 지도 전용 색 ── */
   --color-accent-route: #ffc9d7; /* 경로선 */
