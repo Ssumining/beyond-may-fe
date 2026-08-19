@@ -24,8 +24,8 @@ const CourseMapView = ({
   const { markers, route, center } = getCourseMapData(course.places);
 
   return (
-    <div className="bg-neutral-01 flex h-dvh flex-col">
-      <div className="relative flex-1">
+    <div className="bg-neutral-01 flex min-h-dvh flex-col">
+      <div className="relative h-[673px]">
         <KakaoMap center={center} markers={markers} route={route} />
       </div>
       <CourseSummaryPanel
