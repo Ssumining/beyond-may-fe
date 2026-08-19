@@ -37,22 +37,20 @@ const CourseSummaryPanel = ({
       <h2 className="text-neutral-07 mt-2 text-[19.2px] leading-6 font-semibold">
         {title}
       </h2>
-      <p className="text-neutral-05 mt-1 text-[11.6px] leading-[14px]">
-        {meta}
-      </p>
+      <p className="text-neutral-05 mt-1 text-[11.6px] leading-3.5">{meta}</p>
 
       <div className="mt-4 flex gap-4">
         <button
           type="button"
           onClick={onDetailClick}
-          className="border-neutral-07 text-neutral-07 bg-neutral-01 h-[50px] flex-1 rounded-[29px] border text-sm font-extrabold tracking-[1px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)]"
+          className="border-neutral-07 text-neutral-07 bg-neutral-01 h-12.5 flex-1 rounded-[29px] border text-sm font-extrabold tracking-[1px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)]"
         >
           코스 상세
         </button>
         <button
           type="button"
           onClick={onConfirmClick}
-          className="bg-neutral-07 text-neutral-01 h-[50px] flex-1 rounded-[29px] text-sm font-extrabold tracking-[1px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)]"
+          className="bg-neutral-07 text-neutral-01 h-12.5 flex-1 rounded-[29px] text-sm font-extrabold tracking-[1px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)]"
         >
           이 코스로 진행
         </button>
