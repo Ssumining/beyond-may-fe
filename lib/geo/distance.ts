@@ -4,8 +4,9 @@
  * 실제 인증 판정은 서버가 좌표를 재검증.
  */
 
-/** 인증 가능 반경 (미터). */
-// TODO: 인증 반경 확정값 명기 (명세 4.3.3 "100m 제안", 백엔드/팀 결정) (backend)
+/** 인증 가능 반경 (미터).
+ *  백엔드 확정: 100m (GPS 정확도 최대 50m).
+ */
 export const VISIT_RADIUS_METERS = 100;
 
 interface Coordinates {
