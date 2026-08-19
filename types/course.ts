@@ -14,6 +14,8 @@ export interface CoursePlace {
   order: number;
   placeId: string;
   name: string;
+  /** 장소 한 줄 설명 ("전시 · 복합문화공간" 등). 목록·폴백 표시용 */
+  summary?: string;
   /** TourAPI 분류 ("문화" 등). 장소 검색 필터용 */
   category: string;
   // TODO(백엔드 확인): 4유형 필드명·값 형식 제안함
