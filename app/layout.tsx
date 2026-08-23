@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
 import "./globals.css";
@@ -30,6 +30,13 @@ const pretendardJp = localFont({
 export const metadata: Metadata = {
   title: "5월 너머의 광주",
   description: "광주 5·18 테마 여행, 광주 동행 지도",
+  appleWebApp: {
+    title: "5월 너머",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#E74D22",
 };
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
