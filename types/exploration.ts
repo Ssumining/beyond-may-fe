@@ -9,7 +9,11 @@ export type ExplorationStatus = "BEFORE" | "ONGOING" | "COMPLETED";
 
 /* ---------------- 방문 인증 (4.3.3) ---------------- */
 
-/** 방문 인증 요청 — POST /api/v1/visits */
+/**
+ * 방문 인증 요청 — POST /api/v1/visits
+ * body의 ID는 백엔드 int64 기준 number.
+ * (경로 파라미터로 쓰는 함수들의 id는 URL 조합용 string과 역할이 다름)
+ */
 export interface VisitRequest {
   explorationId: number;
   placeId: number;
