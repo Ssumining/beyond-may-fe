@@ -14,13 +14,14 @@
 
 /**
  * 방문 인증 전파 (/topic/explorations/{id}/visits).
- * TODO: 소켓 payload의 visitedAt 형식 확인 (REST는 ISO 8601 문자열) (backend)
+ * 소켓 payload 날짜는 epoch milliseconds.
  */
+
 export interface VisitConfirmedPayload {
   placeId: number;
   userId: number;
   displayName: string;
-  visitedAt: string; // ISO 8601 (REST 기준, 소켓 확인 필요)
+  visitedAt: number;
 }
 
 /** 팀원 개인 진행상태 갱신 (/topic/.../events 또는 visits 파생) */

@@ -81,6 +81,7 @@ AI 코딩 어시스턴트(Claude, Gemini, Cursor 등)가 이 프로젝트에서 
 - 인증: STOMP CONNECT 프레임 헤더에 토큰 (Authorization: Bearer)
 - STOMP 메시지 body는 문자열 → 수신 시 JSON.parse, 송신 시 JSON.stringify
 - 구독은 컴포넌트 언마운트 시 반드시 unsubscribe (또는 연결 해제로 정리)
+- 소켓 payload의 userId 등 식별자는 서버가 인증으로 식별하며, 클라이언트가 보낸 값은 신뢰하지 않음 (전송 방식과 무관한 보안 규칙)
 
 ## Import 규칙
 
