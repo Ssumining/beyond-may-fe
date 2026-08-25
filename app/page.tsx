@@ -13,6 +13,8 @@ import {
 import GradientBackground from "@/components/ui/GradientBackground";
 import ScrollIndicator from "@/components/ui/ScrollIndicator";
 import AppHeader from "@/components/layout/AppHeader";
+import Sidebar from "@/components/layout/sidebar/Sidebar";
+import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
 
 /** 스크롤 한 번으로 모션이 끝까지 재생되도록 하는 가상 스크롤 트랙 길이 */
 const SCROLL_TRACK_HEIGHT = "240dvh";
@@ -31,7 +33,6 @@ const SCROLL_TRACK_HEIGHT = "240dvh";
  *   - 성향 O, 닉네임 X → /onboarding/nickname 으로 이동
  */
 const HomePage = () => {
-  // TODO: 사이드바 내용(설정/위치 이동 등) 확정 후 실제 사이드바 컴포넌트와 연결
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const router = useRouter();
@@ -83,9 +84,12 @@ const HomePage = () => {
         <div className="mt-23 flex justify-center">
           <ScrollIndicator label="TAB" href="/onboarding" />
         </div>
-
-        {/* TODO: isMenuOpen 시 사이드바 렌더. 내용 확정 후 별도 컴포넌트로 분리 */}
       </div>
+
+      {/* TODO(사이드바 2단계): 로그인 상태면 프로필 메뉴로 교체 */}
+      <Sidebar open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+        <SidebarLoginForm />
+      </Sidebar>
     </main>
   );
 };
