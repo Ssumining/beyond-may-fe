@@ -8,5 +8,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   nickname: string;
+  // TODO(백엔드 확인): 로그인 응답에 포함되는지, 별도 조회 API가 있는지 미확정
+  identificationCode: string;
   // TODO(백엔드 확인): 성향 타입 등 프로필 관련 필드 추가될 수 있음
 }

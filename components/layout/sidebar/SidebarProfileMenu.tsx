@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 import ChevronRight from "@/components/ui/icons/ChevronRight";
 import useSessionStore from "@/stores/sessionStore";
+import SidebarCodeAccordion from "./SidebarCodeAccordion";
 
 interface SidebarProfileMenuProps {
   /** 성향 검사 결과 유형명 (예: "사색러"). 아직 검사 전이면 undefined — 뱃지 숨김 */
@@ -21,6 +22,9 @@ const MENU_ITEM_CLASS =
  */
 const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
   const nickname = useSessionStore((state) => state.nickname);
+  const identificationCode = useSessionStore(
+    (state) => state.identificationCode,
+  );
   const clearSession = useSessionStore((state) => state.clearSession);
 
   const handleLogout = () => {
@@ -48,11 +52,9 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
       </div>
 
       <div className="mt-6 flex flex-col">
-        {/* TODO: 식별코드 보기는 아코디언(펼치면 코드+복사)으로 별도 구현 예정 */}
-        <button type="button" className={MENU_ITEM_CLASS}>
-          식별코드 보기
-          <ChevronRight className="text-neutral-04 h-3 w-3" />
-        </button>
+        {identificationCode && (
+          <SidebarCodeAccordion code={identificationCode} />
+        )}
 
         <Link href="/onboarding/result" className={MENU_ITEM_CLASS}>
           내 성향 결과

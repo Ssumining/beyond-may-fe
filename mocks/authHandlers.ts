@@ -36,6 +36,7 @@ export const authHandlers = [
     const data: LoginResponse = {
       accessToken: "mock-access-token",
       nickname: body.nickname,
+      identificationCode: body.identificationCode,
     };
 
     return HttpResponse.json({ code: 200, data, message: "OK" });
