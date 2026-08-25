@@ -15,6 +15,8 @@ import ScrollIndicator from "@/components/ui/ScrollIndicator";
 import AppHeader from "@/components/layout/AppHeader";
 import Sidebar from "@/components/layout/sidebar/Sidebar";
 import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
+import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
+import useSessionStore from "@/stores/sessionStore";
 
 /** 스크롤 한 번으로 모션이 끝까지 재생되도록 하는 가상 스크롤 트랙 길이 */
 const SCROLL_TRACK_HEIGHT = "240dvh";
@@ -34,6 +36,7 @@ const SCROLL_TRACK_HEIGHT = "240dvh";
  */
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
 
   const router = useRouter();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -86,9 +89,8 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* TODO(사이드바 2단계): 로그인 상태면 프로필 메뉴로 교체 */}
       <Sidebar open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
-        <SidebarLoginForm />
+        {isLoggedIn ? <SidebarProfileMenu /> : <SidebarLoginForm />}
       </Sidebar>
     </main>
   );
