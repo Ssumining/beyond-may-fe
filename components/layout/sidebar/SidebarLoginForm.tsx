@@ -64,7 +64,7 @@ const SidebarLoginForm = () => {
 
   return (
     <div>
-      <h2 className="text-neutral-07 text-[16px] font-semibold">로그인</h2>
+      <h2 className="text-neutral-07 text-[13px] font-normal">로그인</h2>
       <p className="text-neutral-07 mt-3 text-[15px] leading-relaxed font-medium">
         닉네임을 입력하면
         <br />
@@ -85,11 +85,11 @@ const SidebarLoginForm = () => {
           <input
             id="sidebar-login-nickname"
             type="text"
-            placeholder="김감자"
+            placeholder="닉네임을 입력해주세요."
             className={cn(
               "border-neutral-03 mt-1.5 w-full rounded-lg border px-3.5 py-3 text-[15px]",
               "placeholder:text-neutral-04",
-              errorMessage && "border-red-500 bg-red-50",
+              errorMessage && "border-caution-02 bg-caution-01",
             )}
             {...register("nickname")}
           />
@@ -109,12 +109,12 @@ const SidebarLoginForm = () => {
             className={cn(
               "border-neutral-03 mt-1.5 w-full rounded-lg border px-3.5 py-3 text-[15px]",
               "placeholder:text-neutral-04",
-              errorMessage && "border-red-500 bg-red-50",
+              errorMessage && "border-caution-02 bg-caution-01",
             )}
             {...register("identificationCode")}
           />
           {errorMessage && (
-            <p className="mt-1.5 text-[12px] text-red-500">{errorMessage}</p>
+            <p className="text-caution-02 mt-1.5 text-[12px]">{errorMessage}</p>
           )}
         </div>
 

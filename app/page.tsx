@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   motion,
@@ -28,11 +28,12 @@ const SCROLL_TRACK_HEIGHT = "240dvh";
  * 끝까지 스크롤하면 배경의 아치·태양 원과 타이틀 텍스트가 위로 이동하며 페이드아웃되고,
  * 모션이 끝나는 시점에 자동으로 성향 검사 온보딩(/onboarding)으로 전환된다.
  *
- * TODO(1.1.1): 로컬 스토리지 세션 검사 후 분기 처리 (인증 방식 확정 후 별도 이슈)
+ * 세션 분기(1.1.1): 세션 없음이면 이 화면을 유지한다.
+ * 세션 있음일 때의 나머지 분기(코스·성향 조회)는 해당 API 연동 전까지 TODO로 남겨둔다.
  *   - 세션 없음        → 이 화면 유지
- *   - 세션 O, 코스 X   → /places 로 리다이렉트
- *   - 세션 O, 코스 O   → /explore 로 리다이렉트
- *   - 성향 O, 닉네임 X → /onboarding/nickname 으로 이동
+ *   - 세션 O, 코스 X   → /places 로 리다이렉트 (TODO: 코스 존재 조회 API)
+ *   - 세션 O, 코스 O   → /explore 로 리다이렉트 (TODO: 코스 존재 조회 API)
+ *   - 성향 O, 닉네임 X → /onboarding/nickname 으로 이동 (TODO: 성향 결과 조회 API)
  */
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -53,6 +54,16 @@ const HomePage = () => {
     hasNavigated.current = true;
     router.push("/onboarding");
   });
+
+  useEffect(() => {
+    if (!isLoggedIn) return; // 세션 없음 → 이 화면 유지
+
+    // TODO(백엔드 확인): 코스 존재 여부 조회 API 연동 후 분기 완성
+    //   세션 O, 코스 X → router.push("/places")
+    //   세션 O, 코스 O → router.push("/explore")
+    // TODO(백엔드 확인): 성향 결과 조회 API 연동 후 분기 완성
+    //   성향 O, 닉네임 X → router.push("/onboarding/nickname")
+  }, [isLoggedIn, router]);
 
   const titleY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const titleOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
