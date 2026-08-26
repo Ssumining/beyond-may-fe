@@ -11,7 +11,7 @@ AI 코딩 어시스턴트(Claude, Gemini, Cursor 등)가 이 프로젝트에서 
 
 - 상태: 서버=React Query(@tanstack/react-query) / 클라이언트=Zustand
 - HTTP: axios (services/lib/axios.ts 인스턴스 사용, fetch 금지)
-- 실시간: socket.io-client (lib/socket.ts 단일 인스턴스)
+- 실시간: @stomp/stompjs (STOMP, lib/socket.ts 단일 클라이언트)
 - 스타일: Tailwind + cn() 헬퍼(clsx+tailwind-merge). 별도 CSS 파일 금지
 - 폼: react-hook-form + zod (+ @hookform/resolvers)
 - 지도: react-kakao-maps-sdk
@@ -61,7 +61,8 @@ AI 코딩 어시스턴트(Claude, Gemini, Cursor 등)가 이 프로젝트에서 
   (이유: 함수에서 code·message를 확인해야 하므로 data까지 벗기지 않음)
 - 요청 인터셉터: 세션 토큰 자동 첨부 (Authorization: Bearer {token}) / 응답 인터셉터: 공통 에러 + 401 처리
 - 백엔드 응답 키는 camelCase (placeImg, visitedAt). 타입도 camelCase로 맞춤
-- 날짜는 Unix 타임스탬프 밀리초(epoch milliseconds, number), 화면 표시는 date-fns로 변환
+- 날짜: REST 응답은 ISO 8601 문자열(예: 2026-08-15T14:32:10+09:00), 소켓 payload는 epoch milliseconds(number)
+- 화면 표시는 date-fns로 변환
 
 ## React Query 규칙 (v5 객체 문법)
 
@@ -70,15 +71,17 @@ AI 코딩 어시스턴트(Claude, Gemini, Cursor 등)가 이 프로젝트에서 
 - 훅 네이밍: use + 행위 + 대상 + Query / Mutation (useGetUserListQuery, useCreateUserMutation)
 - 토큰 저장 등 side effect는 onSuccess/onError에서 처리
 
-## 실시간(WebSocket) 규칙
+## 실시간(STOMP) 규칙
 
-- socket.io-client 사용, 인스턴스는 lib/socket.ts 단일 생성
-- 이벤트 이름은 백엔드와 합의한 스키마를 따름 (types/socket.ts)
-- 이벤트 핸들러는 컴포넌트 언마운트 시 반드시 off
-- 소켓 인증: 토큰은 query로 전달 (io(url, { query: { token } })).
-- netty-socketio 서버가 auth: {} 를 읽지 못하므로 query 방식 필수
-- 소켓 room 기준: exploration:{explorationId}
-- 소켓 payload에서 userId는 서버가 handshake 인증으로 식별 (클라이언트가 보낸 값 무시)
+- @stomp/stompjs 사용, 클라이언트는 lib/socket.ts 단일 생성
+- STOMP destination 구조는 백엔드 확정 채널을 따름 (types/socket.ts)
+  - 구독(SUBSCRIBE): /topic/explorations/{explorationId}/{visits|locations|events}
+  - 발행(SEND): /app/explorations/{explorationId}/locations
+- 연결: CONNECT /ws (SockJS 미사용)
+- 인증: STOMP CONNECT 프레임 헤더에 토큰 (Authorization: Bearer)
+- STOMP 메시지 body는 문자열 → 수신 시 JSON.parse, 송신 시 JSON.stringify
+- 구독은 컴포넌트 언마운트 시 반드시 unsubscribe (또는 연결 해제로 정리)
+- 소켓 payload의 userId 등 식별자는 서버가 인증으로 식별하며, 클라이언트가 보낸 값은 신뢰하지 않음 (전송 방식과 무관한 보안 규칙)
 
 ## Import 규칙
 
@@ -162,7 +165,7 @@ git checkout -b type/이슈번호-설명
 - A/B/C가 주고받는 공유 타입(지도 props, 소켓 이벤트, 방문 데이터 등)은
   types/에 정의하고 "계약"으로 취급한다. 계약 변경 시 관련 담당자와 합의 후 수정한다.
 - 백엔드 응답은 공통 래퍼 ApiResponse<T>({ code, data, message })를 전제로 한다.
-- 응답 키는 camelCase, 날짜는 Unix 타임스탬프 밀리초(number).
+- 응답 키는 camelCase. 날짜는 REST 응답은 ISO 8601 문자열, 소켓 payload는 epoch milliseconds(number).
 - 백엔드와 주고받는 타입은 API 응답 예시(JSON)를 근거로 정의한다.
 
 ## 3. 구현 순서

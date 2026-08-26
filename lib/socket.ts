@@ -1,55 +1,47 @@
-import { io, Socket } from "socket.io-client";
+import { Client } from "@stomp/stompjs";
+import type { IMessage } from "@stomp/stompjs";
 import { ENV } from "@/lib/env";
-import type {
-  ClientToServerEvents,
-  ServerToClientEvents,
-} from "@/types/socket";
 
-type ExploreSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
+let client: Client | null = null;
 
-let socket: ExploreSocket | null = null;
-
-/** 토큰을 query로 실어 소켓 생성 (netty-socketio는 handshake query에서 토큰 검증) */
-const createSocket = (token?: string): ExploreSocket =>
-  io(ENV.SOCKET_URL, {
-    autoConnect: false,
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
-    query: token ? { token } : undefined,
+/** STOMP 클라이언트 생성. 토큰은 CONNECT 프레임 헤더로 전달. */
+const createClient = (token?: string): Client =>
+  new Client({
+    brokerURL: ENV.SOCKET_URL, // ws://.../ws
+    connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+    reconnectDelay: 3000, // 끊기면 3초 후 재연결
+    heartbeatIncoming: 10000,
+    heartbeatOutgoing: 10000,
   });
 
-/** 단일 인스턴스 반환 (없으면 생성) */
-export const getSocket = (): ExploreSocket => {
-  if (!socket) {
-    socket = createSocket();
+/** 단일 클라이언트 반환 (없으면 생성) */
+export const getClient = (): Client => {
+  if (!client) {
+    client = createClient();
   }
-  return socket;
+  return client;
 };
 
-/**
- * 연결 시작. 토큰을 query로 전달해야 하므로,
- * 토큰이 있으면 기존 인스턴스를 버리고 토큰을 실어 새로 생성한다.
- */
-export const connectSocket = (token?: string): ExploreSocket => {
-  // 토큰이 주어졌는데 기존 소켓이 없거나 이미 연결돼 있으면 새로 만든다
+/** 연결 시작. 토큰이 있으면 토큰을 실어 새로 생성. */
+export const connectClient = (token?: string): Client => {
   if (token) {
-    if (socket?.connected) {
-      socket.disconnect();
+    if (client?.active) {
+      client.deactivate();
     }
-    socket = createSocket(token);
+    client = createClient(token);
   }
-
-  const current = getSocket();
-  if (!current.connected) {
-    current.connect();
+  const current = getClient();
+  if (!current.active) {
+    current.activate(); // 연결 시작
   }
   return current;
 };
 
 /** 연결 해제 */
-export const disconnectSocket = (): void => {
-  if (socket?.connected) {
-    socket.disconnect();
+export const disconnectClient = (): void => {
+  if (client?.active) {
+    client.deactivate();
   }
 };
+
+export type { IMessage };
