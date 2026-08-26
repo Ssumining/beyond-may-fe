@@ -10,7 +10,7 @@ interface SidebarCodeAccordionProps {
 }
 
 const MENU_ITEM_CLASS =
-  "border-neutral-02 flex w-full items-center justify-between border-b py-4 text-[15px]";
+  "border-neutral-02 flex w-full cursor-pointer items-center justify-between border-b py-4 text-[15px]";
 
 /**
  * "식별코드 보기" 아코디언. 접힌 상태는 다른 메뉴 항목과 같은 chevron 행,
@@ -41,7 +41,7 @@ const SidebarCodeAccordion = ({ code }: SidebarCodeAccordionProps) => {
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="flex w-full items-center justify-between"
+        className="flex w-full cursor-pointer items-center justify-between"
       >
         <span className="text-neutral-04 text-[13px]">식별코드</span>
         <span className="text-neutral-04 flex items-center gap-1 text-[13px]">
@@ -55,7 +55,7 @@ const SidebarCodeAccordion = ({ code }: SidebarCodeAccordionProps) => {
         <button
           type="button"
           onClick={handleCopy}
-          className="text-neutral-04 text-[13px]"
+          className="text-neutral-04 cursor-pointer text-[13px]"
         >
           복사
         </button>

@@ -133,7 +133,7 @@ const SidebarLoginForm = () => {
         {/* TODO: 서비스 소개 페이지 경로 미확정 */}
         <button
           type="button"
-          className="border-neutral-02 flex w-full items-center justify-between border-b py-4 text-[15px]"
+          className="border-neutral-02 flex w-full cursor-pointer items-center justify-between border-b py-4 text-[15px]"
         >
           서비스 소개
           <ChevronRight className="text-neutral-04 h-3 w-3" />

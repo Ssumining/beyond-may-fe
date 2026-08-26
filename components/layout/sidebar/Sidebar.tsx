@@ -52,7 +52,7 @@ const Sidebar = ({ open, onClose, children, className }: SidebarProps) => {
                 type="button"
                 onClick={onClose}
                 aria-label="닫기"
-                className="text-neutral-06 self-end p-2"
+                className="text-neutral-06 cursor-pointer self-end p-2"
               >
                 <Close className="h-5 w-5" />
               </button>

@@ -13,7 +13,7 @@ interface SidebarProfileMenuProps {
 }
 
 const MENU_ITEM_CLASS =
-  "border-neutral-02 flex w-full items-center justify-between border-b py-4 text-[15px]";
+  "border-neutral-02 flex w-full cursor-pointer items-center justify-between border-b py-4 text-[15px]";
 
 /**
  * 사이드바 로그인 상태 콘텐츠 (프로필 메뉴).
@@ -83,7 +83,7 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
       <button
         type="button"
         onClick={handleLogout}
-        className="text-neutral-04 py-4 text-left text-[14px]"
+        className="text-neutral-04 cursor-pointer py-4 text-left text-[14px]"
       >
         로그아웃
       </button>
