@@ -54,7 +54,7 @@ const AppHeader = ({
           type="button"
           onClick={onOpenMenu}
           aria-label="메뉴 열기"
-          className="focus-visible:outline-neutral-07 rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="focus-visible:outline-neutral-07 cursor-pointer rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <Hamburger className="h-6 w-6" />
         </button>
