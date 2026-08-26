@@ -9,8 +9,15 @@ import { toBlob } from "html-to-image";
  * 결과 공유 카드뿐 아니라 추후 코스·탐험 결과처럼 지도 스크린샷이 포함된
  * 다른 화면에서도 그대로 재사용할 수 있도록 특정 기능에 종속되지 않게 만들었다.
  *
- * 주의: 캡처 대상 안의 원격 이미지(<img src="https://...">)는
- * 해당 서버가 CORS를 허용해야 정상적으로 캡처된다. (crossOrigin="anonymous" 권장)
+ * 주의(CORS, 리뷰 확인 필요): 캡처 대상 안의 원격 이미지(<img crossOrigin="anonymous">)는
+ * 그 서버가 Access-Control-Allow-Origin을 내려줘야 정상적으로 캡처된다.
+ * CORS가 안 열려 있으면 이미지 로드 자체가 실패하거나 캔버스가 오염(tainted)되어
+ * captureNode() 아래 toBlob이 null/에러를 반환 → download/share 전체가 실패한다
+ * (실패 시 결과 페이지의 "이미지를 만들지 못했어요" 모달로 이어짐, 조용히 무시되진 않음).
+ * 지금은 mock 데이터라 이미지 URL이 비어 있어 안 터지는 것뿐이므로,
+ * mbtiImg/placeImg가 실제 백엔드·카카오 이미지 서버 URL로 바뀌기 전에
+ * 해당 서버들이 CORS를 허용하는지 반드시 확인해야 한다.
+ * 같은 crossOrigin="anonymous"가 StampPhoto.tsx의 <image>에도 쓰여 동일하게 적용됨.
  */
 
 interface CaptureOptions {
