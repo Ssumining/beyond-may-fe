@@ -1,17 +1,21 @@
 import type { PlaceCategory } from "./map";
 
-/** 장소 상세 조회 응답 */
+/** 장소 상세 조회 응답 (GET /api/v1/places/{placeId}) */
 export interface PlaceDetailResponse {
-  placeId: string;
+  placeId: number;
   name: string;
-  address: string;
-  /** 장소 사진 목록. 1장 이상, 여러 장이면 캐러셀로 넘겨볼 수 있음 */
-  images: string[];
-  // TODO(백엔드 확인): 운영시간 응답 포맷 미확정, 우선 문자열로 가정
-  operatingHours?: string;
+  /** 장소의 업종·형태를 나타내는 화면 표시용 분류 (예: "전시"). travelMbtiType과는 별개 필드 */
+  category: string;
+  // TODO(백엔드 확인): 실제 값은 THINKER/FOODIE/ARTIST/REMEMBERER(대문자)로 내려옴.
+  //   팀 전체 4유형 값 통일 논의 후 값 형식 맞출 예정, 우선 기존 PlaceCategory(소문자) 유지.
+  travelMbtiType: PlaceCategory;
   tags: string[];
+  address: string;
+  /** 방문 인증 거리 계산에 사용 */
+  latitude: number;
+  longitude: number;
+  businessHours: string | null;
+  /** 상세 설명. 5·18 관련 의미가 있으면 이 안에 포함되어 내려옴(별도 boolean 필드 없음) */
   description: string;
-  // TODO(백엔드 확인): 5·18 관련 장소 판별 필드명·형식 미확정, 우선 boolean으로 가정
-  isMemorialSite: boolean;
-  category: PlaceCategory;
+  thumbnailUrl: string | null;
 }

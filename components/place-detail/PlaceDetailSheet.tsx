@@ -33,8 +33,9 @@ const PlaceDetailSheet = ({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // 사진이 없으면 placeholder 한 칸을 보여줄 수 있도록 빈 슬롯 하나를 둔다
-  const images = place.images.length > 0 ? place.images : [""];
+  // 실제 API는 thumbnailUrl 1장만 내려주지만, 추후 여러 장 지원 시 그대로
+  // 확장할 수 있도록 캐러셀 구조는 유지하고 배열 하나로 감싼다
+  const images = [place.thumbnailUrl ?? ""];
 
   const handleCarouselScroll = () => {
     const el = carouselRef.current;
@@ -101,9 +102,9 @@ const PlaceDetailSheet = ({
             {place.name}
           </h2>
           <p className="text-neutral-04 mt-1 text-[13px]">{place.address}</p>
-          {place.operatingHours && (
+          {place.businessHours && (
             <p className="text-neutral-04 mt-1 text-[13px]">
-              운영시간 {place.operatingHours}
+              운영시간 {place.businessHours}
             </p>
           )}
 
@@ -120,15 +121,9 @@ const PlaceDetailSheet = ({
             </div>
           )}
 
-          {place.isMemorialSite ? (
-            <div className="bg-neutral-02 text-neutral-06 mt-3 rounded-md px-3.5 py-3 text-[13px] leading-relaxed">
-              {place.description}
-            </div>
-          ) : (
-            <p className="text-neutral-06 mt-3 text-[14px] leading-relaxed">
-              {place.description}
-            </p>
-          )}
+          <p className="text-neutral-06 mt-3 text-[14px] leading-relaxed">
+            {place.description}
+          </p>
         </div>
       </div>
 

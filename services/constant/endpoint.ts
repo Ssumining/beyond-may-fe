@@ -6,7 +6,7 @@ export const API_ENDPOINTS = {
       `/api/users/nickname/check?nickname=${nickname}`,
   },
   place: {
-    detail: (placeId: string) => `/api/v1/places/${placeId}`,
+    detail: (placeId: number) => `/api/v1/places/${placeId}`,
     recommendations: "/api/v1/places/recommendations",
     search: "/api/v1/places/search",
   },
