@@ -3,6 +3,7 @@ import { courseHandlers } from "./courseHandlers";
 import { placeHandlers } from "./placeHandlers";
 import { preferenceHandlers } from "./preferenceHandlers";
 import { visitHandlers } from "./visitHandlers";
+import { participantHandlers } from "./participantHandlers";
 
 export const handlers = [
   ...preferenceHandlers,
@@ -10,4 +11,5 @@ export const handlers = [
   ...visitHandlers,
   ...authHandlers,
   ...placeHandlers,
+  ...participantHandlers,
 ];

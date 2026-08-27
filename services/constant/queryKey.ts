@@ -15,4 +15,9 @@ export const QUERY_KEYS = {
     DETAIL: (placeId: number) =>
       [...QUERY_KEYS.PLACE.ALL, "detail", placeId] as const,
   },
+  EXPLORATION: {
+    ALL: ["exploration"] as const,
+    PARTICIPANTS: (explorationId: string) =>
+      [...QUERY_KEYS.EXPLORATION.ALL, "participants", explorationId] as const,
+  },
 } as const;
