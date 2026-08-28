@@ -14,7 +14,8 @@ import { usePostLoginMutation } from "./usePostLoginMutation";
 
 const loginSchema = z.object({
   nickname: z.string().min(1),
-  identificationCode: z.string().min(1),
+  /** 서버가 발급하는 식별코드(1~99)를 문자열 입력으로 받고, 제출 시 숫자로 변환한다 */
+  identificationCode: z.string().regex(/^([1-9]|[1-9][0-9])$/),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -59,7 +60,10 @@ const SidebarLoginForm = () => {
         : null;
 
   const onSubmit = (values: LoginFormValues) => {
-    mutate(values);
+    mutate({
+      nickname: values.nickname,
+      identificationCode: Number(values.identificationCode),
+    });
   };
 
   return (
@@ -105,6 +109,7 @@ const SidebarLoginForm = () => {
           <input
             id="sidebar-login-code"
             type="text"
+            inputMode="numeric"
             placeholder="부여된 식별코드를 입력해주세요."
             className={cn(
               "border-neutral-03 mt-1.5 w-full rounded-lg border px-3.5 py-3 text-[15px]",

@@ -8,9 +8,9 @@ export const usePostLoginMutation = () => {
 
   return useMutation({
     mutationFn: postLogin,
-    onSuccess: (data) => {
-      localStorage.setItem("accessToken", data.accessToken);
-      setSession(data.nickname, data.identificationCode);
+    onSuccess: (data, variables) => {
+      localStorage.setItem("accessToken", data.token);
+      setSession(data.nickname, variables.identificationCode);
     },
   });
 };

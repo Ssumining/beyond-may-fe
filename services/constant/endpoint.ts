@@ -1,9 +1,7 @@
 export const API_ENDPOINTS = {
   auth: {
-    login: "/api/auth/login",
-    nickname: "/api/users/nickname",
-    nicknameCheck: (nickname: string) =>
-      `/api/users/nickname/check?nickname=${nickname}`,
+    login: "/api/v1/users/login",
+    logout: "/api/v1/users/logout",
   },
   place: {
     detail: (placeId: number) => `/api/v1/places/${placeId}`,

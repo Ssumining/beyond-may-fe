@@ -28,16 +28,22 @@ const SCROLL_TRACK_HEIGHT = "240dvh";
  * 끝까지 스크롤하면 배경의 아치·태양 원과 타이틀 텍스트가 위로 이동하며 페이드아웃되고,
  * 모션이 끝나는 시점에 자동으로 성향 검사 온보딩(/onboarding)으로 전환된다.
  *
- * 세션 분기(1.1.1): 세션 없음이면 이 화면을 유지한다.
- * 세션 있음일 때의 나머지 분기(코스·성향 조회)는 해당 API 연동 전까지 TODO로 남겨둔다.
+ * 세션 분기(1.1.1):
  *   - 세션 없음        → 이 화면 유지
- *   - 세션 O, 코스 X   → /places 로 리다이렉트 (TODO: 코스 존재 조회 API)
- *   - 세션 O, 코스 O   → /explore 로 리다이렉트 (TODO: 코스 존재 조회 API)
- *   - 성향 O, 닉네임 X → /onboarding/nickname 으로 이동 (TODO: 성향 결과 조회 API)
+ *   - 세션 O, 코스 X   → /places 로 리다이렉트
+ *   - 세션 O, 코스 O   → /explore 로 리다이렉트
+ * "성향 O, 닉네임 X"(로그인 전 성향검사만 마친 사용자) 분기는 닉네임/세션 등록
+ * 이슈에서 처리한다.
+ *
+ * 코스 존재 여부는 sessionStore.courseId로 판단한다.
+ * TODO(course 도메인 연동 필요): 코스 확정(POST /courses/{id}/confirm) 성공 시
+ *   setCourseId를 호출하는 코드가 아직 없다 — 지금은 courseId가 항상 null이라
+ *   로그인한 모든 사용자가 /places로 리다이렉트된다.
  */
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
+  const courseId = useSessionStore((state) => state.courseId);
 
   const router = useRouter();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -58,12 +64,8 @@ const HomePage = () => {
   useEffect(() => {
     if (!isLoggedIn) return; // 세션 없음 → 이 화면 유지
 
-    // TODO(백엔드 확인): 코스 존재 여부 조회 API 연동 후 분기 완성
-    //   세션 O, 코스 X → router.push("/places")
-    //   세션 O, 코스 O → router.push("/explore")
-    // TODO(백엔드 확인): 성향 결과 조회 API 연동 후 분기 완성
-    //   성향 O, 닉네임 X → router.push("/onboarding/nickname")
-  }, [isLoggedIn, router]);
+    router.push(courseId ? "/explore" : "/places");
+  }, [isLoggedIn, courseId, router]);
 
   const titleY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const titleOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
