@@ -39,5 +39,8 @@ export const API_ENDPOINTS = {
       `/api/v1/explorations/${explorationId}/participants`,
     /** 방문 인증 (4.3.3) */
     visit: () => `/api/v1/visits`,
+    /** 밝힌 장소 조회 (5.2.2) */
+    visitedPlaces: (explorationId: string) =>
+      `/api/v1/visits/visited-places?explorationId=${explorationId}`,
   },
 } as const;
