@@ -38,7 +38,7 @@ const Button = ({
   <button
     type={type}
     className={cn(
-      "flex items-center justify-center gap-2 rounded-full font-medium disabled:opacity-50",
+      "flex cursor-pointer items-center justify-center gap-2 rounded-full font-medium disabled:cursor-not-allowed disabled:opacity-50",
       VARIANT_CLASS[variant],
       SIZE_CLASS[size],
       className,

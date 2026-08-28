@@ -6,6 +6,7 @@ import type {
   ParticipantsResponse,
   JoinResponse,
   StartResponse,
+  VisitedPlacesResponse,
 } from "@/types/exploration";
 
 /** 탐험에 합류 (4.1.1). */
@@ -45,6 +46,16 @@ export const postVisit = async (body: VisitRequest): Promise<VisitResponse> => {
   const res = await api.post<VisitResponse>(
     API_ENDPOINTS.exploration.visit(),
     body,
+  );
+  return res.data;
+};
+
+/** 밝힌 장소(팀 방문 장소) 목록을 조회 (5.2.2). */
+export const getVisitedPlaces = async (
+  explorationId: string,
+): Promise<VisitedPlacesResponse> => {
+  const res = await api.get<VisitedPlacesResponse>(
+    API_ENDPOINTS.exploration.visitedPlaces(explorationId),
   );
   return res.data;
 };

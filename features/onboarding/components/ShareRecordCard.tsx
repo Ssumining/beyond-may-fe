@@ -39,6 +39,9 @@ const ShareRecordCard = forwardRef<HTMLDivElement, ShareRecordCardProps>(
       recommendedPlaces,
     } = result;
     const theme = getResultTheme(type);
+    // 지금은 "오늘" 날짜 도장이라 new Date()로 충분하다.
+    // TODO: 실제 방문 날짜(REST에서 오는 ISO 문자열)를 표시하게 되면
+    // new Date(isoString) 대신 date-fns parseISO를 써야 한다.
     const stampDate = format(new Date(), "yyyy.MM.dd");
     const places = recommendedPlaces.slice(0, RECORD_PLACE_COUNT);
 

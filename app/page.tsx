@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   motion,
@@ -13,6 +13,10 @@ import {
 import GradientBackground from "@/components/ui/GradientBackground";
 import ScrollIndicator from "@/components/ui/ScrollIndicator";
 import AppHeader from "@/components/layout/AppHeader";
+import Sidebar from "@/components/layout/sidebar/Sidebar";
+import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
+import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
+import useSessionStore from "@/stores/sessionStore";
 
 /** 스크롤 한 번으로 모션이 끝까지 재생되도록 하는 가상 스크롤 트랙 길이 */
 const SCROLL_TRACK_HEIGHT = "240dvh";
@@ -24,15 +28,16 @@ const SCROLL_TRACK_HEIGHT = "240dvh";
  * 끝까지 스크롤하면 배경의 아치·태양 원과 타이틀 텍스트가 위로 이동하며 페이드아웃되고,
  * 모션이 끝나는 시점에 자동으로 성향 검사 온보딩(/onboarding)으로 전환된다.
  *
- * TODO(1.1.1): 로컬 스토리지 세션 검사 후 분기 처리 (인증 방식 확정 후 별도 이슈)
+ * 세션 분기(1.1.1): 세션 없음이면 이 화면을 유지한다.
+ * 세션 있음일 때의 나머지 분기(코스·성향 조회)는 해당 API 연동 전까지 TODO로 남겨둔다.
  *   - 세션 없음        → 이 화면 유지
- *   - 세션 O, 코스 X   → /places 로 리다이렉트
- *   - 세션 O, 코스 O   → /explore 로 리다이렉트
- *   - 성향 O, 닉네임 X → /onboarding/nickname 으로 이동
+ *   - 세션 O, 코스 X   → /places 로 리다이렉트 (TODO: 코스 존재 조회 API)
+ *   - 세션 O, 코스 O   → /explore 로 리다이렉트 (TODO: 코스 존재 조회 API)
+ *   - 성향 O, 닉네임 X → /onboarding/nickname 으로 이동 (TODO: 성향 결과 조회 API)
  */
 const HomePage = () => {
-  // TODO: 사이드바 내용(설정/위치 이동 등) 확정 후 실제 사이드바 컴포넌트와 연결
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
 
   const router = useRouter();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -49,6 +54,16 @@ const HomePage = () => {
     hasNavigated.current = true;
     router.push("/onboarding");
   });
+
+  useEffect(() => {
+    if (!isLoggedIn) return; // 세션 없음 → 이 화면 유지
+
+    // TODO(백엔드 확인): 코스 존재 여부 조회 API 연동 후 분기 완성
+    //   세션 O, 코스 X → router.push("/places")
+    //   세션 O, 코스 O → router.push("/explore")
+    // TODO(백엔드 확인): 성향 결과 조회 API 연동 후 분기 완성
+    //   성향 O, 닉네임 X → router.push("/onboarding/nickname")
+  }, [isLoggedIn, router]);
 
   const titleY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const titleOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
@@ -83,9 +98,11 @@ const HomePage = () => {
         <div className="mt-23 flex justify-center">
           <ScrollIndicator label="TAB" href="/onboarding" />
         </div>
-
-        {/* TODO: isMenuOpen 시 사이드바 렌더. 내용 확정 후 별도 컴포넌트로 분리 */}
       </div>
+
+      <Sidebar open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+        {isLoggedIn ? <SidebarProfileMenu /> : <SidebarLoginForm />}
+      </Sidebar>
     </main>
   );
 };

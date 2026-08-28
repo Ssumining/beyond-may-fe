@@ -6,7 +6,7 @@ export const API_ENDPOINTS = {
       `/api/users/nickname/check?nickname=${nickname}`,
   },
   place: {
-    detail: (placeId: string) => `/api/v1/places/${placeId}`,
+    detail: (placeId: number) => `/api/v1/places/${placeId}`,
     recommendations: "/api/v1/places/recommendations",
     search: "/api/v1/places/search",
   },
@@ -39,5 +39,8 @@ export const API_ENDPOINTS = {
       `/api/v1/explorations/${explorationId}/participants`,
     /** 방문 인증 (4.3.3) */
     visit: () => `/api/v1/visits`,
+    /** 밝힌 장소 조회 (5.2.2) */
+    visitedPlaces: (explorationId: string) =>
+      `/api/v1/visits/visited-places?explorationId=${explorationId}`,
   },
 } as const;

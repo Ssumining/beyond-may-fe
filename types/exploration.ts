@@ -96,3 +96,32 @@ export interface JoinResponse {
   /** 이미 합류한 사용자의 재진입이면 true */
   alreadyJoined: boolean;
 }
+
+/* ---------------- 밝힌 장소 조회 (5.2.2) ---------------- */
+
+/** 밝힌 장소 하나 */
+export interface VisitedPlace {
+  placeId: number;
+  name: string;
+  category: string;
+  /** THINKER/FOODIE/ARTIST/REMEMBERER — 프론트 remember와 변환 필요 (팀 통일 대기) */
+  travelMbtiType: string;
+  latitude: number;
+  longitude: number;
+  thumbnailUrl: string | null;
+  isCoursePlace: boolean;
+  visitCount: number;
+  visitedByCount: number;
+  /** ISO 8601 문자열 */
+  firstVisitedAt: string;
+  /** ISO 8601 문자열 */
+  lastVisitedAt: string;
+  participantDisplayNames: string[];
+}
+
+/** 밝힌 장소 조회 응답 */
+export interface VisitedPlacesResponse {
+  explorationId: number;
+  visitedPlaces: VisitedPlace[];
+  totalVisitedPlaceCount: number;
+}
