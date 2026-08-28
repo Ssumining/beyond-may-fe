@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   motion,
   useMotionValueEvent,
@@ -16,6 +17,8 @@ import AppHeader from "@/components/layout/AppHeader";
 import Sidebar from "@/components/layout/sidebar/Sidebar";
 import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
 import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
+import { getExplorations } from "@/services/api/exploration/explorationApi";
+import { QUERY_KEYS } from "@/services/constant/queryKey";
 import useSessionStore from "@/stores/sessionStore";
 
 /** 스크롤 한 번으로 모션이 끝까지 재생되도록 하는 가상 스크롤 트랙 길이 */
@@ -35,17 +38,27 @@ const SCROLL_TRACK_HEIGHT = "240dvh";
  * "성향 O, 닉네임 X"(로그인 전 성향검사만 마친 사용자) 분기는 닉네임/세션 등록
  * 이슈에서 처리한다.
  *
- * 코스 존재 여부는 sessionStore.courseId로 판단한다.
- * TODO(course 도메인 연동 필요): 코스 확정(POST /courses/{id}/confirm) 성공 시
- *   setCourseId를 호출하는 코드가 아직 없다 — 지금은 courseId가 항상 null이라
- *   로그인한 모든 사용자가 /places로 리다이렉트된다.
+ * 코스 존재 여부는 진행 중(ONGOING)인 탐험이 있는지로 판단한다
+ * (GET /explorations?status=ONGOING).
+ * TODO(백엔드 확인): 코스를 막 확정했지만 아직 탐험을 시작하지 않은 상태(BEFORE)는
+ *   이 조회로 안 잡힌다 — ONGOING/COMPLETED만 지원되는지, BEFORE 상태 코스는
+ *   어떻게 판단해야 하는지 백엔드 확인 필요. 조회 실패 시에는 안전하게 /places로 보낸다.
  */
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
-  const courseId = useSessionStore((state) => state.courseId);
 
   const router = useRouter();
+
+  const {
+    data: ongoingExplorations,
+    isLoading: isCheckingCourse,
+    isError: isCourseCheckError,
+  } = useQuery({
+    queryKey: QUERY_KEYS.EXPLORATION.LIST("ONGOING"),
+    queryFn: () => getExplorations("ONGOING"),
+    enabled: isLoggedIn,
+  });
   const trackRef = useRef<HTMLDivElement>(null);
   const hasNavigated = useRef(false);
   const prefersReducedMotion = useReducedMotion();
@@ -63,9 +76,20 @@ const HomePage = () => {
 
   useEffect(() => {
     if (!isLoggedIn) return; // 세션 없음 → 이 화면 유지
+    if (isCheckingCourse) return; // 조회 완료 후 분기
 
-    router.push(courseId ? "/explore" : "/places");
-  }, [isLoggedIn, courseId, router]);
+    // 조회 실패 시 안전하게 장소 선택으로 보낸다 (TODO: 백엔드 에러 정책 확인 필요)
+    const hasOngoingCourse =
+      !isCourseCheckError &&
+      (ongoingExplorations?.explorations.length ?? 0) > 0;
+    router.push(hasOngoingCourse ? "/explore" : "/places");
+  }, [
+    isLoggedIn,
+    isCheckingCourse,
+    isCourseCheckError,
+    ongoingExplorations,
+    router,
+  ]);
 
   const titleY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const titleOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);

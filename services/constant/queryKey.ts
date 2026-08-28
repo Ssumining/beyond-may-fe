@@ -19,5 +19,7 @@ export const QUERY_KEYS = {
     ALL: ["exploration"] as const,
     PARTICIPANTS: (explorationId: string) =>
       [...QUERY_KEYS.EXPLORATION.ALL, "participants", explorationId] as const,
+    LIST: (status: "ONGOING" | "COMPLETED") =>
+      [...QUERY_KEYS.EXPLORATION.ALL, "list", status] as const,
   },
 } as const;

@@ -40,5 +40,8 @@ export const API_ENDPOINTS = {
     /** 밝힌 장소 조회 (5.2.2) */
     visitedPlaces: (explorationId: string) =>
       `/api/v1/visits/visited-places?explorationId=${explorationId}`,
+    /** 상태별 탐험 코스 목록 조회 — 홈 화면 라우팅 가드의 코스 존재 여부 판단에 사용 */
+    list: (status: "ONGOING" | "COMPLETED") =>
+      `/api/v1/explorations?status=${status}`,
   },
 } as const;
