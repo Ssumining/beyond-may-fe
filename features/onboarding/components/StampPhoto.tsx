@@ -106,6 +106,9 @@ const StampPhoto = ({
           fill="var(--color-neutral-03)"
         />
         {src && (
+          // 주의(CORS): crossOrigin="anonymous"는 원격 서버가 CORS를 허용해야 유효하다.
+          // 허용되지 않으면 캔버스가 오염되어 useCaptureImage의 캡처(toBlob)가 실패한다.
+          // 자세한 내용은 hooks/useCaptureImage.ts 상단 주석 참고.
           <image
             href={src}
             x={innerX}
