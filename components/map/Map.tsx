@@ -55,6 +55,7 @@ const KakaoMap = ({
   onMarkerClick,
   onError,
   panTo,
+  panToNonce,
   className,
 }: MapProps) => {
   const [loading, error] = useKakaoLoader();
@@ -85,7 +86,7 @@ const KakaoMap = ({
   useEffect(() => {
     if (!map || !panTo) return;
     map.panTo(new window.kakao.maps.LatLng(panTo.lat, panTo.lng));
-  }, [map, panTo]);
+  }, [map, panTo, panToNonce]);
 
   // 지도 로드 실패를 부모에 알린다 (부모가 폴백 화면으로 교체)
   useEffect(() => {
