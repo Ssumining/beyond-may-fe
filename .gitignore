@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# postman 로컬 워크스페이스
+.postman/
+postman/
+
+# 로컬 전용 지도 테스트 페이지 (커밋 안 함)
+app/map-test/
