@@ -54,6 +54,8 @@ const KakaoMap = ({
   glow = false,
   onMarkerClick,
   onError,
+  panTo,
+  panToNonce,
   className,
 }: MapProps) => {
   const [loading, error] = useKakaoLoader();
@@ -78,6 +80,13 @@ const KakaoMap = ({
     map.setBounds(bounds);
     hasFitted.current = true;
   }, [map, fitBounds, markers, route]);
+
+  // 지정 좌표로 지도 중심 이동 (타임라인 항목 선택 등 외부 트리거용).
+  // fitBounds(최초 1회)와 별개로, panTo 값이 바뀔 때마다 부드럽게 이동한다.
+  useEffect(() => {
+    if (!map || !panTo) return;
+    map.panTo(new window.kakao.maps.LatLng(panTo.lat, panTo.lng));
+  }, [map, panTo, panToNonce]);
 
   // 지도 로드 실패를 부모에 알린다 (부모가 폴백 화면으로 교체)
   useEffect(() => {
