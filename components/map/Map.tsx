@@ -194,9 +194,10 @@ const KakaoMap = ({
             yAnchor={state === "current" ? 1 : 0.9}
             zIndex={state === "current" ? Z_INDEX_PIN_CURRENT : Z_INDEX_PIN}
           >
-            {/* CustomOverlayMap은 onClick을 지원하지 않아 래퍼로 처리 */}
+            {/* CustomOverlayMap은 onClick을 지원하지 않아 래퍼로 처리.
+                핀이 작아도 누르기 쉽도록 투명 padding으로 터치 영역을 넓힌다. */}
             <div
-              className="cursor-pointer"
+              className="flex cursor-pointer items-center justify-center p-1"
               onClick={() => onMarkerClick?.(marker.id)}
             >
               <MapPin order={marker.order} color={color} state={state} />
