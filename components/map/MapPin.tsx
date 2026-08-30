@@ -16,6 +16,7 @@ interface MapPinProps {
 const FILL_OPACITY = 0.92;
 const PIN_SIZE = 30; // 물방울 핀 지름 (깃발 높이와 맞춤)
 const VISITED_SCALE = 0.85; // 방문 완료 핀은 미방문 대비 작게 (다녀온 느낌)
+const VISITED_OPACITY = 0.75; // 다녀온 곳은 살짝 흐리게
 
 /** 위는 둥글고 아래로 뾰족한 물방울 핀 */
 const DropPin = ({
@@ -53,9 +54,11 @@ const MapPin = ({ order, color, state = "default" }: MapPinProps) => {
   // (주변 glow가 방문 여부를 색으로 함께 표시)
   if (state === "visited") {
     return (
-      <DropPin color={color} size={PIN_SIZE * VISITED_SCALE}>
-        ✓
-      </DropPin>
+      <div style={{ opacity: VISITED_OPACITY }}>
+        <DropPin color={color} size={PIN_SIZE * VISITED_SCALE}>
+          ✓
+        </DropPin>
+      </div>
     );
   }
 
