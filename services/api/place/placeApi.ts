@@ -8,5 +8,5 @@ export const getPlaceDetail = async (
   const res = await api.get<PlaceDetailResponse>(
     API_ENDPOINTS.place.detail(placeId),
   );
-  return res.data;
+  return res.data!;
 };

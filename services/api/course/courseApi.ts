@@ -12,5 +12,5 @@ export const getCourseDetail = async (
   const response = await api.get<CourseDetailResponse>(
     API_ENDPOINTS.course.detail(courseId),
   );
-  return response.data;
+  return response.data!;
 };
