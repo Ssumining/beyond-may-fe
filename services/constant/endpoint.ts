@@ -26,7 +26,12 @@ export const API_ENDPOINTS = {
     result: (userId: number) => `/api/users/${userId}/preference`,
   },
   exploration: {
-    /** 탐험 합류 - 중복 없이 참여 (4.1.1) */
+    /**
+     * 탐험 합류 - 중복 없이 참여 (4.1.1)
+     * TODO(C 확인 필요): 실제 API는 POST /api/v1/courses/{courseId}/join (courseId 기준,
+     *   공유 링크로 합류). explorationId가 아니라 courseId를 받아야 해서
+     *   postJoin 함수 시그니처까지 같이 바뀌어야 함.
+     */
     join: (explorationId: string) =>
       `/api/v1/explorations/${explorationId}/participants`,
     /** 탐험 시작 (4.2.4) */
