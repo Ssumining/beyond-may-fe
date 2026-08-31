@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { CustomOverlayMap, Map, Polyline } from "react-kakao-maps-sdk";
 import useKakaoLoader from "@/hooks/useKakaoLoader";
 import MapPin from "@/components/map/MapPin";
+import ClusterMarker from "@/components/map/ClusterMarker";
+import useMarkerCluster from "@/hooks/useMarkerCluster";
 import { cn } from "@/lib/cn";
-import type { MapProps, PlaceCategory } from "@/types/map";
+import type { LatLng, MapProps, PlaceCategory } from "@/types/map";
 
 // 경로선 색상 (--color-accent-route와 동일)
 // 카카오맵 Polyline strokeColor는 CSS 변수를 못 받아 hex 직접 지정
@@ -93,12 +95,33 @@ const KakaoMap = ({
     if (error) onError?.();
   }, [error, onError]);
 
+  // 클러스터 대상은 미방문(물방울)만. 깃발·방문완료는 묶지 않고 항상 단독 렌더.
+  // (훅이므로 early return보다 위에서 호출해야 한다)
+  const clusterableMarkers = markers.filter(
+    (marker) => !marker.visited && !marker.isCurrent,
+  );
+  const { clusters, singles } = useMarkerCluster(map, clusterableMarkers);
+
   if (error)
     return <div className="p-4 text-red-500">지도를 불러오지 못했어요.</div>;
   if (loading)
     return <div className="p-4 text-gray-500">지도 불러오는 중…</div>;
 
   const hasRoute = route !== undefined && route.length >= 2;
+
+  // 깃발·방문완료는 클러스터 대상이 아니라 항상 개별 렌더
+  const fixedMarkers = markers.filter(
+    (marker) => marker.visited || marker.isCurrent,
+  );
+
+  // 클러스터 클릭 → 해당 위치로 확대해 개별 핀으로 펼친다
+  const handleClusterClick = (position: LatLng) => {
+    if (!map) return;
+    const level = map.getLevel();
+    map.setLevel(Math.max(1, level - 2), {
+      anchor: new window.kakao.maps.LatLng(position.lat, position.lng),
+    });
+  };
 
   return (
     <Map
@@ -176,7 +199,24 @@ const KakaoMap = ({
         </CustomOverlayMap>
       )}
 
-      {markers.map((marker) => {
+      {/* 클러스터 (겹친 미방문 묶음) */}
+      {clusters.map((cluster) => (
+        <CustomOverlayMap
+          key={cluster.id}
+          position={cluster.position}
+          xAnchor={0.5}
+          yAnchor={0.5}
+          zIndex={Z_INDEX_PIN}
+        >
+          <ClusterMarker
+            count={cluster.count}
+            onClick={() => handleClusterClick(cluster.position)}
+          />
+        </CustomOverlayMap>
+      ))}
+
+      {/* 개별 마커: 미방문 단독(singles) + 깃발·방문완료(fixedMarkers) */}
+      {[...singles, ...fixedMarkers].map((marker) => {
         const color = marker.category
           ? CATEGORY_COLORS[marker.category]
           : DEFAULT_COLOR;
@@ -194,9 +234,8 @@ const KakaoMap = ({
             yAnchor={state === "current" ? 1 : 0.9}
             zIndex={state === "current" ? Z_INDEX_PIN_CURRENT : Z_INDEX_PIN}
           >
-            {/* CustomOverlayMap은 onClick을 지원하지 않아 래퍼로 처리 */}
             <div
-              className="cursor-pointer"
+              className="flex cursor-pointer items-center justify-center p-1.5"
               onClick={() => onMarkerClick?.(marker.id)}
             >
               <MapPin order={marker.order} color={color} state={state} />
