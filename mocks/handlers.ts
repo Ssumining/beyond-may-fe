@@ -1,5 +1,6 @@
 import { authHandlers } from "./authHandlers";
 import { courseHandlers } from "./courseHandlers";
+import { explorationHandlers } from "./explorationHandlers";
 import { placeHandlers } from "./placeHandlers";
 import { preferenceHandlers } from "./preferenceHandlers";
 import { visitHandlers } from "./visitHandlers";
@@ -10,6 +11,7 @@ export const handlers = [
   ...courseHandlers,
   ...visitHandlers,
   ...authHandlers,
+  ...explorationHandlers,
   ...placeHandlers,
   ...participantHandlers,
 ];

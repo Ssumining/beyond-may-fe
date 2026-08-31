@@ -3,9 +3,9 @@ import { persist } from "zustand/middleware";
 
 interface SessionState {
   nickname: string | null;
-  identificationCode: string | null;
+  identificationCode: number | null;
   isLoggedIn: boolean;
-  setSession: (nickname: string, identificationCode: string) => void;
+  setSession: (nickname: string, identificationCode: number) => void;
   clearSession: () => void;
 }
 

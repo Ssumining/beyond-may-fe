@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { cn } from "@/lib/cn";
 import ChevronRight from "@/components/ui/icons/ChevronRight";
+import { postLogout } from "@/services/api/auth/authApi";
 import useSessionStore from "@/stores/sessionStore";
 import SidebarCodeAccordion from "./SidebarCodeAccordion";
 
@@ -27,9 +28,13 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
   );
   const clearSession = useSessionStore((state) => state.clearSession);
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    clearSession();
+  const handleLogout = async () => {
+    try {
+      await postLogout();
+    } finally {
+      localStorage.removeItem("accessToken");
+      clearSession();
+    }
   };
 
   return (
@@ -53,7 +58,7 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
 
       <div className="mt-6 flex flex-col">
         {identificationCode && (
-          <SidebarCodeAccordion code={identificationCode} />
+          <SidebarCodeAccordion code={String(identificationCode)} />
         )}
 
         <Link href="/onboarding/result" className={MENU_ITEM_CLASS}>

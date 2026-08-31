@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   motion,
   useMotionValueEvent,
@@ -16,6 +17,8 @@ import AppHeader from "@/components/layout/AppHeader";
 import Sidebar from "@/components/layout/sidebar/Sidebar";
 import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
 import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
+import { getExplorations } from "@/services/api/exploration/explorationApi";
+import { QUERY_KEYS } from "@/services/constant/queryKey";
 import useSessionStore from "@/stores/sessionStore";
 
 /** 스크롤 한 번으로 모션이 끝까지 재생되도록 하는 가상 스크롤 트랙 길이 */
@@ -28,18 +31,34 @@ const SCROLL_TRACK_HEIGHT = "240dvh";
  * 끝까지 스크롤하면 배경의 아치·태양 원과 타이틀 텍스트가 위로 이동하며 페이드아웃되고,
  * 모션이 끝나는 시점에 자동으로 성향 검사 온보딩(/onboarding)으로 전환된다.
  *
- * 세션 분기(1.1.1): 세션 없음이면 이 화면을 유지한다.
- * 세션 있음일 때의 나머지 분기(코스·성향 조회)는 해당 API 연동 전까지 TODO로 남겨둔다.
+ * 세션 분기(1.1.1):
  *   - 세션 없음        → 이 화면 유지
- *   - 세션 O, 코스 X   → /places 로 리다이렉트 (TODO: 코스 존재 조회 API)
- *   - 세션 O, 코스 O   → /explore 로 리다이렉트 (TODO: 코스 존재 조회 API)
- *   - 성향 O, 닉네임 X → /onboarding/nickname 으로 이동 (TODO: 성향 결과 조회 API)
+ *   - 세션 O, 코스 X   → /places 로 리다이렉트
+ *   - 세션 O, 코스 O   → /explore 로 리다이렉트
+ * "성향 O, 닉네임 X"(로그인 전 성향검사만 마친 사용자) 분기는 닉네임/세션 등록
+ * 이슈에서 처리한다.
+ *
+ * 코스 존재 여부는 진행 중(ONGOING)인 탐험이 있는지로 판단한다
+ * (GET /explorations?status=ONGOING).
+ * TODO(백엔드 확인): 코스를 막 확정했지만 아직 탐험을 시작하지 않은 상태(BEFORE)는
+ *   이 조회로 안 잡힌다 — ONGOING/COMPLETED만 지원되는지, BEFORE 상태 코스는
+ *   어떻게 판단해야 하는지 백엔드 확인 필요. 조회 실패 시에는 안전하게 /places로 보낸다.
  */
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
 
   const router = useRouter();
+
+  const {
+    data: ongoingExplorations,
+    isLoading: isCheckingCourse,
+    isError: isCourseCheckError,
+  } = useQuery({
+    queryKey: QUERY_KEYS.EXPLORATION.LIST("ONGOING"),
+    queryFn: () => getExplorations("ONGOING"),
+    enabled: isLoggedIn,
+  });
   const trackRef = useRef<HTMLDivElement>(null);
   const hasNavigated = useRef(false);
   const prefersReducedMotion = useReducedMotion();
@@ -57,13 +76,20 @@ const HomePage = () => {
 
   useEffect(() => {
     if (!isLoggedIn) return; // 세션 없음 → 이 화면 유지
+    if (isCheckingCourse) return; // 조회 완료 후 분기
 
-    // TODO(백엔드 확인): 코스 존재 여부 조회 API 연동 후 분기 완성
-    //   세션 O, 코스 X → router.push("/places")
-    //   세션 O, 코스 O → router.push("/explore")
-    // TODO(백엔드 확인): 성향 결과 조회 API 연동 후 분기 완성
-    //   성향 O, 닉네임 X → router.push("/onboarding/nickname")
-  }, [isLoggedIn, router]);
+    // 조회 실패 시 안전하게 장소 선택으로 보낸다 (TODO: 백엔드 에러 정책 확인 필요)
+    const hasOngoingCourse =
+      !isCourseCheckError &&
+      (ongoingExplorations?.explorations.length ?? 0) > 0;
+    router.push(hasOngoingCourse ? "/explore" : "/places");
+  }, [
+    isLoggedIn,
+    isCheckingCourse,
+    isCourseCheckError,
+    ongoingExplorations,
+    router,
+  ]);
 
   const titleY = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const titleOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
