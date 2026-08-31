@@ -8,6 +8,7 @@ import type {
   StartResponse,
   VisitedPlacesResponse,
   ExplorationListResponse,
+  ExplorationStatusResponse,
 } from "@/types/exploration";
 
 /** 탐험에 합류 (4.1.1). */
@@ -66,6 +67,16 @@ export const getExplorations = async (
 ): Promise<ExplorationListResponse> => {
   const res = await api.get<ExplorationListResponse>(
     API_ENDPOINTS.exploration.list(status),
+  );
+  return res.data!;
+};
+
+/** 탐험 상태를 조회 (4.2.2 / 4.3.2). status로 방문 수 표시 여부 판단. */
+export const getExplorationStatus = async (
+  explorationId: string,
+): Promise<ExplorationStatusResponse> => {
+  const res = await api.get<ExplorationStatusResponse>(
+    API_ENDPOINTS.exploration.status(explorationId),
   );
   return res.data!;
 };
