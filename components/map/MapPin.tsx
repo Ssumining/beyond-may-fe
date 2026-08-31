@@ -2,8 +2,8 @@
  * 지도에 표시하는 핀.
  * 상태에 따라 형태가 달라진다.
  * - default: 물방울 핀 + 남은 순서 번호
- * - current: 깃발 + 번호 1 (다음 목적지)
- * - visited: 물방울 핀 + 체크 (번호 없음, 방문한 곳은 순서에서 제외)
+ * - current: 깃발 + 번호 (다음 목적지)
+ * - visited: 작은 물방울 핀 + 체크 (다녀온 곳 — 미방문보다 작게)
  */
 import type { ReactNode } from "react";
 
@@ -15,32 +15,34 @@ interface MapPinProps {
 
 const FILL_OPACITY = 0.92;
 const PIN_SIZE = 30; // 물방울 핀 지름 (깃발 높이와 맞춤)
+const VISITED_SCALE = 0.85; // 방문 완료 핀은 미방문 대비 작게 (다녀온 느낌)
+const VISITED_OPACITY = 0.75; // 다녀온 곳은 살짝 흐리게
 
 /** 위는 둥글고 아래로 뾰족한 물방울 핀 */
 const DropPin = ({
   color,
+  size = PIN_SIZE,
   children,
 }: {
   color: string;
+  size?: number;
   children?: ReactNode;
 }) => (
   <div
     className="flex items-center justify-center"
     style={{
-      width: PIN_SIZE,
-      height: PIN_SIZE,
+      width: size,
+      height: size,
       backgroundColor: `rgba(${color}, ${FILL_OPACITY})`,
-      // 위 3개 모서리는 완전히 둥글게, 왼쪽 아래만 각지게 → 45도 회전 시 물방울
       borderRadius: "50% 50% 50% 0",
       border: "2px solid white",
       boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
       transform: "rotate(-45deg)",
     }}
   >
-    {/* 내용은 다시 되돌려서 똑바로 보이게 */}
     <span
       className="text-neutral-07 font-bold"
-      style={{ transform: "rotate(45deg)", fontSize: 13 }}
+      style={{ transform: "rotate(45deg)", fontSize: size * 0.43 }}
     >
       {children}
     </span>
@@ -48,9 +50,16 @@ const DropPin = ({
 );
 
 const MapPin = ({ order, color, state = "default" }: MapPinProps) => {
-  // 방문 완료 — 체크 (주변 glow가 방문 여부를 함께 표시)
+  // 방문 완료 — 작은 물방울 핀 + 체크. 미방문보다 작게 해 "다녀온 곳"을 표시한다.
+  // (주변 glow가 방문 여부를 색으로 함께 표시)
   if (state === "visited") {
-    return <DropPin color={color}>✓</DropPin>;
+    return (
+      <div style={{ opacity: VISITED_OPACITY }}>
+        <DropPin color={color} size={PIN_SIZE * VISITED_SCALE}>
+          ✓
+        </DropPin>
+      </div>
+    );
   }
 
   // 다음 목적지 — 깃발
