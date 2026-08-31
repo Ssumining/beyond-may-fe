@@ -18,7 +18,8 @@ interface TeamParticipantsSheetProps {
   participants: ExplorationParticipant[];
   isPending: boolean;
   isError: boolean;
-  showVisitCount?: boolean;
+  /** 탐험 진행 중 여부. true면 방문 수·위치 배지 표시, false(탐험 전)면 닉네임만 */
+  isOngoing?: boolean;
   onClose: () => void;
 }
 
@@ -27,7 +28,7 @@ const TeamParticipantsSheet = ({
   participants,
   isPending,
   isError,
-  showVisitCount = true,
+  isOngoing = true,
   onClose,
 }: TeamParticipantsSheetProps) => {
   return (
@@ -80,14 +81,14 @@ const TeamParticipantsSheet = ({
                   <p className="text-neutral-07 text-[15px] font-medium">
                     {participant.displayName}
                   </p>
-                  {showVisitCount && (
+                  {isOngoing && (
                     <p className="text-neutral-04 text-[12px]">
                       {participant.visitedPlaceCount}개 완료
                     </p>
                   )}
                 </div>
 
-                {!participant.locationSharingEnabled && (
+                {isOngoing && !participant.locationSharingEnabled && (
                   <span className="bg-neutral-02 text-neutral-04 flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] whitespace-nowrap">
                     <LocationOff className="h-2.5 w-2.5" />
                     위치 비공개
@@ -99,7 +100,7 @@ const TeamParticipantsSheet = ({
         )}
 
         <p className="text-neutral-04 mt-4 text-[12px] leading-relaxed">
-          {showVisitCount
+          {isOngoing
             ? "위치 미공유 팀원은 목록엔 노출되지만 지도에는 마커를 표시하지 않습니다."
             : "탐험 전이라 방문 완료 개수는 표시되지 않고 닉네임만 노출됩니다."}
         </p>
