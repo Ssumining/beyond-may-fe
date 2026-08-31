@@ -1,9 +1,6 @@
 import { useEffect } from "react";
+import { GPS_ACCURACY_THRESHOLD_METERS } from "@/lib/geo/distance";
 import useGeolocationStore from "@/stores/geolocationStore";
-
-/** 정확도 기준값 (미터). 이 값보다 크면 부정확으로 간주해 마커 표시 보류. */
-// TODO: 정확도 기준값(m) 백엔드 확인 후 확정 (명세 4.3.1) (backend)
-const ACCURACY_THRESHOLD = 50;
 
 interface UseGeolocationParams {
   /** 위치 추적 시작 여부 (탐험 진입 시 true) */
@@ -38,7 +35,7 @@ const useGeolocation = ({
         setPermission("granted");
         setError(null);
         setCoordinates({ latitude, longitude, accuracy });
-        setAccurate(accuracy <= ACCURACY_THRESHOLD);
+        setAccurate(accuracy <= GPS_ACCURACY_THRESHOLD_METERS);
       },
       (positionError) => {
         if (positionError.code === positionError.PERMISSION_DENIED) {

@@ -9,6 +9,10 @@
  */
 export const VISIT_RADIUS_METERS = 100;
 
+/** GPS 정확도 기준 (미터). 이 값보다 크면 부정확으로 간주해 마커 표시 보류.
+ *  백엔드 확정: 50m */
+export const GPS_ACCURACY_THRESHOLD_METERS = 50;
+
 interface Coordinates {
   latitude: number;
   longitude: number;
