@@ -12,7 +12,9 @@ import Share from "@/components/ui/icons/Share";
 import Undo from "@/components/ui/icons/Undo";
 import { useCaptureImage } from "@/hooks/useCaptureImage";
 import { useGetPreferenceResultQuery } from "@/features/onboarding/hooks/useGetPreferenceResultQuery";
+import useSessionStore from "@/stores/sessionStore";
 import ResultTypeCard from "@/features/onboarding/components/ResultTypeCard";
+import NicknameRegisterSection from "@/features/onboarding/components/NicknameRegisterSection";
 import RecommendedPlaceList from "@/features/onboarding/components/RecommendedPlaceList";
 import ShareRecordCard from "@/features/onboarding/components/ShareRecordCard";
 import ShareCollageCard from "@/features/onboarding/components/ShareCollageCard";
@@ -26,8 +28,6 @@ import ShareCollageCard from "@/features/onboarding/components/ShareCollageCard"
  * 결과 화면 본문은 흰 배경·검정 텍스트로 고정 (유형별 그라디언트는 공유 카드에서만).
  *
  * TODO: userId는 세션/로그인에서 얻어야 하나 현재 미확정 → 임시값 사용. (#13 세션)
- * TODO: 하단 액션 영역 중 닉네임/시작하기는 후속 이슈. (#13/#14)
- *   이미지 저장/공유, 다시하기는 이번 이슈(#29)에서 구현.
  */
 
 /** 공유 이미지 버전: 화면 그대로(기록형) / 우표 엽서(스토리형, 원본 피그마 목업 기준) */
@@ -39,6 +39,11 @@ type ShareVersionId = (typeof SHARE_VERSIONS)[number]["id"];
 
 const ResultPage = () => {
   const router = useRouter();
+  // 진입 시점 세션 상태를 스냅샷으로 고정 — 등록 도중 setSession으로 isLoggedIn이
+  // true로 바뀌어도 NicknameRegisterSection(식별코드 모달 포함)이 중간에 언마운트되지 않게 한다.
+  const [hadSessionOnEnter] = useState(
+    () => useSessionStore.getState().isLoggedIn,
+  );
   // TODO: 실제 userId를 세션에서 가져오도록 교체. (#13)
   const TEMP_USER_ID = 1;
 
@@ -150,7 +155,8 @@ const ResultPage = () => {
         </Button>
       </section>
 
-      {/* TODO: 닉네임/시작하기 액션은 후속 이슈 (#13/#14) */}
+      {/* 성향 O, 닉네임 X — 로그인 전(세션 없음) 사용자만 닉네임 등록으로 유도 */}
+      {!hadSessionOnEnter && <NicknameRegisterSection />}
 
       <ShareSheet
         open={isShareOpen}
