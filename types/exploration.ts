@@ -125,3 +125,18 @@ export interface VisitedPlacesResponse {
   visitedPlaces: VisitedPlace[];
   totalVisitedPlaceCount: number;
 }
+
+/* ---------------- 상태별 탐험 코스 목록 조회 (여행 기록) ---------------- */
+
+/** 탐험 코스 목록 항목 하나.
+ * TODO(백엔드 확인): 응답 예시가 없어 최소 필드만 가정함 */
+export interface ExplorationSummary {
+  explorationId: number;
+  courseId: number;
+  status: ExplorationStatus;
+}
+
+/** 상태별 탐험 코스 목록 응답 (GET /api/v1/explorations?status={status}) */
+export interface ExplorationListResponse {
+  explorations: ExplorationSummary[];
+}

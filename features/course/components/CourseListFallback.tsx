@@ -16,7 +16,7 @@ const CourseListFallback = ({ places, onRetry }: CourseListFallbackProps) => {
   return (
     <div className="overflow-y-auto px-6 pt-6">
       {/* 지도 실패 안내 박스 */}
-      <div className="border-neutral-02 flex flex-col items-center rounded-[2px] border px-5 pt-[22px] pb-5">
+      <div className="border-neutral-02 flex flex-col items-center rounded-xs border px-5 pt-5.5 pb-5">
         <svg
           width="40"
           height="40"
@@ -48,7 +48,7 @@ const CourseListFallback = ({ places, onRetry }: CourseListFallbackProps) => {
           <button
             type="button"
             onClick={onRetry}
-            className="border-neutral-07 text-neutral-07 mt-4 flex items-center gap-1.5 rounded-[29px] border px-[18px] py-2 text-[13px] font-extrabold tracking-[0.5px]"
+            className="border-neutral-07 text-neutral-07 mt-4 flex items-center gap-1.5 rounded-[29px] border px-4.5 py-2 text-[13px] font-extrabold tracking-[0.5px]"
           >
             <svg
               width="15"

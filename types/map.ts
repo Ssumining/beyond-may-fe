@@ -29,6 +29,8 @@ export interface MapProps {
   fitBounds?: boolean; // 최초 1회 마커·경로가 모두 보이도록 범위 자동 조정 (기본 true)
   onMarkerClick?: (markerId: string) => void; // 핀 클릭 시 동작
   onError?: () => void; // 지도 로드 실패 시 (부모가 폴백 처리)
+  panTo?: LatLng | null; // 지정 좌표로 지도 중심 이동 (값 바뀔 때마다 이동)
+  panToNonce?: number; // 이동 트리거. 같은 좌표라도 값이 바뀌면 재이동 (반복 "내 위치로" 대응)
   glow?: boolean; // 방문 핀에 빛 효과 (탐험 지도만 켬)
   className?: string; // 크기·여백 등 스타일 주입
 }

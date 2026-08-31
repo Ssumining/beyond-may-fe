@@ -54,6 +54,8 @@ const KakaoMap = ({
   glow = false,
   onMarkerClick,
   onError,
+  panTo,
+  panToNonce,
   className,
 }: MapProps) => {
   const [loading, error] = useKakaoLoader();
@@ -78,6 +80,13 @@ const KakaoMap = ({
     map.setBounds(bounds);
     hasFitted.current = true;
   }, [map, fitBounds, markers, route]);
+
+  // 지정 좌표로 지도 중심 이동 (타임라인 항목 선택 등 외부 트리거용).
+  // fitBounds(최초 1회)와 별개로, panTo 값이 바뀔 때마다 부드럽게 이동한다.
+  useEffect(() => {
+    if (!map || !panTo) return;
+    map.panTo(new window.kakao.maps.LatLng(panTo.lat, panTo.lng));
+  }, [map, panTo, panToNonce]);
 
   // 지도 로드 실패를 부모에 알린다 (부모가 폴백 화면으로 교체)
   useEffect(() => {
@@ -185,9 +194,10 @@ const KakaoMap = ({
             yAnchor={state === "current" ? 1 : 0.9}
             zIndex={state === "current" ? Z_INDEX_PIN_CURRENT : Z_INDEX_PIN}
           >
-            {/* CustomOverlayMap은 onClick을 지원하지 않아 래퍼로 처리 */}
+            {/* CustomOverlayMap은 onClick을 지원하지 않아 래퍼로 처리.
+                핀이 작아도 누르기 쉽도록 투명 padding으로 터치 영역을 넓힌다. */}
             <div
-              className="cursor-pointer"
+              className="flex cursor-pointer items-center justify-center p-1"
               onClick={() => onMarkerClick?.(marker.id)}
             >
               <MapPin order={marker.order} color={color} state={state} />

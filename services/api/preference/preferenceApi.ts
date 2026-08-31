@@ -16,7 +16,7 @@ export const getPreferenceQuestions =
     const res = await api.get<PreferenceQuestionsResponse>(
       API_ENDPOINTS.preference.questions,
     );
-    return res.data;
+    return res.data!;
   };
 
 /**
@@ -43,5 +43,5 @@ export const getPreferenceResult = async (
   const res = await api.get<PreferenceResultResponse>(
     API_ENDPOINTS.preference.result(userId),
   );
-  return res.data;
+  return res.data!;
 };

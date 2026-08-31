@@ -4,5 +4,9 @@ import type { LoginRequest, LoginResponse } from "@/types/user";
 
 export const postLogin = async (data: LoginRequest): Promise<LoginResponse> => {
   const res = await api.post<LoginResponse>(API_ENDPOINTS.auth.login, data);
-  return res.data;
+  return res.data!;
+};
+
+export const postLogout = async (): Promise<void> => {
+  await api.post<void>(API_ENDPOINTS.auth.logout);
 };
