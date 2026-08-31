@@ -44,5 +44,8 @@ export const API_ENDPOINTS = {
       `/api/v1/explorations?status=${status}`,
     /** 탐험 상태 조회 (4.2.2 / 4.3.2) */
     status: (explorationId: string) => `/api/v1/explorations/${explorationId}`,
+    /** 내 위치 공유 설정 변경 (4.3.2) */
+    locationSharing: (explorationId: string) =>
+      `/api/v1/explorations/${explorationId}/participants/me/location-sharing`,
   },
 } as const;
