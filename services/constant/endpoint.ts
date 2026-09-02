@@ -1,5 +1,6 @@
 export const API_ENDPOINTS = {
   auth: {
+    signup: "/api/v1/users/sign-up",
     login: "/api/v1/users/login",
     logout: "/api/v1/users/logout",
   },
@@ -26,14 +27,8 @@ export const API_ENDPOINTS = {
     result: (userId: number) => `/api/users/${userId}/preference`,
   },
   exploration: {
-    /**
-     * 탐험 합류 - 중복 없이 참여 (4.1.1)
-     * TODO(C 확인 필요): 실제 API는 POST /api/v1/courses/{courseId}/join (courseId 기준,
-     *   공유 링크로 합류). explorationId가 아니라 courseId를 받아야 해서
-     *   postJoin 함수 시그니처까지 같이 바뀌어야 함.
-     */
-    join: (explorationId: string) =>
-      `/api/v1/explorations/${explorationId}/participants`,
+    /** 탐험 합류 - 공유 링크로 참여 (4.1.1). courseId 기준. */
+    join: (courseId: string) => `/api/v1/courses/${courseId}/join`,
     /** 탐험 시작 (4.2.4) */
     start: (explorationId: string) =>
       `/api/v1/explorations/${explorationId}/start`,
@@ -48,5 +43,10 @@ export const API_ENDPOINTS = {
     /** 상태별 탐험 코스 목록 조회 — 홈 화면 라우팅 가드의 코스 존재 여부 판단에 사용 */
     list: (status: "ONGOING" | "COMPLETED") =>
       `/api/v1/explorations?status=${status}`,
+    /** 탐험 상태 조회 (4.2.2 / 4.3.2) */
+    status: (explorationId: string) => `/api/v1/explorations/${explorationId}`,
+    /** 내 위치 공유 설정 변경 (4.3.2) */
+    locationSharing: (explorationId: string) =>
+      `/api/v1/explorations/${explorationId}/participants/me/location-sharing`,
   },
 } as const;

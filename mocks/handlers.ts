@@ -5,6 +5,8 @@ import { placeHandlers } from "./placeHandlers";
 import { preferenceHandlers } from "./preferenceHandlers";
 import { visitHandlers } from "./visitHandlers";
 import { participantHandlers } from "./participantHandlers";
+import { explorationStatusHandlers } from "./explorationStatusHandlers";
+import { locationSharingHandlers } from "./locationSharingHandlers";
 
 export const handlers = [
   ...preferenceHandlers,
@@ -14,4 +16,6 @@ export const handlers = [
   ...explorationHandlers,
   ...placeHandlers,
   ...participantHandlers,
+  ...explorationStatusHandlers,
+  ...locationSharingHandlers,
 ];

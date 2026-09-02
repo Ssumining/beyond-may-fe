@@ -140,3 +140,42 @@ export interface ExplorationSummary {
 export interface ExplorationListResponse {
   explorations: ExplorationSummary[];
 }
+
+/* ---------------- 탐험 상태 조회 (4.2.2 / 4.3.2) ---------------- */
+/** 현재 참여자 정보 (탐험 상태 응답 내) */
+export interface CurrentParticipant {
+  participantId: number;
+  role: ParticipantRole;
+  status: ParticipantStatus;
+  locationSharingEnabled: boolean;
+}
+
+/** 탐험 상태 조회 응답 (GET /explorations/{id}) */
+export interface ExplorationStatusResponse {
+  explorationId: number;
+  courseId: number;
+  status: ExplorationStatus;
+  startedByParticipantId: number | null;
+  /** ISO 8601 문자열 */
+  startedAt: string | null;
+  completedAt: string | null;
+  participantCount: number;
+  teamVisitedPlaceCount: number;
+  courseProgress: CourseProgress;
+  currentParticipant: CurrentParticipant;
+}
+
+/* ---------------- 위치 공유 설정 변경 (4.3.2) ---------------- */
+/** 위치 공유 설정 변경 요청 (PATCH .../location-sharing) */
+export interface LocationSharingRequest {
+  enabled: boolean;
+}
+
+/** 위치 공유 설정 변경 응답 */
+export interface LocationSharingResponse {
+  explorationId: number;
+  participantId: number;
+  locationSharingEnabled: boolean;
+  /** ISO 8601 문자열 */
+  updatedAt: string;
+}
