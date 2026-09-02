@@ -14,6 +14,8 @@ export const QUERY_KEYS = {
     ALL: ["place"] as const,
     DETAIL: (placeId: number) =>
       [...QUERY_KEYS.PLACE.ALL, "detail", placeId] as const,
+    RECOMMENDATIONS: () =>
+      [...QUERY_KEYS.PLACE.ALL, "recommendations"] as const,
   },
   EXPLORATION: {
     ALL: ["exploration"] as const,

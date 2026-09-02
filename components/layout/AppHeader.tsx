@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/cn";
@@ -15,6 +16,11 @@ interface AppHeaderProps {
    * 결과 로딩처럼 Home만 필요한 화면에서는 false로 넘겨 Home만 표시.
    */
   showMenu?: boolean;
+  /**
+   * 헤더 중앙에 표시할 라벨 (예: 장소 카드덱의 남은 장소 수).
+   * 지정 시에만 렌더링되며, 나머지 화면 레이아웃에는 영향을 주지 않는다.
+   */
+  centerLabel?: ReactNode;
   className?: string;
 }
 
@@ -32,12 +38,13 @@ interface AppHeaderProps {
 const AppHeader = ({
   onOpenMenu,
   showMenu = true,
+  centerLabel,
   className,
 }: AppHeaderProps) => {
   return (
     <header
       className={cn(
-        "text-neutral-03 flex items-center justify-between px-5 pt-4",
+        "text-neutral-03 relative flex items-center justify-between px-5 pt-4",
         className,
       )}
     >
@@ -48,6 +55,12 @@ const AppHeader = ({
       >
         <Home className="h-6 w-6" />
       </Link>
+
+      {centerLabel !== undefined && (
+        <span className="text-neutral-05 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pt-4 text-[14px]">
+          {centerLabel}
+        </span>
+      )}
 
       {showMenu && (
         <button
