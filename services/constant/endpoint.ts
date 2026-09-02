@@ -43,5 +43,7 @@ export const API_ENDPOINTS = {
     /** 상태별 탐험 코스 목록 조회 — 홈 화면 라우팅 가드의 코스 존재 여부 판단에 사용 */
     list: (status: "ONGOING" | "COMPLETED") =>
       `/api/v1/explorations?status=${status}`,
+    /** 탐험 상태 조회 (4.2.2 / 4.3.2) */
+    status: (explorationId: string) => `/api/v1/explorations/${explorationId}`,
   },
 } as const;
