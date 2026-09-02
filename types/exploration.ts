@@ -164,3 +164,18 @@ export interface ExplorationStatusResponse {
   courseProgress: CourseProgress;
   currentParticipant: CurrentParticipant;
 }
+
+/* ---------------- 위치 공유 설정 변경 (4.3.2) ---------------- */
+/** 위치 공유 설정 변경 요청 (PATCH .../location-sharing) */
+export interface LocationSharingRequest {
+  enabled: boolean;
+}
+
+/** 위치 공유 설정 변경 응답 */
+export interface LocationSharingResponse {
+  explorationId: number;
+  participantId: number;
+  locationSharingEnabled: boolean;
+  /** ISO 8601 문자열 */
+  updatedAt: string;
+}
