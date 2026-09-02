@@ -20,8 +20,8 @@ interface PlaceSwipeGuideProps {
 
 /**
  * 장소 카드덱 진입 전 스와이프 사용법 안내 화면 (기능명세 2.1.1).
- * 카드덱과 같은 X/하트 버튼을 미리 보여주지만 눌러도 동작하지 않는다(안내용).
- * 실제 스와이프 제스처는 후속 이슈에서 카드덱에 연결된다.
+ * 카드덱과 같은 X/하트 버튼을 실제와 동일한(비활성 아닌) 모습으로 미리 보여주지만,
+ * 클릭 핸들러는 없다 — 사용법을 보여주는 용도이며 실제 스와이프는 카드덱에서 이뤄진다.
  */
 const PlaceSwipeGuide = ({
   placeCount,
@@ -62,9 +62,9 @@ const PlaceSwipeGuide = ({
         <div className="mt-10 flex items-center gap-6">
           <ArrowRight className="text-neutral-04 h-5 w-5 rotate-180 opacity-50" />
 
-          <div className="relative h-[112px] w-[90px]">
-            <div className="bg-neutral-07/20 absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl" />
-            <div className="border-neutral-07 bg-neutral-01 absolute inset-0 rounded-2xl border-2" />
+          <div className="relative h-28 w-22.5">
+            <div className="bg-neutral-07/20 absolute inset-0 -translate-x-1.5 translate-y-1 rounded-2xl" />
+            <div className="animate-card-sway border-neutral-07 bg-neutral-01 absolute inset-0 rounded-2xl border-2" />
           </div>
 
           <ArrowRight className="text-neutral-07 h-5 w-5" />
@@ -79,14 +79,12 @@ const PlaceSwipeGuide = ({
         <div className="mt-8 flex items-center gap-6">
           <CircleIconButton
             icon={<Close className="h-6 w-6" />}
-            disabled
             aria-label="싫어요"
             className="h-15 w-15"
           />
           <CircleIconButton
             icon={<HeartFilled className="h-6 w-6" />}
             variant="dark"
-            disabled
             aria-label="좋아요"
             className="h-18 w-18"
           />

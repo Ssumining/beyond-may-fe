@@ -80,6 +80,7 @@
   --animate-float: float var(--float-duration, 20s) ease-in-out infinite;
   --animate-hint-bounce: hint-bounce 1.8s ease-in-out infinite;
   --animate-location-pulse: location-pulse 1.8s ease-out infinite;
+  --animate-card-sway: card-sway 1.4s ease-in-out infinite;
 }
 
 @keyframes float {
@@ -115,6 +116,19 @@
   100% {
     transform: scale(1.8);
     opacity: 0;
+  }
+}
+
+@keyframes card-sway {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-10px) rotate(-6deg);
+  }
+  75% {
+    transform: translateX(10px) rotate(6deg);
   }
 }
 

@@ -80,9 +80,10 @@ export const placeHandlers = [
     await delay(300);
 
     return HttpResponse.json({
-      code: 200,
+      message: "성공입니다.",
+      code: "COMMON200",
       data: MOCK_PLACE_DETAIL,
-      message: "OK",
+      success: true,
     });
   }),
 ];
