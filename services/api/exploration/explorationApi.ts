@@ -9,6 +9,8 @@ import type {
   VisitedPlacesResponse,
   ExplorationListResponse,
   ExplorationStatusResponse,
+  LocationSharingRequest,
+  LocationSharingResponse,
 } from "@/types/exploration";
 
 /** 탐험에 합류 (4.1.1). */
@@ -77,6 +79,18 @@ export const getExplorationStatus = async (
 ): Promise<ExplorationStatusResponse> => {
   const res = await api.get<ExplorationStatusResponse>(
     API_ENDPOINTS.exploration.status(explorationId),
+  );
+  return res.data!;
+};
+
+/** 내 위치 공유 설정을 변경 (4.3.2). */
+export const patchLocationSharing = async (
+  explorationId: string,
+  body: LocationSharingRequest,
+): Promise<LocationSharingResponse> => {
+  const res = await api.patch<LocationSharingResponse>(
+    API_ENDPOINTS.exploration.locationSharing(explorationId),
+    body,
   );
   return res.data!;
 };
