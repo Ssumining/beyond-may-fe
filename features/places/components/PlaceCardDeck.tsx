@@ -55,11 +55,11 @@ const PlaceCardDeck = ({
 }: PlaceCardDeckProps) => {
   const visiblePlaces = places.slice(0, MAX_VISIBLE_CARDS);
   const topPlace = visiblePlaces[0];
-  // 방금 나간 카드가 어느 방향으로 날아갈지 (exit 애니메이션에 사용)
-  const [exitState, setExitState] = useState<{
-    direction: SwipeDirection;
-    velocityX: number;
-  }>({ direction: "like", velocityX: 0 });
+  // 카드별 exit 방향(placeId로 구분) — 공유 상태로 두면 한 카드가 날아가는 도중
+  // 다음 스와이프가 발생했을 때 그 값이 바뀌어 방향이 도중에 틀어지는 문제가 있었다.
+  const [exitDirections, setExitDirections] = useState<
+    Map<number, { direction: SwipeDirection; velocityX: number }>
+  >(new Map());
   // 드래그가 실제로 일어났는지 (tap 오작동 방지용)
   const didDrag = useRef(false);
   const [showLikedToast, setShowLikedToast] = useState(false);
@@ -81,8 +81,15 @@ const PlaceCardDeck = ({
 
   const commitSwipe = (direction: SwipeDirection, velocityX = 0) => {
     if (!topPlace) return;
-    setExitState({ direction, velocityX });
-    onSwipe(direction);
+    setExitDirections((prev) => {
+      const next = new Map(prev);
+      next.set(topPlace.placeId, { direction, velocityX });
+      return next;
+    });
+    // exit 방향이 반영된 렌더가 먼저 커밋된 뒤에 카드를 배열에서 제거해야
+    // AnimatePresence가 올바른 exit 값을 기억한 채로 사라진다.
+    // (같은 배치에서 같이 처리되면 제거되는 카드는 방향이 반영되기 전 값으로 나간다.)
+    requestAnimationFrame(() => onSwipe(direction));
   };
 
   const handleDrag = (
@@ -143,6 +150,10 @@ const PlaceCardDeck = ({
         <AnimatePresence initial={false}>
           {visiblePlaces.map((place, stackIndex) => {
             const isTop = stackIndex === 0;
+            const exitInfo = exitDirections.get(place.placeId) ?? {
+              direction: "like" as SwipeDirection,
+              velocityX: 0,
+            };
 
             return (
               <motion.div
@@ -160,6 +171,14 @@ const PlaceCardDeck = ({
                 onDrag={isTop ? handleDrag : undefined}
                 onDragEnd={isTop ? handleDragEnd : undefined}
                 onTap={isTop ? () => handleTap(place.placeId) : undefined}
+                onAnimationComplete={() => {
+                  setExitDirections((prev) => {
+                    if (!prev.has(place.placeId)) return prev;
+                    const next = new Map(prev);
+                    next.delete(place.placeId);
+                    return next;
+                  });
+                }}
                 initial={false}
                 animate={{
                   x: 0,
@@ -169,15 +188,15 @@ const PlaceCardDeck = ({
                   opacity: 1,
                 }}
                 exit={{
-                  x: exitState.direction === "like" ? EXIT_X : -EXIT_X,
-                  rotate: exitState.direction === "like" ? 24 : -24,
+                  x: exitInfo.direction === "like" ? EXIT_X : -EXIT_X,
+                  rotate: exitInfo.direction === "like" ? 24 : -24,
                   opacity: 0,
                   transition: {
                     type: "spring",
                     stiffness: 180,
                     damping: 20,
                     mass: 0.6,
-                    velocity: exitState.velocityX,
+                    velocity: exitInfo.velocityX,
                   },
                 }}
                 transition={{ type: "spring", stiffness: 350, damping: 26 }}
