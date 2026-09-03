@@ -48,12 +48,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 응답 인터셉터: 공통 래퍼 { code, data, message }까지만 반환
 api.interceptors.response.use(
-  (response) => response.data, // ← 여기까지만. 알맹이(data.data)는 각 API 함수에서 꺼냄
+  (response) => {
+    const body = response.data;
+    // 공통 실패 처리: success가 false면 throw (판단은 success 필드로 — 팀 합의)
+    if (body && body.success === false) {
+      throw new Error(body.message ?? "요청에 실패했습니다.");
+    }
+    return body;
+  },
   (error) => {
     if (error.response?.status === 401) {
-      // TODO: 백엔드 인증 방식 확정 후 처리
+      // 인증 만료/무효 — 세션 정리 후 로그인 유도 (refresh API 없음)
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        // TODO: 세션 스토어 clear + 로그인 화면 이동 (구현 방식 팀 논의)
+      }
     }
     return Promise.reject(error);
   },
