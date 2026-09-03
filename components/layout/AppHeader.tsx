@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/cn";
 import Home from "@/components/ui/icons/Home";
 import Hamburger from "@/components/ui/icons/Hamburger";
+import HelpCircle from "@/components/ui/icons/HelpCircle";
 
 interface AppHeaderProps {
   /**
@@ -15,6 +17,16 @@ interface AppHeaderProps {
    * 결과 로딩처럼 Home만 필요한 화면에서는 false로 넘겨 Home만 표시.
    */
   showMenu?: boolean;
+  /**
+   * 헤더 중앙에 표시할 라벨 (예: 장소 카드덱의 남은 장소 수).
+   * 지정 시에만 렌더링되며, 나머지 화면 레이아웃에는 영향을 주지 않는다.
+   */
+  centerLabel?: ReactNode;
+  /**
+   * 지정 시 좌측 Home 대신 물음표(도움말) 아이콘을 보여주고 클릭 시 호출한다.
+   * 예: 장소 카드덱에서 좋아요를 1개 이상 담으면 스와이프 안내 화면으로 돌아가는 버튼으로 전환.
+   */
+  onOpenHelp?: () => void;
   className?: string;
 }
 
@@ -32,22 +44,41 @@ interface AppHeaderProps {
 const AppHeader = ({
   onOpenMenu,
   showMenu = true,
+  centerLabel,
+  onOpenHelp,
   className,
 }: AppHeaderProps) => {
   return (
     <header
       className={cn(
-        "text-neutral-03 flex items-center justify-between px-5 pt-4",
+        "text-neutral-03 relative flex items-center justify-between px-5 pt-4",
         className,
       )}
     >
-      <Link
-        href="/"
-        aria-label="홈으로 이동"
-        className="focus-visible:outline-neutral-07 rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        <Home className="h-6 w-6" />
-      </Link>
+      {onOpenHelp ? (
+        <button
+          type="button"
+          onClick={onOpenHelp}
+          aria-label="스와이프 안내 다시 보기"
+          className="focus-visible:outline-neutral-07 cursor-pointer rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          <HelpCircle className="h-6 w-6" />
+        </button>
+      ) : (
+        <Link
+          href="/"
+          aria-label="홈으로 이동"
+          className="focus-visible:outline-neutral-07 rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          <Home className="h-6 w-6" />
+        </Link>
+      )}
+
+      {centerLabel !== undefined && (
+        <span className="text-neutral-05 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pt-4 text-[14px]">
+          {centerLabel}
+        </span>
+      )}
 
       {showMenu && (
         <button
