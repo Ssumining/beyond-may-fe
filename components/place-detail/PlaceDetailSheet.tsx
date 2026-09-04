@@ -48,7 +48,7 @@ const PlaceDetailSheet = ({
       role="dialog"
       aria-label={place.name}
       className={cn(
-        "bg-neutral-01 flex max-h-[85vh] w-full max-w-[430px] flex-col rounded-t-xl pt-3",
+        "bg-neutral-01 shadow-soft flex max-h-[85vh] w-full max-w-[430px] flex-col rounded-t-2xl pt-3",
         className,
       )}
     >
@@ -98,12 +98,12 @@ const PlaceDetailSheet = ({
         </div>
 
         <div className="px-5">
-          <h2 className="text-neutral-07 mt-4 text-[18px] font-semibold">
+          <h2 className="text-neutral-07 mt-4 text-lg font-semibold">
             {place.name}
           </h2>
-          <p className="text-neutral-04 mt-1 text-[13px]">{place.address}</p>
+          <p className="text-neutral-04 mt-1 text-sm">{place.address}</p>
           {place.businessHours && (
-            <p className="text-neutral-04 mt-1 text-[13px]">
+            <p className="text-neutral-04 mt-1 text-sm">
               운영시간 {place.businessHours}
             </p>
           )}
@@ -113,7 +113,7 @@ const PlaceDetailSheet = ({
               {place.tags.map((tag, index) => (
                 <span
                   key={`${tag}-${index}`}
-                  className="bg-neutral-02 text-neutral-06 rounded-full px-2.5 py-1 text-[12px]"
+                  className="bg-neutral-02 text-neutral-06 rounded-full px-2.5 py-1 text-xs"
                 >
                   {tag}
                 </span>
@@ -121,7 +121,7 @@ const PlaceDetailSheet = ({
             </div>
           )}
 
-          <p className="text-neutral-06 mt-3 text-[14px] leading-relaxed">
+          <p className="text-neutral-06 mt-3 text-sm leading-relaxed">
             {place.description}
           </p>
         </div>

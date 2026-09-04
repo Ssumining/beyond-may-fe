@@ -10,8 +10,8 @@ interface CircleIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 const VARIANT_CLASS: Record<CircleIconButtonVariant, string> = {
-  light: "bg-neutral-01 text-neutral-04 shadow-[0_4px_14px_rgba(0,0,0,0.1)]",
-  dark: "bg-neutral-07 text-neutral-01 shadow-[0_6px_18px_rgba(0,0,0,0.18)]",
+  light: "bg-neutral-01 text-neutral-04 shadow-soft",
+  dark: "bg-neutral-07 text-neutral-01 shadow-strong",
 };
 
 /**

@@ -16,7 +16,7 @@ const QuizIntro = ({ isLoading }: QuizIntroProps) => {
     <section className="relative flex flex-1 flex-col items-center justify-center overflow-hidden text-center">
       <GradientBackground className="opacity-70" />
 
-      <p className="text-neutral-07 text-[20px] leading-relaxed font-medium">
+      <p className="text-neutral-07 text-xl leading-relaxed font-medium">
         몇 가지 질문을 통해서
         <br />
         당신의 여행 유형을 알아보아요.

@@ -28,7 +28,7 @@ const CourseMapView = ({
   const { markers, route, center } = getCourseMapData(course.places);
 
   return (
-    <div className="bg-neutral-01 flex h-dvh flex-col">
+    <div className="bg-screen-gradient flex h-dvh flex-col">
       <div className="relative flex-1 overflow-y-auto">
         {hasMapError ? (
           <CourseListFallback
