@@ -48,35 +48,30 @@ const NicknameRegisterSection = () => {
 
   return (
     <section className="mt-16 px-6">
-      <h2 className="text-neutral-07 text-[18px] font-semibold">
-        여행 시작하기
-      </h2>
-      <p className="text-neutral-04 mt-1 text-[13px]">
+      <h2 className="text-neutral-07 text-lg font-semibold">여행 시작하기</h2>
+      <p className="text-neutral-04 mt-1 text-sm">
         중복 확인 없이 바로 시작해요. 실명이나 개인정보 대신 자유롭게 닉네임을
         지어주세요.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-5">
-        <label
-          htmlFor="result-nickname"
-          className="text-neutral-04 text-[13px]"
-        >
+        <label htmlFor="result-nickname" className="text-neutral-04 text-sm">
           닉네임
         </label>
-        <div className="border-neutral-07 mt-1.5 flex items-center rounded-lg border px-3.5 py-3">
+        <div className="border-neutral-07 focus-within:ring-neutral-07/30 mt-1.5 flex items-center rounded-2xl border px-3.5 py-3 transition-shadow focus-within:ring-4">
           <input
             id="result-nickname"
             type="text"
             placeholder="닉네임을 입력해주세요."
             maxLength={10}
-            className="placeholder:text-neutral-04 flex-1 text-[15px] outline-none"
+            className="placeholder:text-neutral-04 flex-1 text-base outline-none"
             {...register("nickname")}
           />
-          <span className="text-neutral-04 shrink-0 text-[13px]">
+          <span className="text-neutral-04 shrink-0 text-sm">
             {nickname?.length ?? 0} / 10
           </span>
         </div>
-        <p className="text-neutral-04 mt-1.5 text-[12px]">
+        <p className="text-neutral-04 mt-1.5 text-xs">
           닉네임은 바꿀 수 없습니다.
         </p>
 

@@ -21,6 +21,11 @@ interface ResultTheme {
    * 실제로 CSS에 남는 --color-theme-*를 같은 매핑으로 직접 참조한다.
    */
   accent: string;
+  /**
+   * 유형별 기본 우표 사진 (public/images). API의 mbtiImg가 아직 없을 때 대신 쓴다.
+   * public 폴더 기준 루트 상대 경로라 클론한 다른 환경에서도 그대로 동작한다.
+   */
+  image: string;
 }
 
 const RESULT_THEME: Record<PreferenceType, ResultTheme> = {
@@ -29,24 +34,28 @@ const RESULT_THEME: Record<PreferenceType, ResultTheme> = {
     gradientTo: "var(--color-theme-purple-02)",
     isLight: false,
     accent: "var(--color-theme-purple-01)",
+    image: "/images/thinker.png",
   },
   artist: {
     gradientFrom: "var(--color-theme-green-01)",
     gradientTo: "var(--color-theme-green-02)",
     isLight: true,
     accent: "var(--color-theme-green-02)",
+    image: "/images/artist.png",
   },
   foodie: {
     gradientFrom: "var(--color-theme-orange-02)",
     gradientTo: "var(--color-theme-orange-01)",
     isLight: true,
     accent: "var(--color-theme-orange-01)",
+    image: "/images/foodie.png",
   },
   remember: {
     gradientFrom: "var(--color-theme-blue-01)",
     gradientTo: "var(--color-theme-blue-02)",
     isLight: false,
     accent: "var(--color-theme-blue-02)",
+    image: "/images/remember.png",
   },
 };
 

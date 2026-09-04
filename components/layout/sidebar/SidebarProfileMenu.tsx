@@ -6,6 +6,10 @@ import { cn } from "@/lib/cn";
 import ChevronRight from "@/components/ui/icons/ChevronRight";
 import { postLogout } from "@/services/api/auth/authApi";
 import useSessionStore from "@/stores/sessionStore";
+import {
+  getResultTheme,
+  PREFERENCE_TYPE_LABEL,
+} from "@/features/onboarding/utils/resultTheme";
 import SidebarCodeAccordion from "./SidebarCodeAccordion";
 
 interface SidebarProfileMenuProps {
@@ -26,7 +30,15 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
   const identificationCode = useSessionStore(
     (state) => state.identificationCode,
   );
+  const preferenceType = useSessionStore((state) => state.preferenceType);
   const clearSession = useSessionStore((state) => state.clearSession);
+
+  // 성향 검사를 마쳤으면 유형별 아바타 이미지, 아니면 기존 단색 원.
+  const avatarImage = preferenceType
+    ? getResultTheme(preferenceType).image
+    : null;
+  const badgeLabel =
+    mbtiName ?? (preferenceType && PREFERENCE_TYPE_LABEL[preferenceType]);
 
   const handleLogout = async () => {
     try {
@@ -40,17 +52,27 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3">
-        <div
-          className="bg-primary-06 h-16 w-16 shrink-0 rounded-full"
-          aria-hidden="true"
-        />
+        {avatarImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarImage}
+            alt=""
+            aria-hidden="true"
+            className="h-16 w-16 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div
+            className="bg-primary-06 h-16 w-16 shrink-0 rounded-full"
+            aria-hidden="true"
+          />
+        )}
         <div>
           <p className="text-neutral-07 text-[16px] font-semibold">
             {nickname}
           </p>
-          {mbtiName && (
+          {badgeLabel && (
             <span className="bg-primary-06 text-neutral-01 mt-1 inline-block rounded-full px-2.5 py-1 text-[12px] font-medium">
-              {mbtiName}
+              {badgeLabel}
             </span>
           )}
         </div>

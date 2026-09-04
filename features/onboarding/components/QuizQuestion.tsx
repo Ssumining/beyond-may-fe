@@ -35,7 +35,7 @@ const QuizQuestion = ({
     <section
       className={cn(
         "flex min-h-[100dvh] snap-start flex-col px-6 pb-8",
-        "pt-17",
+        "pt-16",
       )}
     >
       {/* 이전 문항으로 올라가는 힌트 (첫 문항 제외). 진행률 바 바로 아래 */}
@@ -43,11 +43,9 @@ const QuizQuestion = ({
         {hasPrevious && <ScrollIndicator direction="up" />}
       </div>
 
-      <div className="mt-17">
-        <p className="text-neutral-07 text-[28px] font-bold">
-          {question.order}.
-        </p>
-        <h2 className="text-neutral-07 mt-3 text-[19px] leading-snug font-semibold">
+      <div className="mt-16">
+        <p className="text-neutral-07 text-3xl font-bold">{question.order}.</p>
+        <h2 className="text-neutral-07 mt-3 text-lg leading-snug font-semibold">
           {question.text}
         </h2>
       </div>

@@ -30,7 +30,7 @@ const ResultTypeCard = ({ result }: ResultTypeCardProps) => {
         {/* 우표형 일러스트 (살짝 기울임). 배경이 흰 페이지라 유형색으로 톱니를 보이게 한다. */}
         <div className="relative aspect-3/4 w-[46%] shrink-0">
           <StampPhoto
-            src={mbtiImg}
+            src={mbtiImg || theme.image}
             alt={mbtiName}
             className="-rotate-2"
             paperColor={theme.accent}
@@ -42,7 +42,7 @@ const ResultTypeCard = ({ result }: ResultTypeCardProps) => {
             <span className="text-neutral-07 text-[10px] leading-none font-bold">
               光州
             </span>
-            <span className="text-neutral-05 mt-0.5 text-[7px] leading-none font-normal">
+            <span className="text-neutral-05 mt-0.5 text-[8px] leading-none font-normal">
               {stampDate}
             </span>
           </div>
@@ -50,8 +50,8 @@ const ResultTypeCard = ({ result }: ResultTypeCardProps) => {
 
         {/* 유형명 */}
         <div className="pb-2 text-left">
-          <p className="text-neutral-07 text-[20px] font-medium">나는</p>
-          <h1 className="text-neutral-07 text-[40px] leading-tight font-bold">
+          <p className="text-neutral-04 text-xl font-medium">나는</p>
+          <h1 className="text-neutral-07 text-4xl leading-tight font-bold">
             {mbtiName}
           </h1>
         </div>
@@ -62,7 +62,7 @@ const ResultTypeCard = ({ result }: ResultTypeCardProps) => {
         {mbtiTag.map((tag) => (
           <span
             key={tag}
-            className="border-neutral-07 text-neutral-07 rounded-3xl border px-4 py-1.5 text-[13px] font-medium"
+            className="border-neutral-07 text-neutral-07 rounded-3xl border px-4 py-1.5 text-sm font-medium"
           >
             {tag}
           </span>
@@ -70,7 +70,7 @@ const ResultTypeCard = ({ result }: ResultTypeCardProps) => {
       </div>
 
       {/* 설명 */}
-      <p className="text-neutral-07 mt-4 text-[14px] leading-relaxed">
+      <p className="text-neutral-06 mt-4 text-sm leading-relaxed">
         {mbtiDescription}
       </p>
     </section>
