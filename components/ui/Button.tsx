@@ -14,7 +14,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
   outline: "border-neutral-07 text-neutral-07 border",
-  solid: "bg-neutral-07 text-neutral-01",
+  solid: "bg-neutral-07 text-neutral-01 shadow-soft",
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
@@ -38,7 +38,7 @@ const Button = ({
   <button
     type={type}
     className={cn(
-      "flex cursor-pointer items-center justify-center gap-2 rounded-full font-medium disabled:cursor-not-allowed disabled:opacity-50",
+      "flex cursor-pointer items-center justify-center gap-2 rounded-full font-medium transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
       VARIANT_CLASS[variant],
       SIZE_CLASS[size],
       className,

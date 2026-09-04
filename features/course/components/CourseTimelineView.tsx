@@ -52,35 +52,37 @@ const CourseTimelineView = ({
   };
 
   return (
-    <div className="bg-neutral-01 flex h-dvh flex-col">
+    <div className="bg-screen-gradient flex h-dvh flex-col">
       <AppHeader className="text-neutral-07" />
 
-      <div className="flex-1 overflow-y-auto pt-4">
-        <CourseTimeline
-          places={places}
-          activePlaceId={activePlaceId}
-          onPlaceClick={handlePlaceClick}
-        />
+      <div className="min-h-0 flex-1 px-4 pt-4 pb-2">
+        <div className="bg-neutral-01 shadow-soft rounded-card h-full overflow-y-auto py-2">
+          <CourseTimeline
+            places={places}
+            activePlaceId={activePlaceId}
+            onPlaceClick={handlePlaceClick}
+          />
+        </div>
       </div>
 
       <div className="border-neutral-03 bg-neutral-01 border-t px-6 pt-5 pb-6">
-        <p className="text-neutral-04 text-[10px] tracking-[1px] uppercase">
+        <p className="text-neutral-04 text-xs tracking-[1px] uppercase">
           추천 코스
         </p>
         <h2 className="text-neutral-07 mt-2 text-xl leading-6 font-semibold">
           {title}
         </h2>
-        <p className="text-neutral-05 mt-1 text-[11.6px] leading-3.5">{meta}</p>
+        <p className="text-neutral-05 mt-1 text-xs">{meta}</p>
 
         <button
           type="button"
           onClick={onUseCourse}
-          className="bg-neutral-07 text-neutral-01 mt-4 flex h-12.5 w-full items-center justify-center rounded-[29px] text-sm font-extrabold tracking-[1px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)]"
+          className="bg-neutral-07 text-neutral-01 shadow-soft mt-4 flex h-12.5 w-full items-center justify-center rounded-full text-sm font-extrabold tracking-[1px]"
         >
           이 코스 사용
         </button>
 
-        <div className="mt-3 flex items-center justify-center gap-6 text-[13.4px] font-semibold">
+        <div className="mt-3 flex items-center justify-center gap-6 text-sm font-semibold">
           <button
             type="button"
             onClick={onEditWithAi}

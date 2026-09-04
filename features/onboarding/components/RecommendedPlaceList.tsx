@@ -19,7 +19,7 @@ const RecommendedPlaceList = ({
 }: RecommendedPlaceListProps) => {
   return (
     <section className="mt-6.5 px-6">
-      <h2 className="text-neutral-07 text-[20px] font-semibold">
+      <h2 className="text-neutral-07 text-xl font-semibold">
         {mbtiName}를 위한 광주
       </h2>
 
@@ -27,7 +27,7 @@ const RecommendedPlaceList = ({
         {places.map((place) => (
           <li key={place.placeId}>
             {/* 장소 사진 (URL 없으면 회색 placeholder) */}
-            <div className="bg-neutral-03 aspect-video w-full overflow-hidden">
+            <div className="bg-neutral-03 rounded-card aspect-video w-full overflow-hidden">
               {place.placeImg && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -37,10 +37,10 @@ const RecommendedPlaceList = ({
                 />
               )}
             </div>
-            <h3 className="text-neutral-07 mt-3 text-[16px] font-medium">
+            <h3 className="text-neutral-07 mt-3 text-lg font-medium">
               {place.placeName}
             </h3>
-            <p className="text-neutral-07 mt-1 text-[13px] leading-relaxed font-light">
+            <p className="text-neutral-04 mt-1 text-sm leading-relaxed font-light">
               {place.placeIntro}
             </p>
           </li>

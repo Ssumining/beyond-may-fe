@@ -72,7 +72,7 @@ export default function PlacesPage() {
   };
 
   return (
-    <main className="bg-neutral-01 relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col px-6">
+    <main className="bg-screen-gradient relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col px-6">
       {hasPlaces && !hasSeenGuide && (
         <PlaceSwipeGuide
           placeCount={places.length}
