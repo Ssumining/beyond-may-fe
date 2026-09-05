@@ -11,13 +11,17 @@ import Close from "@/components/ui/icons/Close";
 import ImageIcon from "@/components/ui/icons/Image";
 import PlaceCardDeck from "@/features/places/components/PlaceCardDeck";
 import PlaceSwipeGuide from "@/features/places/components/PlaceSwipeGuide";
+import TripDurationSelect, {
+  type TripDurationRange,
+} from "@/features/places/components/TripDurationSelect";
 import useGetPlaceDetailQuery from "@/features/places/hooks/useGetPlaceDetailQuery";
 import useGetPlaceRecommendationsQuery from "@/features/places/hooks/useGetPlaceRecommendationsQuery";
 
 /**
  * 장소 선택 화면 (기능명세 2.1.1~2.1.3).
- * 닉네임/세션 등록 완료 후 진입, 추천 장소 카드덱을 보여준다.
- * 좋아요는 우측 스와이프/하트, 싫어요는 좌측 스와이프/X, 직전 1건 되돌리기를 지원한다.
+ * 닉네임/세션 등록 완료 후 진입, 여행 기간 선택 → 스와이프 안내 → 추천 장소
+ * 카드덱 순서로 진행한다. 좋아요는 우측 스와이프/하트, 싫어요는 좌측 스와이프/X,
+ * 직전 1건 되돌리기를 지원한다.
  *
  * TODO(백엔드 확인): 좋아요한 장소 목록을 서버에 저장하는 API 미확정 —
  *   우선 클라이언트 상태로만 관리. (backend)
@@ -25,6 +29,10 @@ import useGetPlaceRecommendationsQuery from "@/features/places/hooks/useGetPlace
 export default function PlacesPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
+  // 여행 기간을 고르기 전엔 안내·카드덱 모두 보여주지 않는다
+  const [durationRange, setDurationRange] = useState<TripDurationRange | null>(
+    null,
+  );
   // 스와이프 사용법 안내를 본 뒤에만 실제 카드덱을 보여준다
   const [hasSeenGuide, setHasSeenGuide] = useState(false);
   // 스와이프로 지나친(좋아요+싫어요) placeId, 되돌리기 위해 순서 유지
@@ -73,7 +81,14 @@ export default function PlacesPage() {
 
   return (
     <main className="bg-screen-gradient relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col px-6">
-      {hasPlaces && !hasSeenGuide && (
+      {!durationRange && (
+        <TripDurationSelect
+          onOpenMenu={handleOpenMenu}
+          onConfirm={setDurationRange}
+        />
+      )}
+
+      {durationRange && hasPlaces && !hasSeenGuide && (
         <PlaceSwipeGuide
           placeCount={places.length}
           onOpenMenu={handleOpenMenu}
@@ -81,7 +96,7 @@ export default function PlacesPage() {
         />
       )}
 
-      {(!hasPlaces || hasSeenGuide) && (
+      {durationRange && (!hasPlaces || hasSeenGuide) && (
         <>
           <AppHeader
             onOpenMenu={handleOpenMenu}
