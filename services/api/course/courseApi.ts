@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import { api } from "@/services/lib/axios";
-import type { CourseDetailResponse } from "@/types/course";
+import type { CourseResponse } from "@/types/course";
 
 /**
  * 확정된 코스 상세를 조회한다.
@@ -8,8 +8,8 @@ import type { CourseDetailResponse } from "@/types/course";
  */
 export const getCourseDetail = async (
   courseId: string,
-): Promise<CourseDetailResponse> => {
-  const response = await api.get<CourseDetailResponse>(
+): Promise<CourseResponse> => {
+  const response = await api.get<CourseResponse>(
     API_ENDPOINTS.course.detail(courseId),
   );
   return response.data!;
