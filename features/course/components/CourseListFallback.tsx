@@ -16,7 +16,7 @@ const CourseListFallback = ({ places, onRetry }: CourseListFallbackProps) => {
   return (
     <div className="overflow-y-auto px-6 pt-6">
       {/* 지도 실패 안내 박스 */}
-      <div className="border-neutral-02 flex flex-col items-center rounded-xs border px-5 pt-5.5 pb-5">
+      <div className="border-neutral-02 flex flex-col items-center rounded-2xl border px-5 pt-5.5 pb-5">
         <svg
           width="40"
           height="40"
@@ -41,14 +41,14 @@ const CourseListFallback = ({ places, onRetry }: CourseListFallbackProps) => {
         <p className="text-neutral-07 mt-3 text-base font-extrabold">
           지도를 불러오지 못했어요
         </p>
-        <p className="text-neutral-04 mt-1.5 text-[12.2px]">
+        <p className="text-neutral-04 mt-1.5 text-xs">
           목록으로 코스를 확인할 수 있어요
         </p>
         {onRetry && (
           <button
             type="button"
             onClick={onRetry}
-            className="border-neutral-07 text-neutral-07 mt-4 flex items-center gap-1.5 rounded-[29px] border px-4.5 py-2 text-[13px] font-extrabold tracking-[0.5px]"
+            className="border-neutral-07 text-neutral-07 mt-4 flex items-center gap-1.5 rounded-full border px-4.5 py-2 text-sm font-extrabold tracking-[0.5px]"
           >
             <svg
               width="15"
@@ -78,7 +78,7 @@ const CourseListFallback = ({ places, onRetry }: CourseListFallbackProps) => {
               {place.visitOrder}
             </span>
             <div className="min-w-0">
-              <p className="text-neutral-07 truncate text-[15px] font-medium">
+              <p className="text-neutral-07 truncate text-base font-medium">
                 {place.name}
               </p>
               <p className="text-neutral-05 truncate text-[11.1px]">

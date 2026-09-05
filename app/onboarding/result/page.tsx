@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import GradientBackground from "@/components/ui/GradientBackground";
@@ -61,10 +61,16 @@ const ResultPage = () => {
   const { data, isLoading, isError, refetch } =
     useGetPreferenceResultQuery(TEMP_USER_ID);
 
+  // 결과 유형이 확정되면 세션에 저장 — 사이드바 프로필 아바타 등에서 재사용한다.
+  const setPreferenceType = useSessionStore((state) => state.setPreferenceType);
+  useEffect(() => {
+    if (data) setPreferenceType(data.type);
+  }, [data, setPreferenceType]);
+
   // 로딩/에러: 결과 계산 대기 화면 (그라디언트 배경)
   if (isLoading || isError || !data) {
     return (
-      <main className="bg-neutral-01 relative mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
+      <main className="bg-screen-gradient relative mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
         <GradientBackground className="opacity-70" />
 
         {/* 상단 헤더 (Home). 로딩 화면 디자인 기준 */}
@@ -127,7 +133,7 @@ const ResultPage = () => {
 
   // 결과 도착: 유형 카드 + 추천 장소 (흰 배경)
   return (
-    <main className="bg-neutral-01 mx-auto min-h-[100dvh] w-full max-w-[430px] pb-16">
+    <main className="bg-screen-gradient mx-auto min-h-[100dvh] w-full max-w-[430px] pb-16">
       <AppHeader showMenu={false} className="text-neutral-04" />
 
       <ResultTypeCard result={data} />

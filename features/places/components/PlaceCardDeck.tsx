@@ -139,7 +139,7 @@ const PlaceCardDeck = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="bg-neutral-07 text-neutral-01 absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-medium"
+              className="bg-neutral-07 text-neutral-01 shadow-soft absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium"
             >
               <HeartFilled className="h-3.5 w-3.5" />
               담은 장소 {likedCount}개
@@ -202,10 +202,10 @@ const PlaceCardDeck = ({
                 transition={{ type: "spring", stiffness: 350, damping: 26 }}
                 style={{ zIndex: visiblePlaces.length - stackIndex }}
                 className={cn(
-                  "bg-neutral-02 absolute inset-0 overflow-hidden rounded-[40px]",
+                  "bg-neutral-02 rounded-card absolute inset-0 overflow-hidden",
                   isTop
-                    ? "cursor-grab active:cursor-grabbing"
-                    : "pointer-events-none",
+                    ? "shadow-strong cursor-grab active:cursor-grabbing"
+                    : "shadow-soft pointer-events-none",
                 )}
               >
                 {place.thumbnailUrl ? (
@@ -223,12 +223,12 @@ const PlaceCardDeck = ({
 
                 {isTop && (
                   <>
-                    <span className="bg-neutral-01 text-neutral-04 absolute top-5 left-5 rounded-full px-3.5 py-1.5 text-[13px]">
+                    <span className="bg-neutral-01 text-neutral-04 absolute top-5 left-5 rounded-full px-3.5 py-1.5 text-sm">
                       {place.category}
                     </span>
 
                     <div className="from-neutral-07/70 absolute inset-x-0 bottom-0 bg-linear-to-t to-transparent px-5 pt-16 pb-6">
-                      <h3 className="text-neutral-01 text-[18px] font-semibold">
+                      <h3 className="text-neutral-01 text-lg font-semibold">
                         {place.name}
                       </h3>
                     </div>
@@ -253,7 +253,7 @@ const PlaceCardDeck = ({
           onClick={() => commitSwipe("dislike")}
           disabled={!topPlace}
           aria-label="싫어요"
-          className="h-15 w-15"
+          className="text-neutral-06 h-16 w-16"
         />
         <CircleIconButton
           icon={<HeartFilled className="h-6 w-6" />}
@@ -261,7 +261,7 @@ const PlaceCardDeck = ({
           onClick={() => commitSwipe("like")}
           disabled={!topPlace}
           aria-label="좋아요"
-          className="h-18 w-18"
+          className="bg-location h-16 w-16"
         />
       </div>
     </div>

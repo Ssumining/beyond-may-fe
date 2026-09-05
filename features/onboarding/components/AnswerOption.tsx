@@ -28,10 +28,12 @@ const AnswerOption = ({ text, state, onSelect }: AnswerOptionProps) => {
       onClick={onSelect}
       aria-pressed={state === "selected"}
       className={cn(
-        "w-full rounded-[24px] border px-6 py-3 text-left text-[14px] font-medium transition-colors duration-200",
+        "w-full rounded-3xl border px-6 py-3 text-left text-sm font-medium transition-all duration-200",
         "focus-visible:outline-neutral-07 focus-visible:outline-2 focus-visible:outline-offset-2",
-        (state === "default" || state === "selected") &&
+        state === "default" &&
           "border-neutral-07 bg-neutral-01 text-neutral-07",
+        state === "selected" &&
+          "shadow-soft border-neutral-07 bg-neutral-07 text-neutral-01",
         state === "dimmed" && "border-neutral-05 bg-neutral-04 text-neutral-05",
       )}
     >

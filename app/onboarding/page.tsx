@@ -75,7 +75,7 @@ const OnboardingPage = () => {
   // 로딩/에러 상태: 질문 준비 전에는 인트로(로딩) 화면만 출력.
   if (!isReady) {
     return (
-      <main className="bg-neutral-01 mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col">
+      <main className="bg-screen-gradient mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col">
         {/* 로딩·에러 화면에는 상단 헤더 노출 (질문 화면에는 없음) */}
         <AppHeader className="text-neutral-04" />
 
@@ -101,7 +101,7 @@ const OnboardingPage = () => {
 
   // 질문 준비 완료: 질문 스크롤 컨테이너로 전환 (로딩 화면 없음)
   return (
-    <main className="scrollbar-hide bg-neutral-01 mx-auto h-[100dvh] w-full max-w-[430px] snap-y snap-mandatory overflow-y-scroll">
+    <main className="scrollbar-hide bg-screen-gradient mx-auto h-[100dvh] w-full max-w-[430px] snap-y snap-mandatory overflow-y-scroll">
       {/* 진행률 바: 질문 화면 상단 고정 */}
       <div className="sticky top-0 z-10 px-6 pt-6 pb-10 backdrop-blur">
         <QuizProgressBar progress={progress} />
