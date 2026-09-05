@@ -90,7 +90,7 @@ const VisitMap = ({
             aria-hidden="true"
           />
           {/* 시트 영역 */}
-          <div className="absolute inset-x-0 bottom-0 mx-auto max-w-97.5">
+          <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[430px]">
             {isPlaceDetailPending || !placeDetail ? (
               <div className="bg-white-01 rounded-t-2xl p-6 text-center">
                 <p className="text-neutral-04 text-sm">

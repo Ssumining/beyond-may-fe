@@ -40,7 +40,7 @@ const TeamParticipantsSheet = ({
         aria-hidden="true"
       />
       {/* 시트 */}
-      <div className="bg-white-01 absolute inset-x-0 bottom-0 mx-auto max-w-97.5 rounded-t-2xl px-6 pt-4 pb-4">
+      <div className="bg-white-01 absolute inset-x-0 bottom-0 mx-auto max-w-[430px] rounded-t-2xl px-6 pt-4 pb-4">
         <div className="bg-neutral-03 mx-auto mb-7.5 h-1 w-10.5 rounded-full" />
 
         <h2 className="text-neutral-07 text-[18px] font-bold">
