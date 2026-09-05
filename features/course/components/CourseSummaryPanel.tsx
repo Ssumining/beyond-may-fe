@@ -1,14 +1,14 @@
-import type { CourseDetailResponse, DurationType } from "@/types/course";
+import type { CourseResponse, TravelSchedule } from "@/types/course";
 
-/** 여행 기간 enum → 한글 표기 */
-const DURATION_LABELS: Record<DurationType, string> = {
+/** 여행 기간 enum → 한글 표기. collection 확인값만.
+ *  TODO(백엔드): 2박3일·그이상 코드 확정 시 추가 */
+const TRAVEL_SCHEDULE_LABELS: Record<TravelSchedule, string> = {
   DAY_TRIP: "당일치기",
-  ONE_NIGHT: "1박 2일",
-  TWO_NIGHTS: "2박 3일",
+  ONE_NIGHT_TWO_DAYS: "1박 2일",
 };
 
 interface CourseSummaryPanelProps {
-  course: CourseDetailResponse;
+  course: CourseResponse;
   onDetailClick?: () => void;
   onConfirmClick?: () => void;
 }
@@ -23,9 +23,9 @@ const CourseSummaryPanel = ({
   onDetailClick,
   onConfirmClick,
 }: CourseSummaryPanelProps) => {
-  const { title, durationType, summary, places } = course;
+  const { title, travelSchedule, places } = course;
   const firstPlaceName = places[0]?.name ?? "";
-  const meta = `${summary.totalPlaceCount}곳 · ${DURATION_LABELS[durationType]}${
+  const meta = `${places.length}곳 · ${TRAVEL_SCHEDULE_LABELS[travelSchedule]}${
     firstPlaceName ? ` · ${firstPlaceName}부터` : ""
   }`;
 

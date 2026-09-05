@@ -12,11 +12,11 @@ interface CourseTimelineProps {
   /** 시작 시각 라벨 (예: "09:00 시작"). 없으면 숨김 */
   startLabel?: string;
   /** 현재 선택/강조할 장소 placeId (다음 목적지 등) */
-  activePlaceId?: string;
+  activePlaceId?: number;
   /** 방문 완료된 장소 placeId 집합 */
-  visitedPlaceIds?: string[];
+  visitedPlaceIds?: number[];
   /** 새로 추가된 장소 placeId 집합 (NEW 강조) */
-  addedPlaceIds?: string[];
+  addedPlaceIds?: number[];
   /** 항목 클릭 시 (해당 장소로 지도 이동 등) */
   onPlaceClick?: (place: CoursePlace) => void;
 }
@@ -35,9 +35,9 @@ const CourseTimeline = ({
   addedPlaceIds = [],
   onPlaceClick,
 }: CourseTimelineProps) => {
-  const sorted = [...places].sort((a, b) => a.order - b.order);
+  const sorted = [...places].sort((a, b) => a.visitOrder - b.visitOrder);
 
-  const getStatus = (placeId: string): TimelineItemStatus => {
+  const getStatus = (placeId: number): TimelineItemStatus => {
     if (visitedPlaceIds.includes(placeId)) return "visited";
     if (addedPlaceIds.includes(placeId)) return "added";
     if (placeId === activePlaceId) return "active";
@@ -54,7 +54,7 @@ const CourseTimeline = ({
         {sorted.map((place) => (
           <CourseTimelineItem
             key={place.placeId}
-            order={place.order}
+            order={place.visitOrder}
             name={place.name}
             summary={place.summary}
             status={getStatus(place.placeId)}

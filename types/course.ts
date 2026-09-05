@@ -1,70 +1,46 @@
-import type { LatLng, PlaceCategory } from "./map";
+/** 코스 진행 상태 — 코스는 DRAFT/CONFIRMED만.
+ *  ONGOING·COMPLETED는 exploration 소관 → types/exploration(수민).
+ *  (완료 코스 목록 5.1.2도 exploration status 기준이지 course.status 아님) */
+export type CourseStatus = "DRAFT" | "CONFIRMED";
 
-/** 코스 진행 상태 */
-export type CourseStatus = "DRAFT" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED";
+/** 여행 기간 유형. collection 확인값만 확정.
+ *  TODO(백엔드): 2박3일·그이상 코드값 — 추천세트 생성(2.1.1, 김혜진)에 4종 있으니 대조 후 추가 */
+export type TravelSchedule = "DAY_TRIP" | "ONE_NIGHT_TWO_DAYS";
 
-/** 여행 기간 유형 */
-export type DurationType = "DAY_TRIP" | "ONE_NIGHT" | "TWO_NIGHTS";
+/** 성향 유형 raw(대문자). 색 정규화(→PlaceCategory)는 courseMapAdapter가 담당 */
+export type TravelMbtiType = "THINKER" | "FOODIE" | "ARTIST" | "REMEMBERER";
 
-/** 팀 내 역할 */
-export type TeamRole = "OWNER" | "MEMBER";
+/** 이전 장소→현재 장소 이동수단. 현재 WALK만 관측(없으면 null) */
+export type TravelMode = "WALK";
 
-/** 코스에 포함된 장소 하나 */
+/** 코스 장소 하나 — 조회/AI생성/직접수정/챗봇적용 응답 공통.
+ *  방문 여부는 이 응답에 없음 → visits API와 조합(explore, 수민). */
 export interface CoursePlace {
-  order: number;
-  placeId: string;
+  placeId: number;
   name: string;
-  /** 장소 한 줄 설명 ("전시 · 복합문화공간" 등). 목록·폴백 표시용 */
-  summary?: string;
-  /** TourAPI 분류 ("문화" 등). 장소 검색 필터용 */
   category: string;
-  // TODO(백엔드 확인): 4유형 필드명·값 형식 제안함
-  /** Curated Layer 4분류. 핀·glow 색상 결정 */
-  curatedType?: PlaceCategory;
   address: string;
-  thumbnailUrl: string;
-  location: LatLng;
-  estimatedArrivalTime: string;
+  latitude: number;
+  longitude: number;
+  dayNumber: number;
+  visitOrder: number;
   estimatedStayMinutes: number;
-  visitStatus: {
-    isVisited: boolean;
-    visitedAt: string | null;
-    verifiedByNickname: string | null;
-  };
+  travelModeFromPrevious: TravelMode | null;
+  /** 조회·직접수정·챗봇적용 응답엔 없음(AI생성·추천추가엔 있음) → optional. 색 매핑용 */
+  travelMbtiType?: TravelMbtiType;
+  /** 코스 응답엔 없고 추천 API에만 존재 → optional. 부제 fallback: summary ?? category */
+  summary?: string;
 }
 
-/** 팀원 정보 */
-export interface CourseTeamMember {
-  sessionId: string;
-  nickname: string;
-  role: TeamRole;
-  visitedPlaceCount: number;
-}
-
-/** 코스(확정) 조회 응답 */
-export interface CourseDetailResponse {
-  courseId: string;
+/** 코스 응답 data — detail·draft·ai-generation·직접수정·챗봇적용 공통 shape.
+ *  확정 응답(courseId·explorationId·confirmedAt·shareExpiresAt)은 별도 타입(6번). */
+export interface CourseResponse {
+  courseId: number;
   title: string;
   status: CourseStatus;
-  durationType: DurationType;
-  ownerSessionId: string;
-  myRole: TeamRole;
-  summary: {
-    totalPlaceCount: number;
-    visitedPlaceCount: number;
-    teamMemberCount: number;
-    maxMemberCount: number;
-    estimatedDurationMinutes: number;
-    estimatedDistanceMeters: number;
-  };
-  share: {
-    shareId: string;
-    isExpiredForNewJoin: boolean;
-    expiresAt: string;
-  };
+  travelSchedule: TravelSchedule;
+  startDate: string; // ISO date "2026-08-20"
+  endDate: string; // ISO date
+  startTime: string; // "09:00:00"
   places: CoursePlace[];
-  teamMembers: CourseTeamMember[];
-  createdAt: string;
-  confirmedAt: string | null;
-  completedAt: string | null;
 }

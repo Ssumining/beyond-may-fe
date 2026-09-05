@@ -6,10 +6,10 @@ import KakaoMap from "@/components/map/Map";
 import CourseListFallback from "@/features/course/components/CourseListFallback";
 import CourseSummaryPanel from "@/features/course/components/CourseSummaryPanel";
 import { getCourseMapData } from "@/features/course/utils/courseMapAdapter";
-import type { CourseDetailResponse } from "@/types/course";
+import type { CourseResponse } from "@/types/course";
 
 interface CourseMapViewProps {
-  course: CourseDetailResponse;
+  course: CourseResponse;
   onDetailClick?: () => void;
   onConfirmClick?: () => void;
 }

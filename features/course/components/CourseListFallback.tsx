@@ -11,7 +11,7 @@ interface CourseListFallbackProps {
  * 하단 요약 패널은 부모(CourseMapView)가 그대로 유지한다.
  */
 const CourseListFallback = ({ places, onRetry }: CourseListFallbackProps) => {
-  const sorted = [...places].sort((a, b) => a.order - b.order);
+  const sorted = [...places].sort((a, b) => a.visitOrder - b.visitOrder);
 
   return (
     <div className="overflow-y-auto px-6 pt-6">
@@ -75,14 +75,14 @@ const CourseListFallback = ({ places, onRetry }: CourseListFallbackProps) => {
         {sorted.map((place) => (
           <li key={place.placeId} className="flex items-center gap-3.5 py-2.5">
             <span className="bg-neutral-07 text-neutral-01 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs">
-              {place.order}
+              {place.visitOrder}
             </span>
             <div className="min-w-0">
               <p className="text-neutral-07 truncate text-base font-medium">
                 {place.name}
               </p>
-              <p className="text-neutral-05 truncate text-xs">
-                {place.summary}
+              <p className="text-neutral-05 truncate text-[11.1px]">
+                {place.summary ?? place.category}
               </p>
             </div>
           </li>

@@ -125,8 +125,9 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
     );
   }
 
-  const owner = course.teamMembers.find((m) => m.role === "OWNER");
-  const inviterName = owner?.nickname ?? "친구";
+  // TODO(담당자): 초대자(코스 소유자) 이름은 코스 응답에 없음.
+  // 팀 합류/참여자 API에서 가져와야 함. 우선 기본값으로 표시.
+  const inviterName = "친구";
 
   return (
     <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] flex-col">
@@ -151,8 +152,8 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
               {course.title}
             </p>
             <p className="text-neutral-04 mt-1 text-[13px]">
-              {course.summary.totalPlaceCount}곳 · 팀{" "}
-              {course.summary.teamMemberCount}명
+              {course.places.length}곳
+              {/* TODO(담당자): 팀원 수는 코스 응답에 없음. 참여자 API 연결 후 표시 */}
             </p>
 
             <div className="border-neutral-02 -mx-7 mt-6 border-t" />

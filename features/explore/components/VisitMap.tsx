@@ -8,12 +8,16 @@ import useGetPlaceDetailQuery from "@/features/explore/hooks/useGetPlaceDetailQu
 import type { CoursePlace } from "@/types/course";
 import type { MapMarker, LatLng } from "@/types/map";
 import type { VisitResponse } from "@/types/exploration";
+import { normalizeCategory } from "@/features/course/utils/courseMapAdapter";
 
 interface VisitMapProps {
   explorationId: number;
   places: CoursePlace[];
   center: LatLng;
   myLocation?: LatLng;
+  /** 방문 완료된 placeId 초기 집합. 부모가 visits API(/visits/visited-places)로 채워 내려준다.
+   *  방문 여부는 코스 응답에 없으므로 CoursePlace가 아닌 이 prop이 소스다. */
+  initialVisitedPlaceIds?: number[];
 }
 
 const VisitMap = ({
@@ -21,13 +25,11 @@ const VisitMap = ({
   places,
   center,
   myLocation,
+  initialVisitedPlaceIds = [],
 }: VisitMapProps) => {
   // 로컬 방문 상태 (인증 성공 시 갱신 → 핀 컬러 전환)
-  const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(
-    () =>
-      new Set(
-        places.filter((p) => p.visitStatus.isVisited).map((p) => p.placeId),
-      ),
+  const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<number>>(
+    () => new Set(initialVisitedPlaceIds),
   );
 
   // 선택된 장소의 placeId (핀 클릭 시). null이면 시트 닫힘
@@ -39,11 +41,11 @@ const VisitMap = ({
 
   // CoursePlace → 지도 마커 변환
   const markers: MapMarker[] = places.map((place) => ({
-    id: place.placeId,
-    position: place.location,
-    order: place.order,
+    id: String(place.placeId),
+    position: { lat: place.latitude, lng: place.longitude },
+    order: place.visitOrder,
     visited: visitedPlaceIds.has(place.placeId),
-    category: place.curatedType,
+    category: normalizeCategory(place.travelMbtiType),
   }));
 
   const handleMarkerClick = (markerId: string): void => {
@@ -59,7 +61,7 @@ const VisitMap = ({
     // 인증된 장소를 방문 처리 → 핀 컬러 전환
     setVisitedPlaceIds((prev) => {
       const next = new Set(prev);
-      next.add(String(response.placeId));
+      next.add(response.placeId);
       return next;
     });
     // TODO: STOMP로 팀 전체에 전파 (소켓 연결 후)
@@ -69,7 +71,7 @@ const VisitMap = ({
 
   // 선택 장소의 방문 여부 (핀 색 판단과 동일 소스)
   const isSelectedVisited =
-    selectedPlaceId !== null && visitedPlaceIds.has(String(selectedPlaceId));
+    selectedPlaceId !== null && visitedPlaceIds.has(selectedPlaceId);
 
   return (
     <div className="relative h-dvh w-full">
