@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
   course: {
     list: "/api/v1/courses",
     detail: (courseId: string) => `/api/v1/courses/${courseId}`,
+    draft: (courseId: string) => `/api/v1/courses/${courseId}/draft`,
     confirm: (courseId: string) => `/api/v1/courses/${courseId}/confirm`,
     refine: (courseId: string) => `/api/v1/courses/${courseId}/ai-refine`,
     aiGeneration: "/api/v1/courses/ai-generation",
