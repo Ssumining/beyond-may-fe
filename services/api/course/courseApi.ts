@@ -23,6 +23,16 @@ export const getCourseDetail = async (
   return response.data!;
 };
 
+/** 초안 코스 상세를 조회한다. (추천 코스 지도 3.1.1 — 확정 전 draft 상태) */
+export const getCourseDraft = async (
+  courseId: string,
+): Promise<CourseResponse> => {
+  const response = await api.get<CourseResponse>(
+    API_ENDPOINTS.course.draft(courseId),
+  );
+  return response.data!;
+};
+
 /** 로그인 사용자의 초안·진행·완료 코스를 조회한다. */
 export const getCourses = async (): Promise<CourseListResponse> => {
   const response = await api.get<CourseListResponse>(API_ENDPOINTS.course.list);
