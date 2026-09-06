@@ -13,7 +13,7 @@ import { moveCoursePlace } from "@/features/course/utils/reorderCoursePlaces";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import { patchCourse, postCourseRefine } from "@/services/api/course/courseApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
-import type { CourseDetailResponse, CoursePlace } from "@/types/course";
+import type { CourseResponse, CoursePlace } from "@/types/course";
 
 type EditMode = "ai" | "manual";
 
@@ -23,7 +23,7 @@ interface CourseEditPageProps {
 }
 
 interface CourseEditorProps {
-  course: CourseDetailResponse;
+  course: CourseResponse;
   initialMode: EditMode;
   fromHub: boolean;
 }
@@ -40,7 +40,7 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
   const [mode, setMode] = useState<EditMode>(initialMode);
   const [title, setTitle] = useState(course.title);
   const [places, setPlaces] = useState(() =>
-    [...course.places].sort((a, b) => a.order - b.order),
+    [...course.places].sort((a, b) => a.visitOrder - b.visitOrder),
   );
   const [instruction, setInstruction] = useState("");
   const [refineCount, setRefineCount] = useState(0);
@@ -49,31 +49,40 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
   const [isAddingPlace, setIsAddingPlace] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const { data: recommendations = [] } = useGetPlaceRecommendationsQuery();
-  const minimumPlaceCount = getMinimumSelectionCount(course.durationType);
+  const minimumPlaceCount = getMinimumSelectionCount(course.travelSchedule);
   const availablePlaces = recommendations.filter(
-    (place) => !places.some(({ placeId }) => placeId === String(place.placeId)),
+    (place) => !places.some(({ placeId }) => placeId === place.placeId),
   );
 
   const refineMutation = useMutation({
     mutationFn: () =>
-      postCourseRefine(course.courseId, { instruction: instruction.trim() }),
+      postCourseRefine(String(course.courseId), {
+        message: instruction.trim(),
+      }),
     onSuccess: (refinedCourse) => {
       setTitle(refinedCourse.title);
-      setPlaces([...refinedCourse.places].sort((a, b) => a.order - b.order));
+      setPlaces(
+        [...refinedCourse.places].sort((a, b) => a.visitOrder - b.visitOrder),
+      );
       setHasRefinedPreview(true);
     },
     onSettled: () => setRefineCount((count) => count + 1),
   });
 
+  // TODO(#56 여파): UpdateCourseRequest엔 title 필드가 없음(collection PUT
+  // /courses/{id}/places 기준, 장소 순서만 저장). 코스명 저장은 별도 계약 확정 후 연결.
   const saveMutation = useMutation({
     mutationFn: () =>
-      patchCourse(course.courseId, {
-        title: title.trim(),
-        placeIds: places.map((place) => place.placeId),
+      patchCourse(String(course.courseId), {
+        places: places.map((place, index) => ({
+          placeId: place.placeId,
+          dayNumber: place.dayNumber,
+          visitOrder: index + 1,
+        })),
       }),
     onSuccess: (updatedCourse) => {
       queryClient.setQueryData(
-        QUERY_KEYS.COURSE.DETAIL(course.courseId),
+        QUERY_KEYS.COURSE.DETAIL(String(course.courseId)),
         updatedCourse,
       );
       void queryClient.invalidateQueries({
@@ -99,7 +108,7 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     setPlaces((current) =>
       current
         .filter((_, placeIndex) => placeIndex !== index)
-        .map((place, placeIndex) => ({ ...place, order: placeIndex + 1 })),
+        .map((place, placeIndex) => ({ ...place, visitOrder: placeIndex + 1 })),
     );
   };
 
@@ -117,7 +126,9 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     if (!moved) return;
     next.splice(toIndex, 0, moved);
     setHistory((items) => [...items, places]);
-    setPlaces(next.map((place, index) => ({ ...place, order: index + 1 })));
+    setPlaces(
+      next.map((place, index) => ({ ...place, visitOrder: index + 1 })),
+    );
     setDragIndex(null);
   };
 
@@ -130,22 +141,19 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     setPlaces((current) => [
       ...current,
       {
-        order: current.length + 1,
-        placeId: String(recommendation.placeId),
+        placeId: recommendation.placeId,
         name: recommendation.name,
-        summary: `${recommendation.category} · ${recommendation.tags[0] ?? "추천 장소"}`,
         category: recommendation.category,
-        curatedType: recommendation.travelMbtiType,
+        summary: `${recommendation.category} · ${recommendation.tags[0] ?? "추천 장소"}`,
+        // TODO(#56 여파): 추천 목록엔 좌표·주소가 없음(PlaceRecommendationResponse).
+        // 실제 위치는 장소 상세 조회 연동 후 채워야 함 — 임시로 광주 중심 좌표 사용.
         address: "장소 상세에서 확인",
-        thumbnailUrl: recommendation.thumbnailUrl ?? "",
-        location: { lat: 35.1469, lng: 126.9199 },
-        estimatedArrivalTime: "시간 미정",
+        latitude: 35.1469,
+        longitude: 126.9199,
+        dayNumber: places.at(-1)?.dayNumber ?? 1,
+        visitOrder: current.length + 1,
         estimatedStayMinutes: 60,
-        visitStatus: {
-          isVisited: false,
-          visitedAt: null,
-          verifiedByNickname: null,
-        },
+        travelModeFromPrevious: null,
       },
     ]);
   };
@@ -187,7 +195,8 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                 어떻게 바꾸고 싶나요?
               </h1>
               <p className="text-neutral-04 mt-2 text-[13px] leading-[1.55]">
-                원하는 이동 방식이나 장소 순서를 말해 주세요. · {refineCount}/2회
+                원하는 이동 방식이나 장소 순서를 말해 주세요. · {refineCount}
+                /2회
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
@@ -252,7 +261,7 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                 </div>
               )}
               {refineCount >= 2 && !hasRefinedPreview && (
-                <div className="bg-neutral-02 mt-3 rounded-xl px-4 py-3 text-[12px] text-neutral-06">
+                <div className="bg-neutral-02 text-neutral-06 mt-3 rounded-xl px-4 py-3 text-[12px]">
                   AI 수정 2회를 모두 사용했어요.
                   <button
                     type="button"
@@ -342,7 +351,9 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                           onClick={() => handleAddPlace(place.placeId)}
                           className="bg-neutral-02 flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-left text-[12px]"
                         >
-                          <span className="truncate font-medium">{place.name}</span>
+                          <span className="truncate font-medium">
+                            {place.name}
+                          </span>
                           <span className="text-primary-08 shrink-0">추가</span>
                         </button>
                       </li>
@@ -410,8 +421,8 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
               }`}
               role="status"
             >
-              이 여행 기간은 최소 {minimumPlaceCount}곳이 필요해요. 최소 개수에서는
-              삭제할 수 없습니다.
+              이 여행 기간은 최소 {minimumPlaceCount}곳이 필요해요. 최소
+              개수에서는 삭제할 수 없습니다.
             </p>
           </section>
         )}

@@ -7,34 +7,24 @@ import AppHeader from "@/components/layout/AppHeader";
 import Button from "@/components/ui/Button";
 import { getCourses } from "@/services/api/course/courseApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
-import type { CourseDetailResponse, CourseStatus } from "@/types/course";
+import type { CourseResponse, CourseStatus } from "@/types/course";
 
+// TODO(#56 여파): 여행 중·완료 상태는 exploration 소관(수민)이라 코스 응답엔 없음.
+// exploration status API 연동 전까지는 DRAFT/CONFIRMED 2종만 구분한다.
 const STATUS_LABELS: Record<CourseStatus, string> = {
   DRAFT: "초안",
   CONFIRMED: "출발 전",
-  IN_PROGRESS: "여행 중",
-  COMPLETED: "완료",
 };
 
 const STATUS_CLASSES: Record<CourseStatus, string> = {
   DRAFT: "bg-primary-04 text-primary-08",
   CONFIRMED: "bg-primary-01 text-neutral-07",
-  IN_PROGRESS: "bg-primary-08 text-white",
-  COMPLETED: "bg-neutral-02 text-neutral-04",
 };
 
-const getCourseAction = (course: CourseDetailResponse) => {
-  if (course.status === "IN_PROGRESS") {
-    return { href: `/explore/${course.courseId}`, label: "여행 이어가기" };
-  }
-  if (course.status === "COMPLETED") {
-    return { href: `/record/${course.courseId}`, label: "기록 보기" };
-  }
-  return {
-    href: `/course/${course.courseId}?from=hub`,
-    label: "코스 확인",
-  };
-};
+const getCourseAction = (course: CourseResponse) => ({
+  href: `/course/${course.courseId}?from=hub`,
+  label: "코스 확인",
+});
 
 const CoursePage = () => {
   const { data, isLoading, isError, refetch } = useQuery({
@@ -115,11 +105,6 @@ const CoursePage = () => {
         <ul className="space-y-4 px-6 pb-8">
           {data.courses.map((course) => {
             const action = getCourseAction(course);
-            const progress = Math.round(
-              (course.summary.visitedPlaceCount /
-                Math.max(course.summary.totalPlaceCount, 1)) *
-                100,
-            );
 
             return (
               <li
@@ -138,32 +123,12 @@ const CoursePage = () => {
                     </h2>
                   </div>
                   <span className="text-neutral-04 shrink-0 text-[12px]">
-                    {course.summary.totalPlaceCount}곳
+                    {course.places.length}곳
                   </span>
                 </div>
 
-                <p className="text-neutral-04 mt-2 text-[13px]">
-                  약 {Math.round(course.summary.estimatedDurationMinutes / 60)}
-                  시간 ·{" "}
-                  {(course.summary.estimatedDistanceMeters / 1000).toFixed(1)}
-                  km
-                </p>
-
-                {(course.status === "IN_PROGRESS" ||
-                  course.status === "COMPLETED") && (
-                  <div className="mt-4">
-                    <div className="text-neutral-04 mb-1.5 flex justify-between text-[11px]">
-                      <span>{course.summary.visitedPlaceCount}곳 방문</span>
-                      <span>{progress}%</span>
-                    </div>
-                    <div className="bg-neutral-02 h-1.5 overflow-hidden rounded-full">
-                      <div
-                        className="bg-primary-08 h-full rounded-full"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
+                {/* TODO(#56 여파): 예상 소요시간·거리·방문 진행률은 코스 응답 summary가
+                    사라지면서 표시할 데이터가 없음. exploration status API 연동 후 복원. */}
 
                 <div className="mt-5 flex gap-2">
                   <Link
