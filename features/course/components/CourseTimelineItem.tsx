@@ -45,8 +45,8 @@ const CourseTimelineItem = ({
         layout: { duration: 0.3 },
       }}
       className={cn(
-        "flex w-full items-center gap-3.5 px-6 py-3.5 text-left transition-colors duration-300",
-        isActive && "bg-neutral-02",
+        "border-neutral-03/70 focus-visible:outline-primary-03 flex min-h-16 w-full items-center gap-4 border-t px-6 py-3.5 text-left transition-colors duration-300 last:border-b",
+        isActive && "bg-white",
         isAdded && "bg-neutral-02/60",
       )}
     >
@@ -95,7 +95,7 @@ const CourseTimelineItem = ({
           )}
         </div>
         {summary && (
-          <p className="text-neutral-05 mt-0.75 truncate text-xs">{summary}</p>
+          <p className="text-neutral-04 mt-1 truncate text-[12px]">{summary}</p>
         )}
       </div>
     </motion.button>

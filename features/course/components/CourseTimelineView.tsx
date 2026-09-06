@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import AppHeader from "@/components/layout/AppHeader";
+import Button from "@/components/ui/Button";
 import CourseTimeline from "@/features/course/components/CourseTimeline";
 import type {
   CourseResponse,
@@ -10,8 +11,8 @@ import type {
   TravelSchedule,
 } from "@/types/course";
 
-/** 여행 기간 enum → 한글 표기. collection 확인값만.
- *  TODO(백엔드): 2박3일·그이상 코드 확정 시 추가 */
+/** 여행 기간 enum → 한글 표기. collection 확인값(2종)만 확정.
+ *  TODO(백엔드): 2박3일·그이상 코드값 확정 시 추가 (release-design엔 TWO_NIGHTS_THREE_DAYS·CUSTOM 표기 있었음) */
 const TRAVEL_SCHEDULE_LABELS: Record<TravelSchedule, string> = {
   DAY_TRIP: "당일치기",
   ONE_NIGHT_TWO_DAYS: "1박 2일",
@@ -19,7 +20,10 @@ const TRAVEL_SCHEDULE_LABELS: Record<TravelSchedule, string> = {
 
 interface CourseTimelineViewProps {
   course: CourseResponse;
+  backHref?: string;
   onUseCourse?: () => void;
+  isUsingCourse?: boolean;
+  hasUseCourseError?: boolean;
   onEditWithAi?: () => void;
   onEditManually?: () => void;
 }
@@ -31,7 +35,10 @@ interface CourseTimelineViewProps {
  */
 const CourseTimelineView = ({
   course,
+  backHref = `/course/${course.courseId}`,
   onUseCourse,
+  isUsingCourse = false,
+  hasUseCourseError = false,
   onEditWithAi,
   onEditManually,
 }: CourseTimelineViewProps) => {
@@ -52,69 +59,89 @@ const CourseTimelineView = ({
   };
 
   return (
-    <div className="bg-screen-gradient flex h-dvh flex-col">
-      <AppHeader className="text-neutral-07" />
+    <main className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] flex-col">
+      <AppHeader backHref={backHref} showMenu={false} centerLabel="코스 일정" />
 
-      <div className="min-h-0 flex-1 px-4 pt-4 pb-2">
-        <div className="bg-neutral-01 shadow-soft rounded-card h-full overflow-y-auto py-2">
-          <CourseTimeline
-            places={places}
-            activePlaceId={activePlaceId}
-            onPlaceClick={handlePlaceClick}
-          />
-        </div>
+      <div className="flex-1 overflow-y-auto pt-4">
+        <section className="px-6 pb-5">
+          <p className="text-primary-08 text-[12px] font-semibold tracking-[0.12em]">
+            ROUTE PLAN
+          </p>
+          <h1 className="text-neutral-07 mt-2 text-[28px] leading-[1.3] font-bold">
+            {title}
+          </h1>
+          <p className="text-neutral-04 mt-2 text-[13px]">{meta}</p>
+        </section>
+        <CourseTimeline
+          places={places}
+          activePlaceId={activePlaceId}
+          onPlaceClick={handlePlaceClick}
+        />
       </div>
 
-      <div className="border-neutral-03 bg-neutral-01 border-t px-6 pt-5 pb-6">
-        <p className="text-neutral-04 text-xs tracking-[1px] uppercase">
-          추천 코스
-        </p>
-        <h2 className="text-neutral-07 mt-2 text-xl leading-6 font-semibold">
-          {title}
-        </h2>
-        <p className="text-neutral-05 mt-1 text-xs">{meta}</p>
-
-        <button
-          type="button"
-          onClick={onUseCourse}
-          className="bg-neutral-07 text-neutral-01 shadow-soft mt-4 flex h-12.5 w-full items-center justify-center rounded-full text-sm font-extrabold tracking-[1px]"
-        >
-          이 코스 사용
-        </button>
-
-        <div className="mt-3 flex items-center justify-center gap-6 text-sm font-semibold">
-          <button
-            type="button"
-            onClick={onEditWithAi}
-            className="text-neutral-07 flex items-center gap-1"
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden
+      {(onUseCourse || onEditWithAi || onEditManually) && (
+        <div className="border-neutral-03 border-t bg-white px-6 pt-5 pb-[max(24px,env(safe-area-inset-bottom))]">
+          {onUseCourse && (
+            <Button
+              variant="solid"
+              size="lg"
+              onClick={onUseCourse}
+              isLoading={isUsingCourse}
+              className="w-full"
             >
-              <path
-                d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            AI로 다듬기
-          </button>
-          <button
-            type="button"
-            onClick={onEditManually}
-            className="text-neutral-04"
-          >
-            직접 수정
-          </button>
+              {isUsingCourse ? "코스 확정 중" : "이 코스 사용"}
+            </Button>
+          )}
+
+          {hasUseCourseError && (
+            <p
+              className="text-caution-02 mt-3 text-center text-[12px]"
+              role="alert"
+            >
+              코스를 확정하지 못했어요. 다시 시도해 주세요.
+            </p>
+          )}
+
+          {(onEditWithAi || onEditManually) && (
+            <div className="mt-3 flex items-center justify-center gap-6 text-[13px] font-medium">
+              {onEditWithAi && (
+                <button
+                  type="button"
+                  onClick={onEditWithAi}
+                  className="text-neutral-07 focus-visible:outline-primary-03 flex min-h-11 items-center gap-1 rounded-full px-2"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden
+                  >
+                    <path
+                      d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  AI로 다듬기
+                </button>
+              )}
+              {onEditManually && (
+                <button
+                  type="button"
+                  onClick={onEditManually}
+                  className="text-neutral-04 focus-visible:outline-primary-03 min-h-11 rounded-full px-2"
+                >
+                  직접 수정
+                </button>
+              )}
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+      )}
+    </main>
   );
 };
 

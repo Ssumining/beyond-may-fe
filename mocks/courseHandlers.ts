@@ -1,6 +1,11 @@
 import { http, HttpResponse, delay } from "msw";
 
-import type { CourseResponse } from "@/types/course";
+import type {
+  CourseResponse,
+  GenerateCourseRequest,
+  RefineCourseRequest,
+  UpdateCourseRequest,
+} from "@/types/course";
 
 /**
  * 코스 조회 mock (collection _5 구조 기준).
@@ -107,24 +112,174 @@ const MOCK_COURSE_DRAFT: CourseResponse = {
   status: "DRAFT",
 };
 
+/** 개발 세션 안에서 확정·보정·직접수정 결과를 다음 조회까지 유지한다. */
+const courseOverrides = new Map<number, CourseResponse>();
+
+export const getMockCourse = (courseId: number): CourseResponse => {
+  const override = courseOverrides.get(courseId);
+  if (override) return override;
+  return { ...MOCK_COURSE, courseId };
+};
+
 /** 성공 래퍼로 감싼다 (collection _5: message·code·data·success) */
 const wrap = <T>(data: T) => ({
-  message: "성공입니다.",
   code: "COMMON200",
   data,
+  message: "성공입니다.",
   success: true,
 });
 
 export const courseHandlers = [
+  /** 로그인 사용자의 초안·진행·완료 코스를 조회한다. */
+  http.get(`${BASE_URL}/api/v1/courses`, async () => {
+    await delay(450);
+    return HttpResponse.json(wrap({ courses: [getMockCourse(1)] }));
+  }),
+
+  /** 선택한 장소를 이동 순서에 맞춘 초안 코스로 생성한다. */
+  http.post(`${BASE_URL}/api/v1/courses/ai-generation`, async ({ request }) => {
+    const body = (await request.json()) as Partial<GenerateCourseRequest>;
+
+    if (
+      !Array.isArray(body.placeIds) ||
+      body.placeIds.length === 0 ||
+      body.placeIds.some((placeId) => !Number.isInteger(placeId))
+    ) {
+      return HttpResponse.json(
+        {
+          code: "COURSE400",
+          data: null,
+          message: "코스에 담을 장소를 한 곳 이상 선택해 주세요.",
+          success: false,
+        },
+        { status: 400 },
+      );
+    }
+
+    await delay(1800);
+
+    // TODO(생성 플로우): collection은 생성 응답이 전체 코스(CourseResponse). 지금은 통과용 최소.
+    return HttpResponse.json(wrap({ courseId: 1 }));
+  }),
+
+  /** 초안 코스를 확정해 탐험에 사용할 수 있게 한다. */
+  http.post(
+    `${BASE_URL}/api/v1/courses/:courseId/confirm`,
+    async ({ params }) => {
+      await delay(900);
+
+      const courseId = Number(params.courseId);
+      const course = getMockCourse(courseId);
+      const confirmedAt = new Date().toISOString();
+      courseOverrides.set(courseId, { ...course, status: "CONFIRMED" });
+
+      return HttpResponse.json(
+        wrap({
+          courseId,
+          explorationId: courseId,
+          status: "CONFIRMED" as const,
+          confirmedAt,
+          shareExpiresAt: new Date(
+            Date.now() + 3 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+        }),
+      );
+    },
+  ),
+
+  /** 자연어 요청으로 코스 순서를 다시 추천받는다. */
+  http.post(
+    `${BASE_URL}/api/v1/courses/:courseId/ai-refine`,
+    async ({ params, request }) => {
+      const courseId = Number(params.courseId);
+      const body = (await request.json()) as Partial<RefineCourseRequest>;
+      await delay(1200);
+
+      if (!body.message?.trim() || body.message.includes("실패")) {
+        return HttpResponse.json(
+          {
+            code: "COURSE500",
+            data: null,
+            message: "코스를 다듬지 못했습니다.",
+            success: false,
+          },
+          { status: 500 },
+        );
+      }
+
+      const course = getMockCourse(courseId);
+      const refinedCourse: CourseResponse = {
+        ...course,
+        places: [...course.places]
+          .reverse()
+          .map((place, index) => ({ ...place, visitOrder: index + 1 })),
+      };
+      courseOverrides.set(courseId, refinedCourse);
+
+      return HttpResponse.json(wrap(refinedCourse));
+    },
+  ),
+
+  /** 코스 장소 순서를 직접 저장한다. */
+  http.patch(
+    `${BASE_URL}/api/v1/courses/:courseId`,
+    async ({ params, request }) => {
+      const courseId = Number(params.courseId);
+      const body = (await request.json()) as Partial<UpdateCourseRequest>;
+      const course = getMockCourse(courseId);
+      await delay(700);
+
+      if (!Array.isArray(body.places) || body.places.length === 0) {
+        return HttpResponse.json(
+          {
+            code: "COURSE400",
+            data: null,
+            message: "장소 순서를 확인해 주세요.",
+            success: false,
+          },
+          { status: 400 },
+        );
+      }
+
+      const placesById = new Map(
+        course.places.map((place) => [place.placeId, place]),
+      );
+      const places = body.places.flatMap(
+        ({ placeId, dayNumber, visitOrder }) => {
+          const place = placesById.get(placeId);
+          return place ? [{ ...place, dayNumber, visitOrder }] : [];
+        },
+      );
+
+      if (places.length !== body.places.length) {
+        return HttpResponse.json(
+          {
+            code: "COURSE400",
+            data: null,
+            message: "유효하지 않은 장소가 포함되어 있습니다.",
+            success: false,
+          },
+          { status: 400 },
+        );
+      }
+
+      const updatedCourse = { ...course, places };
+      courseOverrides.set(courseId, updatedCourse);
+
+      return HttpResponse.json(wrap(updatedCourse));
+    },
+  ),
+
   // 초안 코스 조회 (3.1.1). :id/draft 가 :id 보다 먼저 와야 매칭됨
   http.get(`${BASE_URL}/api/v1/courses/:courseId/draft`, async () => {
     await delay(500);
     return HttpResponse.json(wrap(MOCK_COURSE_DRAFT));
   }),
 
-  // 확정 코스 조회
-  http.get(`${BASE_URL}/api/v1/courses/:courseId`, async () => {
+  // 코스(확정) 조회
+  http.get(`${BASE_URL}/api/v1/courses/:courseId`, async ({ params }) => {
     await delay(500);
-    return HttpResponse.json(wrap(MOCK_COURSE));
+    const courseId = Number(params.courseId);
+    return HttpResponse.json(wrap(getMockCourse(courseId)));
   }),
 ];
