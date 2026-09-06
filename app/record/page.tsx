@@ -8,14 +8,15 @@ import KakaoMap from "@/components/map/Map";
 import PlaceDetailSheet from "@/components/place-detail/PlaceDetailSheet";
 import Button from "@/components/ui/Button";
 import ChevronRight from "@/components/ui/icons/ChevronRight";
+import useGetVisitedPlacesQuery from "@/features/record/hooks/useGetVisitedPlacesQuery";
 import {
   formatRecordDate,
   formatRecordTime,
   MOCK_TRAVEL_RECORDS,
-  type TravelRecordPlace,
 } from "@/features/record/mockRecords";
 import type { MapMarker } from "@/types/map";
 import type { PlaceDetailResponse } from "@/types/place";
+import type { VisitedPlaceRecord } from "@/types/record";
 
 type RecordTab = "ongoing" | "completed" | "visits" | "map";
 
@@ -45,19 +46,24 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
     : "ongoing";
   const isEmpty = state === "empty";
   const records = isEmpty ? [] : MOCK_TRAVEL_RECORDS;
-  const [selectedVisit, setSelectedVisit] = useState<TravelRecordPlace | null>(
+  const [selectedVisit, setSelectedVisit] = useState<VisitedPlaceRecord | null>(
     null,
   );
   const [shareStatus, setShareStatus] = useState<string | null>(null);
-  const visits = records
-    .flatMap((record) => record.places)
-    .sort(
-      (first, second) =>
-        new Date(second.visitedAt).getTime() -
-        new Date(first.visitedAt).getTime(),
-    );
+  const {
+    data: visitedPlacesData,
+    isLoading: isVisitsLoading,
+    isError: isVisitsError,
+  } = useGetVisitedPlacesQuery();
+  const visits = isEmpty
+    ? []
+    : [...(visitedPlacesData?.visits ?? [])].sort(
+        (first, second) =>
+          new Date(second.visitedAt).getTime() -
+          new Date(first.visitedAt).getTime(),
+      );
   const mapMarkers: MapMarker[] = visits.slice(0, 5).map((place, index) => ({
-    id: place.placeId,
+    id: String(place.placeId),
     position: VISIT_COORDINATES[index] ?? VISIT_COORDINATES[0],
     visited: true,
     label: place.name,
@@ -65,17 +71,17 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
   }));
   const selectedPlaceDetail: PlaceDetailResponse | null = selectedVisit
     ? {
-        placeId: Number(selectedVisit.placeId.replace(/\D/g, "")) || 1,
+        placeId: selectedVisit.placeId,
         name: selectedVisit.name,
-        category: "방문 장소",
+        category: selectedVisit.category,
         travelMbtiType: "remember",
-        tags: ["팀 방문", "여행 기록"],
+        tags: selectedVisit.tags,
         address: "광주광역시",
         latitude: 35.1469,
         longitude: 126.9199,
         businessHours: null,
-        description: selectedVisit.summary,
-        thumbnailUrl: null,
+        description: "",
+        thumbnailUrl: selectedVisit.thumbnailUrl,
       }
     : null;
 
@@ -207,35 +213,71 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
 
       {activeTab === "visits" && (
         <section className="px-6 pt-6">
-          <SectionHeading title="팀이 방문한 장소" count={visits.length} />
-          {visits.length === 0 ? (
+          <SectionHeading title="내가 방문한 장소" count={visits.length} />
+          {isVisitsLoading && (
+            <p
+              className="text-neutral-04 py-10 text-center text-[13px]"
+              role="status"
+            >
+              방문 장소를 불러오고 있어요…
+            </p>
+          )}
+
+          {isVisitsError && (
+            <p
+              className="text-caution-02 py-10 text-center text-[13px]"
+              role="alert"
+            >
+              방문 장소를 불러오지 못했어요.
+            </p>
+          )}
+
+          {!isVisitsLoading && !isVisitsError && visits.length === 0 && (
             <EmptyRecordState
               title="아직 방문한 장소가 없습니다"
               description="장소에서 방문을 인증하면 시간순으로 기록돼요."
               action="진행 중 코스 보기"
               href="/record?tab=ongoing"
             />
-          ) : (
+          )}
+
+          {!isVisitsLoading && !isVisitsError && visits.length > 0 && (
             <ul className="mt-4 space-y-2">
-              {visits.map((place, index) => (
-                <li key={`${place.placeId}-${place.visitedAt}`}>
+              {visits.map((place) => (
+                <li key={place.visitId}>
                   <button
                     type="button"
                     onClick={() => setSelectedVisit(place)}
                     className="border-neutral-03 flex min-h-18 w-full items-center gap-3 rounded-[18px] border bg-white p-3 text-left"
                   >
-                    <span className={`h-12 w-12 shrink-0 rounded-xl ${index % 2 === 0 ? "bg-primary-04" : "bg-neutral-02"}`} />
+                    {place.thumbnailUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={place.thumbnailUrl}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <span
+                        className="bg-primary-04 h-12 w-12 shrink-0 rounded-xl"
+                        aria-hidden="true"
+                      />
+                    )}
                     <span className="min-w-0 flex-1">
                       <span className="text-neutral-07 block truncate text-[14px] font-semibold">
                         {place.name}
                       </span>
                       <span className="text-neutral-04 mt-1 block text-[11px]">
-                        {formatRecordDate(place.visitedAt)} · {formatRecordTime(place.visitedAt)}
+                        {formatRecordDate(place.visitedAt)} ·{" "}
+                        {formatRecordTime(place.visitedAt)}
                       </span>
                     </span>
-                    <span className="bg-neutral-02 text-neutral-05 rounded-full px-2 py-1 text-[10px]">
-                      코스 장소
-                    </span>
+                    {place.tags[0] && (
+                      <span className="bg-neutral-02 text-neutral-05 shrink-0 rounded-full px-2 py-1 text-[10px]">
+                        {place.tags[0]}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}
@@ -247,7 +289,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
       {activeTab === "map" && (
         <section className="px-6 pt-6">
           <SectionHeading title="광주에서 밝힌 곳" count={mapMarkers.length} />
-          <div className="border-neutral-03 relative mt-4 h-[52dvh] min-h-96 overflow-hidden rounded-[24px] border bg-neutral-07">
+          <div className="border-neutral-03 bg-neutral-07 relative mt-4 h-[52dvh] min-h-96 overflow-hidden rounded-[24px] border">
             {mapMarkers.length > 0 && (
               <KakaoMap
                 center={{ lat: 35.1469, lng: 126.9142 }}
@@ -257,7 +299,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
               />
             )}
             {mapMarkers.length === 0 && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-neutral-07/90 px-8 text-center">
+              <div className="bg-neutral-07/90 absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center">
                 <p className="text-[20px] font-semibold text-white">
                   아직 밝힌 곳이 없어요
                 </p>
@@ -271,7 +313,9 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
             <Button
               size="lg"
               disabled={mapMarkers.length === 0}
-              onClick={() => setShareStatus("밝힌 지도 이미지를 저장할 준비가 됐어요.")}
+              onClick={() =>
+                setShareStatus("밝힌 지도 이미지를 저장할 준비가 됐어요.")
+              }
             >
               이미지 저장
             </Button>
@@ -296,7 +340,10 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
             </Button>
           </div>
           {shareStatus && (
-            <p className="bg-neutral-07 text-neutral-01 mt-3 rounded-full px-4 py-3 text-center text-[12px]" role="status">
+            <p
+              className="bg-neutral-07 text-neutral-01 mt-3 rounded-full px-4 py-3 text-center text-[12px]"
+              role="status"
+            >
               {shareStatus}
             </p>
           )}
@@ -305,12 +352,24 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
 
       {selectedPlaceDetail && (
         <div className="fixed inset-0 z-50">
-          <div className="bg-neutral-07/35 absolute inset-0" onClick={() => setSelectedVisit(null)} aria-hidden="true" />
+          <div
+            className="bg-neutral-07/35 absolute inset-0"
+            onClick={() => setSelectedVisit(null)}
+            aria-hidden="true"
+          />
           <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[430px]">
             <PlaceDetailSheet
               place={selectedPlaceDetail}
               onClose={() => setSelectedVisit(null)}
-              footer={<Button size="lg" className="w-full" onClick={() => setSelectedVisit(null)}>기록으로 돌아가기</Button>}
+              footer={
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setSelectedVisit(null)}
+                >
+                  기록으로 돌아가기
+                </Button>
+              }
             />
           </div>
         </div>
@@ -347,7 +406,10 @@ const EmptyRecordState = ({
     <p className="text-neutral-04 mt-2 text-[13px] leading-[1.6]">
       {description}
     </p>
-    <Link href={href} className="bg-neutral-07 text-neutral-01 mt-6 flex min-h-12 w-full items-center justify-center rounded-full px-5 text-[14px] font-semibold">
+    <Link
+      href={href}
+      className="bg-neutral-07 text-neutral-01 mt-6 flex min-h-12 w-full items-center justify-center rounded-full px-5 text-[14px] font-semibold"
+    >
       {action}
     </Link>
   </div>
