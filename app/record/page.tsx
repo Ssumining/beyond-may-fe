@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, type ChangeEvent, useState } from "react";
 import Link from "next/link";
 
 import AppHeader from "@/components/layout/AppHeader";
@@ -9,6 +9,8 @@ import PlaceDetailSheet from "@/components/place-detail/PlaceDetailSheet";
 import Button from "@/components/ui/Button";
 import ChevronRight from "@/components/ui/icons/ChevronRight";
 import useGetVisitedPlacesQuery from "@/features/record/hooks/useGetVisitedPlacesQuery";
+import useUploadVisitPhotoMutation from "@/features/record/hooks/useUploadVisitPhotoMutation";
+import { cn } from "@/lib/cn";
 import {
   formatRecordDate,
   formatRecordTime,
@@ -46,9 +48,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
     : "ongoing";
   const isEmpty = state === "empty";
   const records = isEmpty ? [] : MOCK_TRAVEL_RECORDS;
-  const [selectedVisit, setSelectedVisit] = useState<VisitedPlaceRecord | null>(
-    null,
-  );
+  const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const {
     data: visitedPlacesData,
@@ -62,6 +62,9 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
           new Date(second.visitedAt).getTime() -
           new Date(first.visitedAt).getTime(),
       );
+  // 캐시에서 다시 찾아 파생 — 사진 업로드 후에도 최신 photoUrl을 그대로 반영한다
+  const selectedVisit =
+    visits.find((visit) => visit.visitId === selectedVisitId) ?? null;
   const mapMarkers: MapMarker[] = visits.slice(0, 5).map((place, index) => ({
     id: String(place.placeId),
     position: VISIT_COORDINATES[index] ?? VISIT_COORDINATES[0],
@@ -81,7 +84,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
         longitude: 126.9199,
         businessHours: null,
         description: "",
-        thumbnailUrl: selectedVisit.thumbnailUrl,
+        thumbnailUrl: selectedVisit.photoUrl ?? selectedVisit.thumbnailUrl,
       }
     : null;
 
@@ -247,13 +250,13 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
                 <li key={place.visitId}>
                   <button
                     type="button"
-                    onClick={() => setSelectedVisit(place)}
+                    onClick={() => setSelectedVisitId(place.visitId)}
                     className="border-neutral-03 flex min-h-18 w-full items-center gap-3 rounded-[18px] border bg-white p-3 text-left"
                   >
-                    {place.thumbnailUrl ? (
+                    {(place.photoUrl ?? place.thumbnailUrl) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={place.thumbnailUrl}
+                        src={place.photoUrl ?? place.thumbnailUrl ?? undefined}
                         alt=""
                         aria-hidden="true"
                         className="h-12 w-12 shrink-0 rounded-xl object-cover"
@@ -350,25 +353,22 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
         </section>
       )}
 
-      {selectedPlaceDetail && (
+      {selectedPlaceDetail && selectedVisit && (
         <div className="fixed inset-0 z-50">
           <div
             className="bg-neutral-07/35 absolute inset-0"
-            onClick={() => setSelectedVisit(null)}
+            onClick={() => setSelectedVisitId(null)}
             aria-hidden="true"
           />
           <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[430px]">
             <PlaceDetailSheet
               place={selectedPlaceDetail}
-              onClose={() => setSelectedVisit(null)}
+              onClose={() => setSelectedVisitId(null)}
               footer={
-                <Button
-                  size="lg"
-                  className="w-full"
-                  onClick={() => setSelectedVisit(null)}
-                >
-                  기록으로 돌아가기
-                </Button>
+                <VisitPhotoUploadFooter
+                  visit={selectedVisit}
+                  onDone={() => setSelectedVisitId(null)}
+                />
               }
             />
           </div>
@@ -414,5 +414,59 @@ const EmptyRecordState = ({
     </Link>
   </div>
 );
+
+interface VisitPhotoUploadFooterProps {
+  visit: VisitedPlaceRecord;
+  onDone: () => void;
+}
+
+const VisitPhotoUploadFooter = ({
+  visit,
+  onDone,
+}: VisitPhotoUploadFooterProps) => {
+  const { mutate, isPending, isError } = useUploadVisitPhotoMutation();
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    mutate({ visitId: visit.visitId, photo: file });
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      {isError && (
+        <p className="text-caution-02 text-center text-[12px]" role="alert">
+          사진을 업로드하지 못했어요. 다시 시도해 주세요.
+        </p>
+      )}
+      <label
+        className={cn(
+          "bg-neutral-07 text-neutral-01 flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 text-[15px] font-medium",
+          isPending && "pointer-events-none opacity-50",
+        )}
+      >
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          disabled={isPending}
+          onChange={handleFileChange}
+        />
+        {isPending && (
+          <span
+            aria-hidden="true"
+            className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+          />
+        )}
+        {visit.photoUrl ? "인증 사진 다시 올리기" : "인증 사진 업로드"}
+      </label>
+      <Button size="lg" className="w-full" onClick={onDone}>
+        기록으로 돌아가기
+      </Button>
+    </div>
+  );
+};
 
 export default RecordPage;

@@ -72,4 +72,41 @@ export const recordHandlers = [
       success: true,
     });
   }),
+
+  // TODO(백엔드 확인): 실제 저장 없이 objectURL로만 미리보기 — 새로고침하면 사라짐. (backend)
+  http.post(
+    `${BASE_URL}/api/v1/records/visits/:visitId/photo`,
+    async ({ params, request }) => {
+      const visitId = Number(params.visitId);
+      const formData = await request.formData();
+      const photo = formData.get("photo");
+
+      if (!(photo instanceof Blob)) {
+        return HttpResponse.json(
+          {
+            code: "RECORD400",
+            data: null,
+            message: "사진 파일을 확인해 주세요.",
+            success: false,
+          },
+          { status: 400 },
+        );
+      }
+
+      await delay(600);
+
+      const photoUrl = URL.createObjectURL(photo);
+      const visit = MOCK_VISITED_PLACES.find(
+        (item) => item.visitId === visitId,
+      );
+      if (visit) visit.photoUrl = photoUrl;
+
+      return HttpResponse.json({
+        code: "COMMON200",
+        data: { visitId, photoUrl },
+        message: "사진을 업로드했습니다.",
+        success: true,
+      });
+    },
+  ),
 ];
