@@ -91,7 +91,7 @@ const ShareSheet = ({
                 type="button"
                 onClick={onClose}
                 aria-label="닫기"
-                className="text-neutral-05 hover:bg-neutral-02 focus-visible:outline-primary-03 active:bg-neutral-03 flex h-11 w-11 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="text-neutral-05 focus-visible:outline-primary-03 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <Close className="h-5 w-5" />
               </button>
