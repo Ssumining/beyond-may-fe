@@ -1,11 +1,14 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import ChevronRight from "@/components/ui/icons/ChevronRight";
 import { postLogout } from "@/services/api/auth/authApi";
 import useSessionStore from "@/stores/sessionStore";
+import {
+  getResultTheme,
+  PREFERENCE_TYPE_LABEL,
+} from "@/features/onboarding/utils/resultTheme";
 import SidebarCodeAccordion from "./SidebarCodeAccordion";
 
 interface SidebarProfileMenuProps {
@@ -15,23 +18,6 @@ interface SidebarProfileMenuProps {
 
 const MENU_ITEM_CLASS =
   "flex min-h-14 w-full cursor-pointer items-center justify-between border-b border-neutral-02 py-4 text-[15px] font-medium text-neutral-07 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-03";
-const PREFERENCE_RESULT_KEY = "beyond-may-preference-result";
-
-const subscribePreferenceResult = (onStoreChange: () => void): (() => void) => {
-  window.addEventListener("storage", onStoreChange);
-  return () => window.removeEventListener("storage", onStoreChange);
-};
-
-const getSavedMbtiName = (): string | undefined => {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem(PREFERENCE_RESULT_KEY) ?? "null",
-    ) as { mbtiName?: unknown } | null;
-    return typeof saved?.mbtiName === "string" ? saved.mbtiName : undefined;
-  } catch {
-    return undefined;
-  }
-};
 
 /**
  * 사이드바 로그인 상태 콘텐츠 (프로필 메뉴).
@@ -39,17 +25,19 @@ const getSavedMbtiName = (): string | undefined => {
  * 마운트되므로 세션에 닉네임이 있다고 가정한다.
  */
 const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
-  const savedMbtiName = useSyncExternalStore(
-    subscribePreferenceResult,
-    getSavedMbtiName,
-    () => undefined,
-  );
   const nickname = useSessionStore((state) => state.nickname);
   const identificationCode = useSessionStore(
     (state) => state.identificationCode,
   );
+  const preferenceType = useSessionStore((state) => state.preferenceType);
   const clearSession = useSessionStore((state) => state.clearSession);
-  const displayedMbtiName = mbtiName ?? savedMbtiName;
+
+  // 성향 검사를 마쳤으면 유형별 아바타 이미지, 아니면 기존 단색 원.
+  const avatarImage = preferenceType
+    ? getResultTheme(preferenceType).image
+    : null;
+  const badgeLabel =
+    mbtiName ?? (preferenceType && PREFERENCE_TYPE_LABEL[preferenceType]);
 
   const handleLogout = async () => {
     await postLogout().catch(() => undefined);
@@ -60,17 +48,27 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3">
-        <div
-          className="bg-primary-06 h-16 w-16 shrink-0 rounded-full"
-          aria-hidden="true"
-        />
+        {avatarImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarImage}
+            alt=""
+            aria-hidden="true"
+            className="h-16 w-16 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div
+            className="bg-primary-06 h-16 w-16 shrink-0 rounded-full"
+            aria-hidden="true"
+          />
+        )}
         <div>
           <p className="text-neutral-07 text-[16px] font-semibold">
             {nickname}
           </p>
-          {displayedMbtiName && (
+          {badgeLabel && (
             <span className="bg-primary-06 text-neutral-01 mt-1 inline-block rounded-full px-2.5 py-1 text-[12px] font-medium">
-              {displayedMbtiName}
+              {badgeLabel}
             </span>
           )}
         </div>

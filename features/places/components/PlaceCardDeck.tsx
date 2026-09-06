@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 
 import { cn } from "@/lib/cn";
-import Button from "@/components/ui/Button";
 import CircleIconButton from "@/components/ui/CircleIconButton";
 import ImageIcon from "@/components/ui/icons/Image";
 import Undo from "@/components/ui/icons/Undo";
@@ -140,7 +139,7 @@ const PlaceCardDeck = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="bg-neutral-07 text-neutral-01 absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-medium whitespace-nowrap"
+              className="bg-neutral-07 text-neutral-01 shadow-soft absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-medium whitespace-nowrap"
             >
               <HeartFilled className="h-3.5 w-3.5" />
               담은 장소 {likedCount}개
@@ -217,10 +216,10 @@ const PlaceCardDeck = ({
                 transition={{ type: "spring", stiffness: 350, damping: 26 }}
                 style={{ zIndex: visiblePlaces.length - stackIndex }}
                 className={cn(
-                  "border-neutral-03 bg-neutral-02 focus-visible:outline-primary-03 absolute inset-0 overflow-hidden rounded-[40px] border shadow-[0_2px_8px_rgba(0,0,0,0.14)] focus-visible:outline-2 focus-visible:outline-offset-2",
+                  "border-neutral-03 bg-neutral-02 focus-visible:outline-primary-03 rounded-card absolute inset-0 overflow-hidden border focus-visible:outline-2 focus-visible:outline-offset-2",
                   isTop
-                    ? "cursor-grab active:cursor-grabbing"
-                    : "pointer-events-none",
+                    ? "shadow-strong cursor-grab active:cursor-grabbing"
+                    : "shadow-soft pointer-events-none",
                 )}
               >
                 {place.thumbnailUrl ? (
@@ -277,25 +276,21 @@ const PlaceCardDeck = ({
           aria-label="되돌리기"
           className="absolute left-0 h-11 w-11"
         />
-        <Button
+        <CircleIconButton
           icon={<Close className="h-6 w-6" />}
           onClick={() => commitSwipe("dislike")}
           disabled={!topPlace}
-          aria-label="현재 장소 넘기기"
-          className="flex-1"
-        >
-          넘기기
-        </Button>
-        <Button
+          aria-label="싫어요"
+          className="text-neutral-06 h-16 w-16"
+        />
+        <CircleIconButton
           icon={<HeartFilled className="h-6 w-6" />}
-          variant="solid"
+          variant="dark"
           onClick={() => commitSwipe("like")}
           disabled={!topPlace}
-          aria-label="현재 장소 담기"
-          className="flex-1"
-        >
-          담기
-        </Button>
+          aria-label="좋아요"
+          className="bg-location h-16 w-16"
+        />
       </div>
       <p className="text-neutral-04 mt-3 text-center text-[12px]">
         카드를 누르면 장소 정보를 자세히 볼 수 있어요.

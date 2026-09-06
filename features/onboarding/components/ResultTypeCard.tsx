@@ -35,7 +35,7 @@ const ResultTypeCard = ({ result }: ResultTypeCardProps) => {
           {/* 우표형 일러스트 (살짝 기울임). 배경이 흰 페이지라 유형색으로 톱니를 보이게 한다. */}
           <div className="relative aspect-3/4 w-[43%] shrink-0">
             <StampPhoto
-              src={mbtiImg}
+              src={mbtiImg || theme.image}
               alt={mbtiName}
               className="-rotate-2"
               paperColor={theme.accent}

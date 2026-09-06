@@ -53,8 +53,8 @@ const CourseTimelineItem = ({
       <motion.span
         layout
         className={cn(
-          "bg-neutral-07 text-neutral-01 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-medium transition-all",
-          isActive && "shadow-[0_0_0_3px_#DDDDDD]",
+          "bg-neutral-07 text-neutral-01 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs transition-all",
+          isActive && "shadow-[0_0_0_2px_var(--color-neutral-05)]",
         )}
       >
         {isVisited ? (
@@ -82,7 +82,7 @@ const CourseTimelineItem = ({
         <div className="flex items-center gap-2">
           <p
             className={cn(
-              "text-neutral-07 truncate text-[15px] font-semibold",
+              "text-neutral-07 truncate text-base font-medium",
               isVisited && "text-neutral-05 line-through",
             )}
           >

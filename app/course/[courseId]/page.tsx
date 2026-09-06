@@ -122,9 +122,7 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
         course={course}
         backHref={fromHub ? "/course" : "/places"}
         onDetailClick={() =>
-          router.push(
-            `/course/${courseId}/detail${fromHub ? "?from=hub" : ""}`,
-          )
+          router.push(`/course/${courseId}/detail${fromHub ? "?from=hub" : ""}`)
         }
         onConfirmClick={
           course.status === "DRAFT" ? () => setIsConfirmOpen(true) : undefined
@@ -132,9 +130,9 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
         onShareClick={isConfirmed ? () => setIsShareOpen(true) : undefined}
         onStartClick={isConfirmed ? () => setIsStartOpen(true) : undefined}
         onRedesignClick={
-          isConfirmed && course.summary.teamMemberCount === 1
-            ? () => router.push("/places")
-            : undefined
+          // TODO(#56 여파): 팀원 수(teamMemberCount)는 코스 응답에 없음(exploration 소관).
+          // 명세 3.3.1 "팀원 합류 전에만 재설계" 가드는 participants API 연결 후 복원.
+          isConfirmed ? () => router.push("/places") : undefined
         }
         isConfirming={isConfirming}
         hasConfirmError={hasConfirmError}
@@ -167,7 +165,10 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
           </Button>
         </div>
         {hasConfirmError && (
-          <p className="text-error mt-3 text-center text-[12px]" role="alert">
+          <p
+            className="text-caution-02 mt-3 text-center text-[12px]"
+            role="alert"
+          >
             코스를 확정하지 못했어요. 다시 시도해 주세요.
           </p>
         )}
@@ -184,7 +185,7 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
           공유 링크는 발급 시점부터 3일 동안 참여에 사용할 수 있어요.
         </p>
         <div className="border-neutral-03 bg-neutral-02 mt-4 overflow-hidden rounded-xl border px-4 py-3">
-          <p className="truncate text-[12px] text-neutral-06">
+          <p className="text-neutral-06 truncate text-[12px]">
             {typeof window !== "undefined"
               ? `${window.location.origin}/explore/${courseId}`
               : `/explore/${courseId}`}
@@ -224,8 +225,8 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
           현재 위치를 켜고 탐험할까요?
         </h2>
         <p className="text-neutral-04 mt-2 text-[13px] leading-[1.55]">
-          위치는 내 위치 표시, 팀원 공유, 100m 이내 방문 인증에만 사용해요.
-          권한 없이도 코스 미리보기는 가능합니다.
+          위치는 내 위치 표시, 팀원 공유, 100m 이내 방문 인증에만 사용해요. 권한
+          없이도 코스 미리보기는 가능합니다.
         </p>
         <div className="mt-5 flex flex-col gap-2">
           <Button

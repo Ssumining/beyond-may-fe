@@ -1,3 +1,5 @@
+import { cn } from "@/lib/cn";
+import ScrollIndicator from "@/components/ui/ScrollIndicator";
 import type { PreferenceQuestion } from "@/types/preference";
 
 import AnswerOption from "./AnswerOption";
@@ -7,20 +9,19 @@ interface QuizQuestionProps {
   question: PreferenceQuestion;
   /** 이 문항에서 고른 optionId (없으면 null) */
   selectedOptionId: number | null;
-  isSubmitting: boolean;
-  hasSubmitError: boolean;
+  /** 위로 스크롤할 수 있는 이전 문항이 있는지 (첫 문항은 ▲ 숨김) */
+  hasPrevious: boolean;
   onSelect: (optionId: number) => void;
 }
 
 /**
- * 성향 검사 문항 한 개.
+ * 성향 검사 문항 한 개 = scroll-snap 섹션 한 개(100dvh).
  * 답을 고르면 나머지 선택지가 dimmed로 흐려진다.
  */
 const QuizQuestion = ({
   question,
   selectedOptionId,
-  isSubmitting,
-  hasSubmitError,
+  hasPrevious,
   onSelect,
 }: QuizQuestionProps) => {
   const hasAnswered = selectedOptionId !== null;
@@ -31,9 +32,20 @@ const QuizQuestion = ({
   };
 
   return (
-    <section className="flex min-h-[calc(100dvh-84px)] flex-col px-6 pt-7 pb-[max(24px,env(safe-area-inset-bottom))]">
-      <div>
-        <h2 className="text-neutral-07 text-[26px] leading-[1.38] font-bold tracking-[-0.015em]">
+    <section
+      className={cn(
+        "flex min-h-[100dvh] snap-start flex-col px-6 pb-8",
+        "pt-16",
+      )}
+    >
+      {/* 이전 문항으로 올라가는 힌트 (첫 문항 제외). 진행률 바 바로 아래 */}
+      <div className="flex h-6 items-center justify-center">
+        {hasPrevious && <ScrollIndicator direction="up" />}
+      </div>
+
+      <div className="mt-16">
+        <p className="text-neutral-07 text-3xl font-bold">{question.order}.</p>
+        <h2 className="text-neutral-07 mt-3 text-lg leading-snug font-semibold">
           {question.text}
         </h2>
       </div>
@@ -44,28 +56,14 @@ const QuizQuestion = ({
             key={option.optionId}
             text={`${option.label}. ${option.text}`}
             state={getOptionState(option.optionId)}
-            disabled={isSubmitting}
             onSelect={() => onSelect(option.optionId)}
           />
         ))}
       </div>
 
-      <div className="mt-auto pt-8 text-center">
-        {hasSubmitError && (
-          <p
-            role="alert"
-            className="text-caution-02 mb-3 text-center text-[12px]"
-          >
-            결과를 만들지 못했어요. 다시 시도해 주세요.
-          </p>
-        )}
-        <p className="text-neutral-04 text-[12px]" role="status">
-          {isSubmitting
-            ? "결과를 만들고 있어요."
-            : hasAnswered
-              ? "선택을 저장했어요. 다음 질문으로 이동합니다."
-              : "답을 선택하면 다음 질문으로 자동 이동해요."}
-        </p>
+      {/* 답을 골랐을 때만 다음으로 내려가는 힌트 노출. 화면 맨 아래 */}
+      <div className="mt-auto flex h-8 items-end justify-center">
+        {hasAnswered && <ScrollIndicator direction="down" />}
       </div>
     </section>
   );

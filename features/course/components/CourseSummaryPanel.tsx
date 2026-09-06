@@ -1,16 +1,16 @@
 import Button from "@/components/ui/Button";
-import type { CourseDetailResponse, DurationType } from "@/types/course";
 
-/** 여행 기간 enum → 한글 표기 */
-const DURATION_LABELS: Record<DurationType, string> = {
+import type { CourseResponse, TravelSchedule } from "@/types/course";
+
+/** 여행 기간 enum → 한글 표기. collection 확인값(2종)만 확정.
+ *  TODO(백엔드): 2박3일·그이상 코드값 확정 시 추가 (release-design엔 TWO_NIGHTS_THREE_DAYS·CUSTOM 표기 있었음) */
+const TRAVEL_SCHEDULE_LABELS: Record<TravelSchedule, string> = {
   DAY_TRIP: "당일치기",
   ONE_NIGHT_TWO_DAYS: "1박 2일",
-  TWO_NIGHTS_THREE_DAYS: "2박 3일",
-  CUSTOM: "3박 이상",
 };
 
 interface CourseSummaryPanelProps {
-  course: CourseDetailResponse;
+  course: CourseResponse;
   onDetailClick?: () => void;
   onConfirmClick?: () => void;
   onShareClick?: () => void;
@@ -35,9 +35,9 @@ const CourseSummaryPanel = ({
   isConfirming = false,
   hasConfirmError = false,
 }: CourseSummaryPanelProps) => {
-  const { title, durationType, summary, places } = course;
+  const { title, travelSchedule, places } = course;
   const firstPlaceName = places[0]?.name ?? "";
-  const meta = `${summary.totalPlaceCount}곳 · ${DURATION_LABELS[durationType]}${
+  const meta = `${places.length}곳 · ${TRAVEL_SCHEDULE_LABELS[travelSchedule]}${
     firstPlaceName ? ` · ${firstPlaceName}부터` : ""
   }`;
 
@@ -89,6 +89,7 @@ const CourseSummaryPanel = ({
           </Button>
         )}
       </div>
+
       {onRedesignClick && (
         <button
           type="button"
@@ -98,8 +99,12 @@ const CourseSummaryPanel = ({
           팀원이 합류하기 전 코스 다시 설계
         </button>
       )}
+
       {hasConfirmError && (
-        <p className="text-error mt-3 text-center text-[12px]" role="alert">
+        <p
+          className="text-caution-02 mt-3 text-center text-[12px]"
+          role="alert"
+        >
           코스를 확정하지 못했어요. 다시 시도해 주세요.
         </p>
       )}

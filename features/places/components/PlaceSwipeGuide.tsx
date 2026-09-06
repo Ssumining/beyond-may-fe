@@ -2,6 +2,7 @@
 
 import AppHeader from "@/components/layout/AppHeader";
 import Button from "@/components/ui/Button";
+import CircleIconButton from "@/components/ui/CircleIconButton";
 import ArrowRight from "@/components/ui/icons/ArrowRight";
 import Close from "@/components/ui/icons/Close";
 import HeartFilled from "@/components/ui/icons/HeartFilled";
@@ -47,8 +48,16 @@ const PlaceSwipeGuide = ({
           <ArrowRight className="text-neutral-04 h-5 w-5 rotate-180 opacity-50" />
 
           <div className="relative h-28 w-22.5">
-            <div className="bg-neutral-07/20 absolute inset-0 -translate-x-1.5 translate-y-1 rounded-2xl" />
-            <div className="border-neutral-07 motion-safe:animate-card-sway absolute inset-0 rounded-2xl border-2 bg-white" />
+            <div className="bg-neutral-07/20 rounded-card absolute inset-0 -translate-x-1.5 translate-y-1" />
+            <div className="border-neutral-07 bg-neutral-01 shadow-soft rounded-card motion-safe:animate-card-sway absolute inset-0 overflow-hidden border-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/place.jpg"
+                alt=""
+                aria-hidden="true"
+                className="h-full w-full scale-175 object-cover object-[center_42%]"
+              />
+            </div>
           </div>
 
           <ArrowRight className="text-neutral-07 h-5 w-5" />
@@ -60,23 +69,18 @@ const PlaceSwipeGuide = ({
           나중에 볼 장소는 왼쪽으로 넘겨요.
         </p>
 
-        <div className="mt-8 flex items-center gap-8" aria-hidden="true">
-          <div className="flex flex-col items-center gap-2">
-            <span className="border-neutral-03 flex h-12 w-12 items-center justify-center rounded-full border bg-white">
-              <Close className="h-5 w-5" />
-            </span>
-            <span className="text-neutral-04 text-[12px] font-medium">
-              넘기기
-            </span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <span className="bg-neutral-07 text-neutral-01 flex h-12 w-12 items-center justify-center rounded-full">
-              <HeartFilled className="h-5 w-5" />
-            </span>
-            <span className="text-neutral-07 text-[12px] font-medium">
-              담기
-            </span>
-          </div>
+        <div className="mt-8 flex items-center gap-6">
+          <CircleIconButton
+            icon={<Close className="h-6 w-6" />}
+            aria-label="싫어요"
+            className="text-neutral-06 h-16 w-16"
+          />
+          <CircleIconButton
+            icon={<HeartFilled className="h-6 w-6" />}
+            variant="dark"
+            aria-label="좋아요"
+            className="bg-location h-16 w-16"
+          />
         </div>
       </div>
 

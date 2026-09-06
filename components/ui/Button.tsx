@@ -15,10 +15,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  outline:
-    "border-neutral-07 bg-transparent text-neutral-07 border hover:bg-neutral-02 active:bg-neutral-03 disabled:border-neutral-03 disabled:bg-transparent disabled:text-neutral-04",
-  solid:
-    "bg-neutral-07 text-neutral-01 hover:bg-neutral-06 active:bg-neutral-06 disabled:bg-neutral-03 disabled:text-neutral-04",
+  outline: "border-neutral-07 text-neutral-07 border",
+  solid: "bg-neutral-07 text-neutral-01",
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
@@ -46,7 +44,7 @@ const Button = ({
     disabled={disabled || isLoading}
     aria-busy={isLoading || undefined}
     className={cn(
-      "focus-visible:outline-primary-03 flex cursor-pointer items-center justify-center gap-2 rounded-full leading-none font-medium transition-[background-color,border-color,color,transform] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100",
+      "flex cursor-pointer items-center justify-center gap-2 rounded-full font-medium disabled:cursor-not-allowed disabled:opacity-50",
       VARIANT_CLASS[variant],
       SIZE_CLASS[size],
       className,

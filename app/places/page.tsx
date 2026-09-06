@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import ImageIcon from "@/components/ui/icons/Image";
 import useGenerateCourseMutation from "@/features/course/hooks/useGenerateCourseMutation";
 import PlaceCardDeck from "@/features/places/components/PlaceCardDeck";
 import PlaceSwipeGuide from "@/features/places/components/PlaceSwipeGuide";
+import TravelPeriodScreen from "@/features/places/components/TravelPeriodScreen";
 import useGetPlaceDetailQuery from "@/features/places/hooks/useGetPlaceDetailQuery";
 import useGetPlaceRecommendationsQuery from "@/features/places/hooks/useGetPlaceRecommendationsQuery";
 import {
@@ -43,9 +44,9 @@ const GUIDE_KEY = "beyond-may-swipe-guide-seen";
 const readDraft = (): PlacesDraft | null => {
   if (typeof window === "undefined") return null;
   try {
-    const value = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null") as
-      | Partial<PlacesDraft>
-      | null;
+    const value = JSON.parse(
+      localStorage.getItem(DRAFT_KEY) ?? "null",
+    ) as Partial<PlacesDraft> | null;
     if (
       !value ||
       !TRAVEL_SCHEDULE_OPTIONS.some(({ id }) => id === value.travelSchedule) ||
@@ -62,7 +63,15 @@ const readDraft = (): PlacesDraft | null => {
   }
 };
 
-/** 기능명세 2.1~2.3의 기간 설정·추천·선택 관리 흐름. */
+/**
+ * 장소 선택 화면 (기능명세 2.1.1~2.1.3).
+ * 닉네임/세션 등록 완료 후 진입, 여행 기간 선택 → 스와이프 안내 → 추천 장소
+ * 카드덱 순서로 진행한다. 좋아요는 우측 스와이프/하트, 싫어요는 좌측 스와이프/X,
+ * 직전 1건 되돌리기를 지원한다.
+ *
+ * TODO(백엔드 확인): 좋아요한 장소 목록을 서버에 저장하는 API 미확정 —
+ *   우선 클라이언트 상태로만 관리. (backend)
+ */
 export default function PlacesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -239,10 +248,7 @@ export default function PlacesPage() {
     setStep("deck");
   };
 
-  const handleOpenDetail = (
-    placeId: number,
-    source: DetailSource,
-  ): void => {
+  const handleOpenDetail = (placeId: number, source: DetailSource): void => {
     setDetailSource(source);
     setSelectedPlaceId(placeId);
   };
@@ -416,12 +422,12 @@ export default function PlacesPage() {
                 <p className="text-primary-08 text-[12px] font-semibold tracking-[0.08em]">
                   {selectionReady ? "장소 선택 완료" : "추천 확인 완료"}
                 </p>
-                <h1 className="text-neutral-07 mt-3 whitespace-pre-line text-[24px] leading-[1.35] font-bold">
+                <h1 className="text-neutral-07 mt-3 text-[24px] leading-[1.35] font-bold whitespace-pre-line">
                   {selectionReady
                     ? "가고 싶은 장소를\n모두 확인했어요"
                     : "더 이상 추천할\n장소가 없어요"}
                 </h1>
-                <p className="text-neutral-04 mt-3 whitespace-pre-line text-[14px] leading-[1.55]">
+                <p className="text-neutral-04 mt-3 text-[14px] leading-[1.55] whitespace-pre-line">
                   {selectionReady
                     ? `${likedPlaceIds.size}곳을 코스에 담았어요.`
                     : `${minimumSelectionCount - likedPlaceIds.size}곳을 더 골라야 코스를 만들 수 있어요.\n기간을 줄이거나 선택을 다시 확인해 주세요.`}
@@ -603,132 +609,6 @@ export default function PlacesPage() {
     </main>
   );
 }
-
-interface TravelPeriodScreenProps {
-  travelSchedule: DurationType;
-  startDate: string;
-  endDate: string;
-  today: string;
-  isValid: boolean;
-  selectedCount: number;
-  onScheduleChange: (value: DurationType) => void;
-  onStartDateChange: (value: string) => void;
-  onEndDateChange: (value: string) => void;
-  onNext: () => void;
-  onOpenMenu: () => void;
-  sidebar: ReactNode;
-}
-
-const TravelPeriodScreen = ({
-  travelSchedule,
-  startDate,
-  endDate,
-  today,
-  isValid,
-  selectedCount,
-  onScheduleChange,
-  onStartDateChange,
-  onEndDateChange,
-  onNext,
-  onOpenMenu,
-  sidebar,
-}: TravelPeriodScreenProps) => (
-  <main className="bg-neutral-01 mx-auto min-h-dvh w-full max-w-[430px] pb-[max(28px,env(safe-area-inset-bottom))]">
-    <AppHeader
-      backHref="/onboarding/result"
-      onOpenMenu={onOpenMenu}
-      centerLabel="여행 기간"
-    />
-    <section className="px-6 pt-7">
-      <p className="text-primary-08 text-[12px] font-semibold tracking-[0.12em]">
-        PLAN YOUR DAYS
-      </p>
-      <h1 className="text-neutral-07 mt-2 text-[30px] leading-[1.25] font-bold">
-        광주에 얼마나
-        <br />
-        머무르나요?
-      </h1>
-      <p className="text-neutral-04 mt-3 text-[14px] leading-[1.6]">
-        기간에 맞춰 운영시간과 이동 거리를 고려한 장소를 골라드려요.
-      </p>
-
-      <fieldset className="mt-7 grid grid-cols-2 gap-3">
-        <legend className="sr-only">여행 기간 선택</legend>
-        {TRAVEL_SCHEDULE_OPTIONS.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            aria-pressed={travelSchedule === option.id}
-            onClick={() => onScheduleChange(option.id)}
-            className={`min-h-24 rounded-[20px] border p-4 text-left transition-colors ${
-              travelSchedule === option.id
-                ? "border-primary-08 bg-primary-04"
-                : "border-neutral-03 bg-white"
-            }`}
-          >
-            <span className="text-neutral-07 block text-[16px] font-semibold">
-              {option.label}
-            </span>
-            <span className="text-neutral-04 mt-2 block text-[12px]">
-              권장 {option.recommendation}
-            </span>
-          </button>
-        ))}
-      </fieldset>
-
-      <div className="border-neutral-03 mt-7 rounded-[20px] border bg-white p-5">
-        <h2 className="text-neutral-07 text-[15px] font-semibold">
-          여행 날짜
-        </h2>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <label className="text-neutral-04 text-[12px]">
-            시작일
-            <input
-              type="date"
-              min={today}
-              value={startDate}
-              onChange={(event) => onStartDateChange(event.target.value)}
-              className="border-neutral-03 text-neutral-07 mt-1.5 min-h-12 w-full rounded-xl border bg-white px-3 text-[13px]"
-            />
-          </label>
-          <label className="text-neutral-04 text-[12px]">
-            종료일
-            <input
-              type="date"
-              min={startDate || today}
-              value={endDate}
-              disabled={travelSchedule !== "CUSTOM"}
-              onChange={(event) => onEndDateChange(event.target.value)}
-              className="border-neutral-03 text-neutral-07 disabled:bg-neutral-02 mt-1.5 min-h-12 w-full rounded-xl border bg-white px-3 text-[13px] disabled:opacity-100"
-            />
-          </label>
-        </div>
-        {!isValid && (
-          <p className="text-caution-02 mt-3 text-[12px]" role="alert">
-            과거 날짜는 선택할 수 없으며, ‘그 이상’은 3박 이상이어야 해요.
-          </p>
-        )}
-      </div>
-
-      {selectedCount > 0 && (
-        <p className="bg-primary-04 text-primary-08 mt-4 rounded-xl px-4 py-3 text-[12px]">
-          기간을 바꿔도 이미 고른 {selectedCount}곳은 유지돼요. 새 최소 개수만
-          다시 확인해 주세요.
-        </p>
-      )}
-      <Button
-        variant="solid"
-        size="lg"
-        className="mt-6 w-full"
-        disabled={!isValid}
-        onClick={onNext}
-      >
-        다음 · 장소 고르기
-      </Button>
-    </section>
-    {sidebar}
-  </main>
-);
 
 interface SelectionModalProps {
   open: boolean;

@@ -68,7 +68,11 @@ const ShareRecordCard = forwardRef<HTMLDivElement, ShareRecordCardProps>(
         {/* 우표 사진 + 유형명 */}
         <div className="flex items-end gap-4">
           <div className="relative aspect-3/4 w-[38%] shrink-0">
-            <StampPhoto src={mbtiImg} alt={mbtiName} className="-rotate-6" />
+            <StampPhoto
+              src={mbtiImg || theme.image}
+              alt={mbtiName}
+              className="-rotate-6"
+            />
             <div className="border-neutral-01 absolute -top-3 -right-4 flex h-11 w-11 -rotate-13 flex-col items-center justify-center rounded-full border-2">
               <span className="text-neutral-01 text-[8px] leading-none font-bold">
                 光州

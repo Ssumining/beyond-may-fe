@@ -7,10 +7,10 @@ import AppHeader from "@/components/layout/AppHeader";
 import CourseListFallback from "@/features/course/components/CourseListFallback";
 import CourseSummaryPanel from "@/features/course/components/CourseSummaryPanel";
 import { getCourseMapData } from "@/features/course/utils/courseMapAdapter";
-import type { CourseDetailResponse } from "@/types/course";
+import type { CourseResponse } from "@/types/course";
 
 interface CourseMapViewProps {
-  course: CourseDetailResponse;
+  course: CourseResponse;
   backHref?: string;
   onDetailClick?: () => void;
   onConfirmClick?: () => void;
@@ -48,6 +48,7 @@ const CourseMapView = ({
         centerLabel="추천 코스"
         className="pointer-events-none absolute inset-x-0 top-0 z-30 [&_a]:pointer-events-auto [&_a]:bg-white [&_a]:shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
       />
+
       <div className="relative flex-1 overflow-y-auto">
         {hasMapError ? (
           <CourseListFallback
@@ -63,6 +64,7 @@ const CourseMapView = ({
           />
         )}
       </div>
+
       <CourseSummaryPanel
         course={course}
         onDetailClick={onDetailClick}

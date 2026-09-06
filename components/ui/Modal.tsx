@@ -43,7 +43,7 @@ const Modal = ({ open, onClose, children, className }: ModalProps) => {
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ type: "tween", duration: 0.15 }}
             className={cn(
-              "relative w-full max-w-[342px] rounded-[20px] bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.22)] focus:outline-none",
+              "shadow-strong relative w-full max-w-85.5 rounded-[20px] bg-white p-6 focus:outline-none",
               className,
             )}
           >
