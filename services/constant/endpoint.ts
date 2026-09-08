@@ -52,4 +52,11 @@ export const API_ENDPOINTS = {
     locationSharing: (explorationId: string) =>
       `/api/v1/explorations/${explorationId}/participants/me/location-sharing`,
   },
+  record: {
+    // TODO(백엔드 확인): 경로·페이지네이션 여부 미확정. (backend)
+    /** 내 방문 장소 목록 조회 (장소×사용자 단위, 여행 기록 화면) */
+    visits: "/api/v1/records/visits",
+    /** 방문 장소 인증 사진 업로드 */
+    visitPhoto: (visitId: number) => `/api/v1/records/visits/${visitId}/photo`,
+  },
 } as const;

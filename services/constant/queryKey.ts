@@ -29,4 +29,8 @@ export const QUERY_KEYS = {
     STATUS: (explorationId: string) =>
       [...QUERY_KEYS.EXPLORATION.ALL, "status", explorationId] as const,
   },
+  RECORD: {
+    ALL: ["record"] as const,
+    VISITS: () => [...QUERY_KEYS.RECORD.ALL, "visits"] as const,
+  },
 } as const;
