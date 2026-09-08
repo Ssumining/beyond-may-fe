@@ -10,6 +10,8 @@ export const QUERY_KEYS = {
     LIST: () => [...QUERY_KEYS.COURSE.ALL, "list"] as const,
     DETAIL: (courseId: string) =>
       [...QUERY_KEYS.COURSE.ALL, "detail", courseId] as const,
+    DRAFT: (courseId: string) =>
+      [...QUERY_KEYS.COURSE.ALL, "draft", courseId] as const,
   },
   PLACE: {
     ALL: ["place"] as const,
