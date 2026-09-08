@@ -9,6 +9,8 @@ import Modal from "@/components/ui/Modal";
 import CourseMapView from "@/features/course/components/CourseMapView";
 import useConfirmCourseMutation from "@/features/course/hooks/useConfirmCourseMutation";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
+import useStartExplorationMutation from "@/features/explore/hooks/useStartExplorationMutation";
+import useSessionStore from "@/stores/sessionStore";
 
 interface CoursePageProps {
   params: Promise<{ courseId: string }>;
@@ -40,6 +42,9 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
     isError: hasConfirmError,
   } = useConfirmCourseMutation();
 
+  const { mutate: startExploration } = useStartExplorationMutation();
+  const explorationId = useSessionStore((state) => state.explorationId);
+
   const handleConfirmCourse = () => {
     confirmCourse(courseId, {
       onSuccess: () => {
@@ -57,15 +62,23 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
   };
 
   const handleStart = (requestLocation: boolean): void => {
+    // explorationId는 확정 직후 세션에 저장됨(persist). 다른 기기·스토리지 클리어 시 없을 수 있음.
+    // TODO(백엔드): 확정 코스 조회 응답에 explorationId 포함되면 그 값으로 보완.
+    if (explorationId === null) return;
+
+    const goToExplore = () =>
+      startExploration(String(explorationId), {
+        onSuccess: () => router.push(`/explore/${courseId}?stage=ongoing`),
+      });
+
     if (requestLocation && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        () => router.push(`/explore/${courseId}?stage=ongoing`),
-        () => router.push(`/explore/${courseId}?stage=ongoing`),
-        { enableHighAccuracy: true, timeout: 8000 },
-      );
+      navigator.geolocation.getCurrentPosition(goToExplore, goToExplore, {
+        enableHighAccuracy: true,
+        timeout: 8000,
+      });
       return;
     }
-    router.push(`/explore/${courseId}?stage=preview`);
+    goToExplore();
   };
 
   if (isLoading) {
