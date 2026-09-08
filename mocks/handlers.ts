@@ -8,6 +8,7 @@ import { participantHandlers } from "./participantHandlers";
 import { explorationStatusHandlers } from "./explorationStatusHandlers";
 import { joinHandlers } from "./joinHandlers";
 import { locationSharingHandlers } from "./locationSharingHandlers";
+import { recordHandlers } from "./recordHandlers";
 
 export const handlers = [
   ...preferenceHandlers,
@@ -20,4 +21,5 @@ export const handlers = [
   ...explorationStatusHandlers,
   ...joinHandlers,
   ...locationSharingHandlers,
+  ...recordHandlers,
 ];
