@@ -74,7 +74,7 @@ const SharedResultPage = async ({ params }: SharedResultPageProps) => {
           SHARED TRAVEL TYPE
         </p>
         <div
-          className="mt-4 overflow-hidden rounded-[32px] p-7 shadow-[0_16px_48px_rgba(20,20,20,0.12)]"
+          className="motion-safe:animate-card-pendulum mt-4 origin-bottom overflow-hidden rounded-[32px] p-7 shadow-[0_16px_48px_rgba(20,20,20,0.12)]"
           style={{
             background: `linear-gradient(135deg, ${theme.gradientFrom}, ${theme.gradientTo})`,
           }}
@@ -104,7 +104,7 @@ const SharedResultPage = async ({ params }: SharedResultPageProps) => {
               </span>
             ))}
           </div>
-          <p className={cn(text, "mt-8 text-[15px] leading-[1.7]")}>
+          <p className={cn(text, "mt-4 text-[15px] leading-[1.7]")}>
             {result.description}
           </p>
         </div>

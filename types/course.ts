@@ -91,14 +91,40 @@ export interface CourseListResponse {
   courses: CourseResponse[];
 }
 
-/* ── 코스 수정 (3.2 / 9·10번, 먼 작업) ──
-   TODO(9·10번): release 구조는 collection과 다름. 해당 단계에서 재정의.
+/* ── 코스 수정 (3.2 / 9·10번) — collection 실측 기준 ──
    - 직접수정(10번): PUT /courses/{id}/places, body { places:[{placeId,dayNumber,visitOrder}] }
-   - AI수정(9번): POST /courses/{id}/chat → { type, message, proposedPlaces, recommendations, remainingRevisions }
-                 + POST /courses/{id}/chat/apply
-   아래는 지금 통과용 최소 정의. */
-export interface RefineCourseRequest {
+   - AI수정(9번): POST /courses/{id}/chat → ChatCourseResponse (저장 안 됨, 미리보기만)
+                 + POST /courses/{id}/chat/apply, body { places:[...] } → 저장 */
+export interface ChatCourseRequest {
   message: string;
+}
+
+/** AI 챗봇 응답 종류 — 순서 재배치 제안(COURSE_REVISION) vs 추가할 장소 추천(ADD_RECOMMENDATION) */
+export type CourseChatType = "COURSE_REVISION" | "ADD_RECOMMENDATION";
+
+/** ADD_RECOMMENDATION일 때의 추천 장소 하나 — CoursePlace보다 필드가 적고 reason이 추가됨 */
+export interface CourseChatRecommendation {
+  placeId: number;
+  name: string;
+  category: string;
+  travelMbtiType: TravelMbtiType;
+  address: string;
+  latitude: number;
+  longitude: number;
+  /** AI가 이 장소를 추천한 이유 */
+  reason: string;
+}
+
+export interface ChatCourseResponse {
+  type: CourseChatType;
+  /** AI의 자연어 설명 */
+  message: string;
+  /** type이 COURSE_REVISION일 때만 채워짐(그 외엔 빈 배열) */
+  proposedPlaces: CoursePlace[];
+  /** type이 ADD_RECOMMENDATION일 때만 채워짐(그 외엔 빈 배열) */
+  recommendations: CourseChatRecommendation[];
+  /** 남은 AI 수정 요청 횟수(최대 2회) */
+  remainingRevisions: number;
 }
 
 export interface UpdateCourseRequest {
