@@ -1,13 +1,15 @@
 import { useMutation } from "@tanstack/react-query";
 import { postJoin } from "@/services/api/exploration/explorationApi";
+import useSessionStore from "@/stores/sessionStore";
 
-/**
- * 공유 링크로 탐험에 합류 (4.1.1).
- * courseId로 합류하고, 응답의 explorationId로 이후 탐험 API 호출.
- */
-const useJoinMutation = () =>
-  useMutation({
+const useJoinMutation = () => {
+  const setExplorationId = useSessionStore((state) => state.setExplorationId);
+  return useMutation({
     mutationFn: (courseId: string) => postJoin(courseId),
+    onSuccess: (data) => {
+      setExplorationId(data.explorationId); // 합류 응답 explorationId 저장
+    },
   });
+};
 
 export default useJoinMutation;

@@ -7,6 +7,7 @@ const useGetExplorationStatusQuery = (explorationId: string) =>
   useQuery({
     queryKey: QUERY_KEYS.EXPLORATION.STATUS(explorationId),
     queryFn: () => getExplorationStatus(explorationId),
+    enabled: explorationId.length > 0, // 추가
   });
 
 export default useGetExplorationStatusQuery;
