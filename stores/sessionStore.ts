@@ -14,6 +14,8 @@ interface SessionState {
   explorationId: number | null;
   setSession: (nickname: string, identificationCode: number) => void;
   setPreferenceType: (preferenceType: PreferenceType) => void;
+  /** 닉네임 등록 없이 결과 화면을 나가는 경우 등, 성향 결과를 포기할 때 사용 */
+  clearPreferenceType: () => void;
   setExplorationId: (explorationId: number) => void;
   clearSession: () => void;
 }
@@ -30,6 +32,7 @@ const useSessionStore = create<SessionState>()(
       setSession: (nickname, identificationCode) =>
         set({ nickname, identificationCode, isLoggedIn: true }),
       setPreferenceType: (preferenceType) => set({ preferenceType }),
+      clearPreferenceType: () => set({ preferenceType: null }),
       setExplorationId: (explorationId) => set({ explorationId }),
       clearSession: () =>
         set({
