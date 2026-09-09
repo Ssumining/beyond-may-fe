@@ -140,6 +140,7 @@ const TravelPeriodScreen = ({
           startDate={startDate}
           endDate={endDate}
           min={today}
+          maxRangeDays={5}
           onConfirm={({ startDate: nextStart, endDate: nextEnd }) => {
             // 실제로 고른 기간이 "그 이상"(3박+) 기준에 못 미치면(당일치기/
             // 1박2일/2박3일에 해당하는 짧은 기간) 그 기간에 맞는 버튼으로

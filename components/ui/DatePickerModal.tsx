@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  addDays,
   addMonths,
   differenceInCalendarDays,
   eachDayOfInterval,
@@ -52,6 +53,8 @@ interface RangeDatePickerModalProps extends DatePickerModalBaseProps {
   /** YYYY-MM-DD */
   endDate: string;
   onConfirm: (range: { startDate: string; endDate: string }) => void;
+  /** 시작일 포함 최대 며칠까지 선택 가능한지 (N박 M일의 M). 없으면 제한 없음 */
+  maxRangeDays?: number;
 }
 
 type DatePickerModalProps =
@@ -119,7 +122,16 @@ const DatePickerModal = (props: DatePickerModalProps) => {
     return eachDayOfInterval({ start: gridStart, end: gridEnd });
   }, [viewMonth]);
 
-  const isDisabled = (day: Date) => !!minDate && isBefore(day, minDate);
+  // 종료일을 고르는 동안(시작만 있고 끝은 아직 없을 때)만 상한을 적용한다 —
+  // 이미 완성된 기간을 다시 찍기 시작하면(새 시작일) 상한도 그 시작일 기준으로 다시 계산된다.
+  const maxEndDate =
+    props.mode === "range" && props.maxRangeDays && pendingStart && !pendingEnd
+      ? addDays(pendingStart, props.maxRangeDays - 1)
+      : null;
+
+  const isDisabled = (day: Date) =>
+    (!!minDate && isBefore(day, minDate)) ||
+    (!!maxEndDate && isAfter(day, maxEndDate));
 
   const handleSelectDay = (day: Date) => {
     if (isDisabled(day)) return;
