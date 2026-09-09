@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
@@ -9,11 +9,19 @@ import Button from "@/components/ui/Button";
 import CourseTimeline from "@/features/course/components/CourseTimeline";
 import useGetPlaceRecommendationsQuery from "@/features/places/hooks/useGetPlaceRecommendationsQuery";
 import { getMinimumSelectionCount } from "@/features/places/utils/travelSchedule";
-import { moveCoursePlace } from "@/features/course/utils/reorderCoursePlaces";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
-import { patchCourse, postCourseRefine } from "@/services/api/course/courseApi";
+import {
+  postCourseAddPlace,
+  postCourseChat,
+  postCourseChatApply,
+  putCoursePlaces,
+} from "@/services/api/course/courseApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
-import type { CourseResponse, CoursePlace } from "@/types/course";
+import type {
+  CourseResponse,
+  CoursePlace,
+  CourseChatRecommendation,
+} from "@/types/course";
 
 type EditMode = "ai" | "manual";
 
@@ -34,76 +42,139 @@ const SUGGESTIONS = [
   "역사 장소를 먼저 둘러보게 해줘",
 ];
 
+const NEW_PLACE_DEFAULTS = {
+  // TODO(#56 여파): 추천 목록엔 좌표·주소가 없음(PlaceRecommendationResponse).
+  // 실제 위치는 장소 상세 조회 연동 후 채워야 함 — 임시로 광주 중심 좌표 사용.
+  address: "장소 상세에서 확인",
+  latitude: 35.1469,
+  longitude: 126.9199,
+  estimatedStayMinutes: 60,
+  travelModeFromPrevious: null,
+} as const;
+
 const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<EditMode>(initialMode);
-  const [title, setTitle] = useState(course.title);
   const [places, setPlaces] = useState(() =>
     [...course.places].sort((a, b) => a.visitOrder - b.visitOrder),
   );
   const [instruction, setInstruction] = useState("");
-  const [refineCount, setRefineCount] = useState(0);
+  const [chatMessage, setChatMessage] = useState<string | null>(null);
+  const [chatRecommendations, setChatRecommendations] = useState<
+    CourseChatRecommendation[]
+  >([]);
+  const [remainingRevisions, setRemainingRevisions] = useState(2);
   const [hasRefinedPreview, setHasRefinedPreview] = useState(false);
   const [history, setHistory] = useState<CoursePlace[][]>([]);
-  const [isAddingPlace, setIsAddingPlace] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [isAddPlaceOpen, setIsAddPlaceOpen] = useState(false);
+  const [addPlaceQuery, setAddPlaceQuery] = useState("");
+  const [selectedNewPlaceIds, setSelectedNewPlaceIds] = useState<Set<number>>(
+    new Set(),
+  );
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const { data: recommendations = [] } = useGetPlaceRecommendationsQuery();
   const minimumPlaceCount = getMinimumSelectionCount(course.travelSchedule);
   const availablePlaces = recommendations.filter(
-    (place) => !places.some(({ placeId }) => placeId === place.placeId),
+    (place) =>
+      !places.some(({ placeId }) => placeId === place.placeId) &&
+      (addPlaceQuery.trim() === "" ||
+        place.name.includes(addPlaceQuery.trim())),
   );
 
-  const refineMutation = useMutation({
+  // 되돌리기·최소 개수 안내를 하단에 잠깐 띄우는 토스트 (PlaceCardDeck의 담은 장소 토스트와 동일 패턴)
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 2000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  const handleSaveSuccess = (updatedCourse: CourseResponse): void => {
+    queryClient.setQueryData(
+      QUERY_KEYS.COURSE.DETAIL(String(course.courseId)),
+      updatedCourse,
+    );
+    void queryClient.invalidateQueries({
+      queryKey: QUERY_KEYS.COURSE.LIST(),
+    });
+    router.push(
+      `/course/${course.courseId}/detail${fromHub ? "?from=hub" : ""}`,
+    );
+  };
+
+  const toPlacesPayload = () =>
+    places.map((place, index) => ({
+      placeId: place.placeId,
+      dayNumber: place.dayNumber,
+      visitOrder: index + 1,
+    }));
+
+  const chatMutation = useMutation({
     mutationFn: () =>
-      postCourseRefine(String(course.courseId), {
+      postCourseChat(String(course.courseId), {
         message: instruction.trim(),
       }),
-    onSuccess: (refinedCourse) => {
-      setTitle(refinedCourse.title);
-      setPlaces(
-        [...refinedCourse.places].sort((a, b) => a.visitOrder - b.visitOrder),
-      );
-      setHasRefinedPreview(true);
+    onSuccess: (result) => {
+      setChatMessage(result.message);
+      setRemainingRevisions(result.remainingRevisions);
+      if (result.type === "COURSE_REVISION") {
+        setPlaces(
+          [...result.proposedPlaces].sort(
+            (a, b) => a.visitOrder - b.visitOrder,
+          ),
+        );
+        setHasRefinedPreview(true);
+        setChatRecommendations([]);
+      } else {
+        setChatRecommendations(result.recommendations);
+        setHasRefinedPreview(false);
+      }
     },
-    onSettled: () => setRefineCount((count) => count + 1),
   });
 
-  // TODO(#56 여파): UpdateCourseRequest엔 title 필드가 없음(collection PUT
-  // /courses/{id}/places 기준, 장소 순서만 저장). 코스명 저장은 별도 계약 확정 후 연결.
-  const saveMutation = useMutation({
+  const chatApplyMutation = useMutation({
     mutationFn: () =>
-      patchCourse(String(course.courseId), {
-        places: places.map((place, index) => ({
-          placeId: place.placeId,
-          dayNumber: place.dayNumber,
-          visitOrder: index + 1,
-        })),
+      postCourseChatApply(String(course.courseId), {
+        places: toPlacesPayload(),
       }),
-    onSuccess: (updatedCourse) => {
+    onSuccess: handleSaveSuccess,
+  });
+
+  const manualSaveMutation = useMutation({
+    mutationFn: () =>
+      putCoursePlaces(String(course.courseId), {
+        places: toPlacesPayload(),
+      }),
+    onSuccess: handleSaveSuccess,
+  });
+
+  /** 챗봇이 추천한 장소를 즉시 코스에 추가한다(저장까지 바로 반영). */
+  const addPlaceMutation = useMutation({
+    mutationFn: (placeId: number) =>
+      postCourseAddPlace(String(course.courseId), placeId),
+    onSuccess: (updatedCourse, placeId) => {
+      setPlaces(
+        [...updatedCourse.places].sort((a, b) => a.visitOrder - b.visitOrder),
+      );
       queryClient.setQueryData(
         QUERY_KEYS.COURSE.DETAIL(String(course.courseId)),
         updatedCourse,
       );
-      void queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.COURSE.LIST(),
-      });
-      router.push(
-        `/course/${course.courseId}/detail${fromHub ? "?from=hub" : ""}`,
+      setChatRecommendations((current) =>
+        current.filter((place) => place.placeId !== placeId),
       );
     },
   });
 
-  const handleMove = (index: number, direction: -1 | 1) => {
-    setPlaces((current) => {
-      const next = moveCoursePlace(current, index, direction);
-      setHistory((items) => [...items, current]);
-      return next;
-    });
-  };
+  const activeSaveMutation =
+    mode === "ai" ? chatApplyMutation : manualSaveMutation;
 
   const handleDelete = (index: number): void => {
-    if (places.length <= minimumPlaceCount) return;
+    if (places.length <= minimumPlaceCount) {
+      setNotice(`최소 ${minimumPlaceCount}개 장소가 필요해요`);
+      return;
+    }
     setHistory((items) => [...items, places]);
     setPlaces((current) =>
       current
@@ -114,7 +185,10 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
 
   const handleUndo = (): void => {
     const previous = history.at(-1);
-    if (!previous) return;
+    if (!previous) {
+      setNotice("더 되돌릴 항목이 없어요");
+      return;
+    }
     setPlaces(previous);
     setHistory((items) => items.slice(0, -1));
   };
@@ -132,38 +206,140 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     setDragIndex(null);
   };
 
-  const handleAddPlace = (placeId: number): void => {
-    const recommendation = recommendations.find(
-      (place) => place.placeId === placeId,
+  const toggleNewPlaceSelection = (placeId: number): void => {
+    setSelectedNewPlaceIds((current) => {
+      const next = new Set(current);
+      if (next.has(placeId)) next.delete(placeId);
+      else next.add(placeId);
+      return next;
+    });
+  };
+
+  /** 수동 편집: 선택한 추천 장소들을 로컬 상태에만 추가한다 — 최종 저장은 "수정 완료"에서 한 번에. */
+  const handleApplyNewPlaces = (): void => {
+    const toAdd = recommendations.filter((place) =>
+      selectedNewPlaceIds.has(place.placeId),
     );
-    if (!recommendation) return;
+    if (toAdd.length === 0) return;
     setHistory((items) => [...items, places]);
     setPlaces((current) => [
       ...current,
-      {
+      ...toAdd.map((recommendation, offset) => ({
         placeId: recommendation.placeId,
         name: recommendation.name,
         category: recommendation.category,
         summary: `${recommendation.category} · ${recommendation.tags[0] ?? "추천 장소"}`,
-        // TODO(#56 여파): 추천 목록엔 좌표·주소가 없음(PlaceRecommendationResponse).
-        // 실제 위치는 장소 상세 조회 연동 후 채워야 함 — 임시로 광주 중심 좌표 사용.
-        address: "장소 상세에서 확인",
-        latitude: 35.1469,
-        longitude: 126.9199,
-        dayNumber: places.at(-1)?.dayNumber ?? 1,
-        visitOrder: current.length + 1,
-        estimatedStayMinutes: 60,
-        travelModeFromPrevious: null,
-      },
+        dayNumber: current.at(-1)?.dayNumber ?? 1,
+        visitOrder: current.length + offset + 1,
+        ...NEW_PLACE_DEFAULTS,
+      })),
     ]);
+    setSelectedNewPlaceIds(new Set());
+    setAddPlaceQuery("");
+    setIsAddPlaceOpen(false);
   };
+
+  if (isAddPlaceOpen) {
+    return (
+      <main className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] flex-col">
+        <header className="flex items-center gap-3 px-4 pt-4 pb-2">
+          <button
+            type="button"
+            aria-label="닫기"
+            onClick={() => setIsAddPlaceOpen(false)}
+            className="focus-visible:outline-primary-03 flex h-9 w-9 items-center justify-center rounded-full text-[18px] focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            ←
+          </button>
+          <h1 className="text-neutral-07 flex-1 text-center text-[15px] font-semibold">
+            장소 추가
+          </h1>
+          <span className="w-9" aria-hidden="true" />
+        </header>
+
+        <div className="px-6 pt-2">
+          <div className="border-neutral-03 flex min-h-12 items-center gap-2 rounded-full border bg-white px-4">
+            <span className="text-neutral-04 text-[14px]" aria-hidden="true">
+              ⌕
+            </span>
+            <input
+              value={addPlaceQuery}
+              onChange={(event) => setAddPlaceQuery(event.target.value)}
+              placeholder="장소를 검색해보세요."
+              className="text-neutral-07 placeholder:text-neutral-04 flex-1 text-[14px] outline-none"
+            />
+          </div>
+          <p className="text-neutral-04 mt-2 text-[11px]">
+            이미 코스에 담긴 장소는 목록에서 제외됩니다
+          </p>
+        </div>
+
+        <ul className="mt-3 flex-1 space-y-2 overflow-y-auto px-6 pb-4">
+          {availablePlaces.length === 0 ? (
+            <li className="text-neutral-04 py-10 text-center text-[13px]">
+              추가할 수 있는 장소가 없어요.
+            </li>
+          ) : (
+            availablePlaces.map((place) => {
+              const isSelected = selectedNewPlaceIds.has(place.placeId);
+              return (
+                <li key={place.placeId}>
+                  <button
+                    type="button"
+                    onClick={() => toggleNewPlaceSelection(place.placeId)}
+                    aria-pressed={isSelected}
+                    className="border-neutral-03 flex min-h-16 w-full items-center gap-3 rounded-[18px] border bg-white px-3 py-2 text-left"
+                  >
+                    <span
+                      className="bg-neutral-03 h-11 w-11 shrink-0 rounded-xl"
+                      aria-hidden="true"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-neutral-07 truncate text-[14px] font-semibold">
+                        {place.name}
+                      </p>
+                      <p className="text-neutral-04 mt-0.5 truncate text-[11px]">
+                        {place.category}
+                        {place.tags[0] ? ` · ${place.tags[0]}` : ""}
+                      </p>
+                    </div>
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] ${
+                        isSelected
+                          ? "bg-neutral-07 text-neutral-01"
+                          : "border-neutral-03 text-neutral-04 border"
+                      }`}
+                    >
+                      {isSelected ? "✓" : "+"}
+                    </span>
+                  </button>
+                </li>
+              );
+            })
+          )}
+        </ul>
+
+        <div className="border-neutral-03 border-t bg-white px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
+          <Button
+            variant="solid"
+            size="lg"
+            className="w-full"
+            disabled={selectedNewPlaceIds.size === 0}
+            onClick={handleApplyNewPlaces}
+          >
+            {selectedNewPlaceIds.size}곳 추가 / 코스에 반영
+          </Button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] flex-col">
       <AppHeader
         backHref={`/course/${course.courseId}/detail${fromHub ? "?from=hub" : ""}`}
         showMenu={false}
-        centerLabel="코스 수정"
+        centerLabel={mode === "manual" ? "순서 편집" : "코스 수정"}
       />
 
       <div className="border-neutral-03 mx-6 mt-4 grid grid-cols-2 rounded-full border bg-white p-1">
@@ -195,8 +371,8 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                 어떻게 바꾸고 싶나요?
               </h1>
               <p className="text-neutral-04 mt-2 text-[13px] leading-[1.55]">
-                원하는 이동 방식이나 장소 순서를 말해 주세요. · {refineCount}
-                /2회
+                원하는 이동 방식이나 장소 순서를 말해 주세요. ·{" "}
+                {remainingRevisions}/2회 남음
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
@@ -235,24 +411,23 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                 variant="solid"
                 size="lg"
                 className="mt-3 w-full"
-                disabled={!instruction.trim() || refineCount >= 2}
-                isLoading={refineMutation.isPending}
-                onClick={() => refineMutation.mutate()}
+                disabled={!instruction.trim() || remainingRevisions <= 0}
+                isLoading={chatMutation.isPending}
+                onClick={() => chatMutation.mutate()}
               >
-                {refineMutation.isPending
-                  ? "코스 다듬는 중"
-                  : "새 순서 제안받기"}
+                {chatMutation.isPending ? "코스 다듬는 중" : "새 순서 제안받기"}
               </Button>
 
-              {hasRefinedPreview && (
-                <p
-                  className="bg-primary-04 text-primary-08 mt-3 rounded-xl px-4 py-3 text-[12px] font-medium"
-                  role="status"
-                >
-                  요청을 반영했어요. 아래 순서를 확인한 뒤 저장해 주세요.
-                </p>
-              )}
-              {refineMutation.isError && (
+              {(hasRefinedPreview || chatRecommendations.length > 0) &&
+                chatMessage && (
+                  <p
+                    className="bg-primary-04 text-primary-08 mt-3 rounded-xl px-4 py-3 text-[12px] font-medium"
+                    role="status"
+                  >
+                    {chatMessage}
+                  </p>
+                )}
+              {chatMutation.isError && (
                 <div
                   className="bg-caution-01 text-caution-02 mt-3 rounded-xl px-4 py-3 text-[12px]"
                   role="alert"
@@ -260,7 +435,7 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                   코스를 다듬지 못했어요. 요청을 바꾸거나 다시 시도해 주세요.
                 </div>
               )}
-              {refineCount >= 2 && !hasRefinedPreview && (
+              {remainingRevisions <= 0 && !hasRefinedPreview && (
                 <div className="bg-neutral-02 text-neutral-06 mt-3 rounded-xl px-4 py-3 text-[12px]">
                   AI 수정 2회를 모두 사용했어요.
                   <button
@@ -274,94 +449,80 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
               )}
             </section>
 
-            <section aria-labelledby="ai-preview-title">
-              <h2
-                id="ai-preview-title"
-                className="text-neutral-07 px-6 pb-3 text-[14px] font-semibold"
-              >
-                코스 미리보기 · {places.length}곳
-              </h2>
-              <CourseTimeline places={places} />
-            </section>
+            {chatRecommendations.length > 0 && (
+              <section className="px-6 pb-6" aria-labelledby="ai-recs-title">
+                <h2
+                  id="ai-recs-title"
+                  className="text-neutral-07 text-[14px] font-semibold"
+                >
+                  추천 장소
+                </h2>
+                <ul className="mt-3 space-y-2">
+                  {chatRecommendations.map((place) => (
+                    <li
+                      key={place.placeId}
+                      className="border-neutral-03 rounded-[18px] border bg-white p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-neutral-07 truncate text-[14px] font-semibold">
+                            {place.name}
+                          </p>
+                          <p className="text-neutral-04 mt-0.5 text-[11px]">
+                            {place.category}
+                          </p>
+                          <p className="text-neutral-06 mt-1 text-[12px] leading-[1.5]">
+                            {place.reason}
+                          </p>
+                        </div>
+                        <Button
+                          size="md"
+                          className="shrink-0"
+                          isLoading={
+                            addPlaceMutation.isPending &&
+                            addPlaceMutation.variables === place.placeId
+                          }
+                          onClick={() => addPlaceMutation.mutate(place.placeId)}
+                        >
+                          추가
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {hasRefinedPreview && (
+              <section aria-labelledby="ai-preview-title">
+                <h2
+                  id="ai-preview-title"
+                  className="text-neutral-07 px-6 pb-3 text-[14px] font-semibold"
+                >
+                  코스 미리보기 · {places.length}곳
+                </h2>
+                <CourseTimeline places={places} />
+              </section>
+            )}
           </>
         ) : (
-          <section className="px-6 pt-7">
-            <p className="text-primary-08 text-[12px] font-semibold tracking-[0.12em]">
-              MANUAL EDIT
-            </p>
-            <h1 className="text-neutral-07 mt-2 text-[26px] font-bold">
-              내 방식대로 정리해요
-            </h1>
-
-            <label
-              htmlFor="course-title"
-              className="text-neutral-07 mt-6 block text-[13px] font-semibold"
-            >
-              코스 이름
-            </label>
-            <input
-              id="course-title"
-              value={title}
-              maxLength={30}
-              onChange={(event) => setTitle(event.target.value)}
-              className="border-neutral-03 text-neutral-07 focus:border-primary-08 mt-2 min-h-12 w-full rounded-[16px] border bg-white px-4 text-[14px] outline-none"
-            />
-
-            <div className="mt-7 flex items-center justify-between gap-3">
+          <section className="px-6 pt-5">
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-neutral-07 text-[14px] font-semibold">
                 장소 순서 · {places.length}곳
               </h2>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleUndo}
-                  disabled={history.length === 0}
-                  className="border-neutral-03 text-neutral-06 disabled:text-neutral-03 min-h-9 rounded-full border px-3 text-[12px]"
-                >
-                  ↺ 되돌리기
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddingPlace((open) => !open)}
-                  className="border-neutral-03 text-neutral-06 min-h-9 rounded-full border px-3 text-[12px]"
-                >
-                  + 장소 추가
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleUndo}
+                disabled={history.length === 0}
+                className="border-neutral-03 text-neutral-06 disabled:text-neutral-03 min-h-9 rounded-full border px-3 text-[12px]"
+              >
+                ↺ 되돌리기
+              </button>
             </div>
             <p className="text-neutral-04 mt-1 text-[12px]">
-              항목을 끌거나 화살표를 눌러 순서를 바꿀 수 있어요.
+              항목을 끌어서 순서를 바꿀 수 있어요.
             </p>
-
-            {isAddingPlace && (
-              <div className="border-neutral-03 mt-3 rounded-[18px] border bg-white p-3">
-                <p className="text-neutral-07 text-[13px] font-semibold">
-                  추천 장소에서 추가
-                </p>
-                {availablePlaces.length === 0 ? (
-                  <p className="text-neutral-04 py-5 text-center text-[12px]">
-                    더 추가할 추천 장소가 없어요.
-                  </p>
-                ) : (
-                  <ul className="mt-2 space-y-1">
-                    {availablePlaces.map((place) => (
-                      <li key={place.placeId}>
-                        <button
-                          type="button"
-                          onClick={() => handleAddPlace(place.placeId)}
-                          className="bg-neutral-02 flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-left text-[12px]"
-                        >
-                          <span className="truncate font-medium">
-                            {place.name}
-                          </span>
-                          <span className="text-primary-08 shrink-0">추가</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
 
             <ol className="mt-3 space-y-2">
               {places.map((place, index) => (
@@ -373,9 +534,16 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                   onDrop={() => handleDrop(index)}
                   className="border-neutral-03 flex min-h-16 items-center gap-3 rounded-[18px] border bg-white px-3 py-2"
                 >
-                  <span className="bg-neutral-07 text-neutral-01 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px]">
-                    {index + 1}
+                  <span
+                    className="text-neutral-04 cursor-grab px-1 text-[16px]"
+                    aria-hidden="true"
+                  >
+                    ≡
                   </span>
+                  <span
+                    className="bg-neutral-03 h-11 w-11 shrink-0 rounded-xl"
+                    aria-hidden="true"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="text-neutral-07 truncate text-[14px] font-semibold">
                       {place.name}
@@ -384,54 +552,43 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                       {place.summary}
                     </p>
                   </div>
-                  <div className="flex shrink-0 gap-1">
-                    <MoveButton
-                      place={place}
-                      label="위로 이동"
-                      disabled={index === 0}
-                      onClick={() => handleMove(index, -1)}
-                    >
-                      ↑
-                    </MoveButton>
-                    <MoveButton
-                      place={place}
-                      label="아래로 이동"
-                      disabled={index === places.length - 1}
-                      onClick={() => handleMove(index, 1)}
-                    >
-                      ↓
-                    </MoveButton>
-                    <MoveButton
-                      place={place}
-                      label="코스에서 삭제"
-                      disabled={places.length <= minimumPlaceCount}
-                      onClick={() => handleDelete(index)}
-                    >
-                      ×
-                    </MoveButton>
-                  </div>
+                  <button
+                    type="button"
+                    aria-label={`${place.name} 코스에서 삭제`}
+                    onClick={() => handleDelete(index)}
+                    className="border-neutral-03 text-neutral-06 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[14px]"
+                  >
+                    ×
+                  </button>
                 </li>
               ))}
             </ol>
-            <p
-              className={`mt-4 text-center text-[12px] ${
-                places.length <= minimumPlaceCount
-                  ? "text-caution-02"
-                  : "text-neutral-04"
-              }`}
-              role="status"
+
+            <button
+              type="button"
+              onClick={() => setIsAddPlaceOpen(true)}
+              className="border-neutral-03 text-neutral-04 mt-2 flex min-h-16 w-full items-center justify-center rounded-[18px] border border-dashed bg-white text-[13px] font-medium"
             >
-              이 여행 기간은 최소 {minimumPlaceCount}곳이 필요해요. 최소
-              개수에서는 삭제할 수 없습니다.
-            </p>
+              + 장소 추가
+            </button>
           </section>
         )}
       </div>
 
       <div className="border-neutral-03 border-t bg-white px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
+        {notice && (
+          <p
+            className="bg-neutral-07 text-neutral-01 mx-auto mb-3 w-fit rounded-full px-4 py-2 text-[12px]"
+            role="status"
+          >
+            {notice}
+          </p>
+        )}
         {mode === "ai" && !hasRefinedPreview ? (
           <p className="text-neutral-04 py-3 text-center text-[12px]">
-            수정 요청을 보내면 원래 코스와 비교할 수 있어요.
+            {chatRecommendations.length > 0
+              ? "장소를 추가하면 바로 코스에 반영돼요."
+              : "수정 요청을 보내면 원래 코스와 비교할 수 있어요."}
           </p>
         ) : (
           <>
@@ -439,15 +596,11 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
               variant="solid"
               size="lg"
               className="w-full"
-              disabled={
-                !title.trim() ||
-                refineMutation.isPending ||
-                places.length < minimumPlaceCount
-              }
-              isLoading={saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
+              disabled={places.length < minimumPlaceCount}
+              isLoading={activeSaveMutation.isPending}
+              onClick={() => activeSaveMutation.mutate()}
             >
-              {saveMutation.isPending
+              {activeSaveMutation.isPending
                 ? "저장 중"
                 : mode === "ai"
                   ? "이 코스로 변경"
@@ -468,7 +621,7 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
             )}
           </>
         )}
-        {saveMutation.isError && (
+        {activeSaveMutation.isError && (
           <p
             className="text-caution-02 mt-2 text-center text-[12px]"
             role="alert"
@@ -480,32 +633,6 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     </main>
   );
 };
-
-interface MoveButtonProps {
-  place: CoursePlace;
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-  children: string;
-}
-
-const MoveButton = ({
-  place,
-  label,
-  disabled,
-  onClick,
-  children,
-}: MoveButtonProps) => (
-  <button
-    type="button"
-    aria-label={`${place.name} ${label}`}
-    disabled={disabled}
-    onClick={onClick}
-    className="border-neutral-03 text-neutral-07 disabled:text-neutral-03 disabled:bg-neutral-02 flex h-9 w-9 items-center justify-center rounded-full border text-[16px]"
-  >
-    {children}
-  </button>
-);
 
 const CourseEditPage = ({ params, searchParams }: CourseEditPageProps) => {
   const { courseId } = use(params);

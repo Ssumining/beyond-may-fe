@@ -1,9 +1,9 @@
 import { http, HttpResponse, delay } from "msw";
 
 import type {
+  ChatCourseRequest,
   CourseResponse,
   GenerateCourseRequest,
-  RefineCourseRequest,
   UpdateCourseRequest,
 } from "@/types/course";
 
@@ -93,6 +93,22 @@ const MOCK_PLACES: CourseResponse["places"] = [
   },
 ];
 
+/** 코스엔 아직 없는 장소 — AI 추천(ADD_RECOMMENDATION)·추천 장소 추가 mock 전용 */
+const EXTRA_MOCK_PLACE: CourseResponse["places"][number] = {
+  placeId: 106,
+  name: "동명동 카페거리",
+  category: "음식",
+  address: "광주광역시 동구 동명로",
+  latitude: 35.1493,
+  longitude: 126.9229,
+  dayNumber: 1,
+  visitOrder: 6,
+  estimatedStayMinutes: 50,
+  travelModeFromPrevious: "WALK",
+  travelMbtiType: "FOODIE",
+  summary: "카페 · 로컬 미식",
+};
+
 /** 확정 코스 (팀 탐험·공유 진입·기록 복귀에서 조회) */
 const MOCK_COURSE: CourseResponse = {
   courseId: 1,
@@ -114,6 +130,9 @@ const MOCK_COURSE_DRAFT: CourseResponse = {
 
 /** 개발 세션 안에서 확정·보정·직접수정 결과를 다음 조회까지 유지한다. */
 const courseOverrides = new Map<number, CourseResponse>();
+
+/** 코스별 AI 챗봇(POST /chat) 호출 횟수 — 최대 2회까지 remainingRevisions 계산용 */
+const chatCallCounts = new Map<number, number>();
 
 export const getMockCourse = (courseId: number): CourseResponse => {
   const override = courseOverrides.get(courseId);
@@ -187,12 +206,12 @@ export const courseHandlers = [
     },
   ),
 
-  /** 자연어 요청으로 코스 순서를 다시 추천받는다. */
+  /** 자연어 요청으로 코스 수정을 요청한다 — 저장 없이 미리보기만 반환. */
   http.post(
-    `${BASE_URL}/api/v1/courses/:courseId/ai-refine`,
+    `${BASE_URL}/api/v1/courses/:courseId/chat`,
     async ({ params, request }) => {
       const courseId = Number(params.courseId);
-      const body = (await request.json()) as Partial<RefineCourseRequest>;
+      const body = (await request.json()) as Partial<ChatCourseRequest>;
       await delay(1200);
 
       if (!body.message?.trim() || body.message.includes("실패")) {
@@ -207,22 +226,66 @@ export const courseHandlers = [
         );
       }
 
-      const course = getMockCourse(courseId);
-      const refinedCourse: CourseResponse = {
-        ...course,
-        places: [...course.places]
-          .reverse()
-          .map((place, index) => ({ ...place, visitOrder: index + 1 })),
-      };
-      courseOverrides.set(courseId, refinedCourse);
+      const usedCount = chatCallCounts.get(courseId) ?? 0;
+      if (usedCount >= 2) {
+        return HttpResponse.json(
+          {
+            code: "COURSE409_2",
+            data: null,
+            message:
+              "AI 코스 수정 요청 횟수를 모두 사용했습니다. 직접 수정을 이용해주세요.",
+            success: false,
+          },
+          { status: 409 },
+        );
+      }
+      chatCallCounts.set(courseId, usedCount + 1);
+      const remainingRevisions = 2 - (usedCount + 1);
 
-      return HttpResponse.json(wrap(refinedCourse));
+      const course = getMockCourse(courseId);
+
+      if (body.message.includes("추천")) {
+        return HttpResponse.json(
+          wrap({
+            type: "ADD_RECOMMENDATION",
+            message: `"${EXTRA_MOCK_PLACE.name}"은(는) 어떠세요?`,
+            proposedPlaces: [],
+            recommendations: [
+              {
+                placeId: EXTRA_MOCK_PLACE.placeId,
+                name: EXTRA_MOCK_PLACE.name,
+                category: EXTRA_MOCK_PLACE.category,
+                travelMbtiType: EXTRA_MOCK_PLACE.travelMbtiType,
+                address: EXTRA_MOCK_PLACE.address,
+                latitude: EXTRA_MOCK_PLACE.latitude,
+                longitude: EXTRA_MOCK_PLACE.longitude,
+                reason: "요청하신 분위기와 잘 어울리는 근처 장소예요.",
+              },
+            ],
+            remainingRevisions,
+          }),
+        );
+      }
+
+      const proposedPlaces = [...course.places]
+        .reverse()
+        .map((place, index) => ({ ...place, visitOrder: index + 1 }));
+
+      return HttpResponse.json(
+        wrap({
+          type: "COURSE_REVISION",
+          message: "요청하신 대로 순서를 다시 짜봤어요.",
+          proposedPlaces,
+          recommendations: [],
+          remainingRevisions,
+        }),
+      );
     },
   ),
 
-  /** 코스 장소 순서를 직접 저장한다. */
-  http.patch(
-    `${BASE_URL}/api/v1/courses/:courseId`,
+  /** AI 수정 미리보기를 실제로 저장한다. */
+  http.post(
+    `${BASE_URL}/api/v1/courses/:courseId/chat/apply`,
     async ({ params, request }) => {
       const courseId = Number(params.courseId);
       const body = (await request.json()) as Partial<UpdateCourseRequest>;
@@ -242,7 +305,10 @@ export const courseHandlers = [
       }
 
       const placesById = new Map(
-        course.places.map((place) => [place.placeId, place]),
+        [...course.places, EXTRA_MOCK_PLACE].map((place) => [
+          place.placeId,
+          place,
+        ]),
       );
       const places = body.places.flatMap(
         ({ placeId, dayNumber, visitOrder }) => {
@@ -254,12 +320,12 @@ export const courseHandlers = [
       if (places.length !== body.places.length) {
         return HttpResponse.json(
           {
-            code: "COURSE400",
+            code: "COURSE404_2",
             data: null,
-            message: "유효하지 않은 장소가 포함되어 있습니다.",
+            message: "선택한 장소를 찾을 수 없습니다.",
             success: false,
           },
-          { status: 400 },
+          { status: 404 },
         );
       }
 
@@ -270,10 +336,118 @@ export const courseHandlers = [
     },
   ),
 
+  /** 코스 장소 순서를 직접 저장한다 — places 배열이 코스의 최종 상태 전체를 대체한다. */
+  http.put(
+    `${BASE_URL}/api/v1/courses/:courseId/places`,
+    async ({ params, request }) => {
+      const courseId = Number(params.courseId);
+      const body = (await request.json()) as Partial<UpdateCourseRequest>;
+      const course = getMockCourse(courseId);
+      await delay(700);
+
+      if (!Array.isArray(body.places) || body.places.length === 0) {
+        return HttpResponse.json(
+          {
+            code: "COURSE400",
+            data: null,
+            message: "장소 순서를 확인해 주세요.",
+            success: false,
+          },
+          { status: 400 },
+        );
+      }
+
+      const placesById = new Map(
+        [...course.places, EXTRA_MOCK_PLACE].map((place) => [
+          place.placeId,
+          place,
+        ]),
+      );
+      const places = body.places.flatMap(
+        ({ placeId, dayNumber, visitOrder }) => {
+          const place = placesById.get(placeId);
+          return place ? [{ ...place, dayNumber, visitOrder }] : [];
+        },
+      );
+
+      if (places.length !== body.places.length) {
+        return HttpResponse.json(
+          {
+            code: "COURSE404_2",
+            data: null,
+            message: "선택한 장소를 찾을 수 없습니다.",
+            success: false,
+          },
+          { status: 404 },
+        );
+      }
+
+      const updatedCourse = { ...course, places };
+      courseOverrides.set(courseId, updatedCourse);
+
+      return HttpResponse.json(wrap(updatedCourse));
+    },
+  ),
+
+  /** 챗봇이 추천한 장소 1곳을 즉시 추가 — 저장 후 전체 코스를 이어붙여 반환한다. */
+  http.post(
+    `${BASE_URL}/api/v1/courses/:courseId/places/:placeId`,
+    async ({ params }) => {
+      const courseId = Number(params.courseId);
+      const placeId = Number(params.placeId);
+      const course = getMockCourse(courseId);
+      await delay(900);
+
+      if (course.places.some((place) => place.placeId === placeId)) {
+        return HttpResponse.json(
+          {
+            code: "COURSE400_2",
+            data: null,
+            message: "중복된 장소가 포함되어 있습니다.",
+            success: false,
+          },
+          { status: 400 },
+        );
+      }
+
+      if (placeId !== EXTRA_MOCK_PLACE.placeId) {
+        return HttpResponse.json(
+          {
+            code: "COURSE404_2",
+            data: null,
+            message: "선택한 장소를 찾을 수 없습니다.",
+            success: false,
+          },
+          { status: 404 },
+        );
+      }
+
+      const lastPlace = course.places.at(-1);
+      const newPlace = {
+        ...EXTRA_MOCK_PLACE,
+        dayNumber: lastPlace?.dayNumber ?? 1,
+        visitOrder: course.places.length + 1,
+        travelModeFromPrevious: "WALK" as const,
+        estimatedStayMinutes: 60,
+      };
+      const updatedCourse = {
+        ...course,
+        places: [...course.places, newPlace],
+      };
+      courseOverrides.set(courseId, updatedCourse);
+
+      return HttpResponse.json(wrap(updatedCourse));
+    },
+  ),
+
   // 초안 코스 조회 (3.1.1). :id/draft 가 :id 보다 먼저 와야 매칭됨
-  http.get(`${BASE_URL}/api/v1/courses/:courseId/draft`, async () => {
+  http.get(`${BASE_URL}/api/v1/courses/:courseId/draft`, async ({ params }) => {
     await delay(500);
-    return HttpResponse.json(wrap(MOCK_COURSE_DRAFT));
+    const courseId = Number(params.courseId);
+    const override = courseOverrides.get(courseId);
+    return HttpResponse.json(
+      wrap(override ?? { ...MOCK_COURSE_DRAFT, courseId }),
+    );
   }),
 
   // 코스(확정) 조회

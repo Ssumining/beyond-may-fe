@@ -1,12 +1,13 @@
 import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import { api } from "@/services/lib/axios";
 import type {
+  ChatCourseRequest,
+  ChatCourseResponse,
   ConfirmCourseResponse,
   CourseResponse,
   CourseListResponse,
   GenerateCourseRequest,
   GenerateCourseResponse,
-  RefineCourseRequest,
   UpdateCourseRequest,
 } from "@/types/course";
 
@@ -64,29 +65,53 @@ export const postCourseGeneration = async (
   return response.data!;
 };
 
-/** 자연어 요청으로 코스 순서를 다시 추천받는다. (3.2.1 / 9번)
- *  TODO(9번): collection은 챗봇 구조(POST /courses/{id}/chat → proposedPlaces·recommendations·
- *  remainingRevisions). 엔드포인트·요청·응답 전면 교체 예정. */
-export const postCourseRefine = async (
+/** 자연어 요청으로 코스 수정을 요청한다. (3.2.1 / 9번)
+ *  저장하지 않고 미리보기만 반환한다 — 장소 재배치 제안(COURSE_REVISION)이거나
+ *  추가할 장소 추천(ADD_RECOMMENDATION)이다. 최대 2회, 초과 시 서버가 409를 준다. */
+export const postCourseChat = async (
   courseId: string,
-  body: RefineCourseRequest,
+  body: ChatCourseRequest,
+): Promise<ChatCourseResponse> => {
+  const response = await api.post<ChatCourseResponse>(
+    API_ENDPOINTS.course.chat(courseId),
+    body,
+  );
+  return response.data!;
+};
+
+/** postCourseChat의 COURSE_REVISION 미리보기를 실제로 저장한다. */
+export const postCourseChatApply = async (
+  courseId: string,
+  body: UpdateCourseRequest,
 ): Promise<CourseResponse> => {
   const response = await api.post<CourseResponse>(
-    API_ENDPOINTS.course.refine(courseId),
+    API_ENDPOINTS.course.chatApply(courseId),
     body,
   );
   return response.data!;
 };
 
 /** 코스 장소 순서를 직접 저장한다. (3.2.2 / 10번)
- *  TODO(10번): collection은 PUT /courses/{id}/places. 엔드포인트·요청 구조 교체 예정. */
-export const patchCourse = async (
+ *  body의 places 배열이 코스의 최종 상태 전체를 대체한다 — 빠진 장소는 삭제로 취급된다. */
+export const putCoursePlaces = async (
   courseId: string,
   body: UpdateCourseRequest,
 ): Promise<CourseResponse> => {
-  const response = await api.patch<CourseResponse>(
-    API_ENDPOINTS.course.detail(courseId),
+  const response = await api.put<CourseResponse>(
+    API_ENDPOINTS.course.places(courseId),
     body,
+  );
+  return response.data!;
+};
+
+/** postCourseChat의 ADD_RECOMMENDATION 카드에서 장소 1곳을 즉시 추가한다.
+ *  미리보기 없이 바로 저장되며, AI가 전체 코스를 재배치한다. */
+export const postCourseAddPlace = async (
+  courseId: string,
+  placeId: number,
+): Promise<CourseResponse> => {
+  const response = await api.post<CourseResponse>(
+    API_ENDPOINTS.course.addPlace(courseId, placeId),
   );
   return response.data!;
 };
