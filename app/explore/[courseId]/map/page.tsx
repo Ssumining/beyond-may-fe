@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import { getCourseMapData } from "@/features/course/utils/courseMapAdapter";
 import { toLatLng } from "@/features/explore/utils/toLatLng";
@@ -29,6 +30,7 @@ interface ExploreMapPageProps {
  */
 const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const { courseId } = use(params);
+  const router = useRouter();
   const explorationId = useSessionStore((state) => state.explorationId);
   const explorationIdStr = explorationId !== null ? String(explorationId) : "";
 
@@ -99,6 +101,15 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         myLocation={myLocation}
         initialVisitedPlaceIds={initialVisitedPlaceIds}
       />
+
+      {/* 코스 보기 → 코스 상세 타임라인(4.3.4) */}
+      <button
+        type="button"
+        onClick={() => router.push(`/explore/${courseId}/course`)}
+        className="text-neutral-07 focus-visible:outline-primary-03 absolute bottom-6 left-4 z-30 min-h-11 rounded-full bg-white px-4 text-[13px] font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
+      >
+        코스 보기
+      </button>
 
       <ExploreHeader
         center={
