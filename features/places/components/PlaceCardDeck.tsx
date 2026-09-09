@@ -149,7 +149,13 @@ const PlaceCardDeck = ({
 
         <AnimatePresence initial={false}>
           {visiblePlaces.map((place, stackIndex) => {
-            const isTop = stackIndex === 0;
+            // 스와이프가 확정된 카드는 배열에서 실제로 제거되기 전 마지막 렌더에서
+            // isTop을 false로 미리 꺼둬야 한다 — AnimatePresence는 제거된 카드를
+            // "그 마지막 렌더 상태"로 얼려서 exit 애니메이션을 재생하기 때문에,
+            // 여기서 안 끄면 카드가 날아가는 동안 계속 드래그 가능한 최상단으로 남아
+            // 뒤 카드의 입력을 가로챈다.
+            const isExiting = exitDirections.has(place.placeId);
+            const isTop = stackIndex === 0 && !isExiting;
             const exitInfo = exitDirections.get(place.placeId) ?? {
               direction: "like" as SwipeDirection,
               velocityX: 0,
@@ -214,7 +220,14 @@ const PlaceCardDeck = ({
                   },
                 }}
                 transition={{ type: "spring", stiffness: 350, damping: 26 }}
-                style={{ zIndex: visiblePlaces.length - stackIndex }}
+                style={{
+                  // 나가는 카드는 새로 올라온 카드와 z-index가 같아지면(둘 다
+                  // stackIndex 0 기준으로 계산되므로) DOM에 나중에 나온 새 카드가
+                  // 위로 그려져 날아가는 카드를 가려버린다 — 항상 맨 위로 고정한다.
+                  zIndex: isExiting
+                    ? MAX_VISIBLE_CARDS + 1
+                    : visiblePlaces.length - stackIndex,
+                }}
                 className={cn(
                   "border-neutral-03 bg-neutral-02 focus-visible:outline-primary-03 rounded-card absolute inset-0 overflow-hidden border focus-visible:outline-2 focus-visible:outline-offset-2",
                   isTop
@@ -268,7 +281,7 @@ const PlaceCardDeck = ({
         </AnimatePresence>
       </div>
 
-      <div className="relative mt-6 flex w-full max-w-[342px] items-center gap-3 pl-14">
+      <div className="relative mt-6 flex w-full max-w-[342px] items-center justify-center gap-3">
         <CircleIconButton
           icon={<Undo className="h-5 w-5" />}
           onClick={onUndo}
@@ -292,7 +305,7 @@ const PlaceCardDeck = ({
           className="bg-location h-16 w-16"
         />
       </div>
-      <p className="text-neutral-04 mt-3 text-center text-[12px]">
+      <p className="text-neutral-04 mt-5 text-center text-[12px]">
         카드를 누르면 장소 정보를 자세히 볼 수 있어요.
       </p>
     </div>
