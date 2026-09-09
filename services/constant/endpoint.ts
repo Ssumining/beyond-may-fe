@@ -10,9 +10,20 @@ export const API_ENDPOINTS = {
     search: "/api/v1/places/search",
   },
   course: {
+    list: "/api/v1/courses",
     detail: (courseId: string) => `/api/v1/courses/${courseId}`,
+    draft: (courseId: string) => `/api/v1/courses/${courseId}/draft`,
     confirm: (courseId: string) => `/api/v1/courses/${courseId}/confirm`,
     aiGeneration: "/api/v1/courses/ai-generation",
+    /** 직접 수정 저장 (PUT) — 장소 배열이 코스의 최종 상태 전체를 대체한다 */
+    places: (courseId: string) => `/api/v1/courses/${courseId}/places`,
+    /** AI 수정 요청 — 저장하지 않고 미리보기만 반환 */
+    chat: (courseId: string) => `/api/v1/courses/${courseId}/chat`,
+    /** AI 수정 미리보기 적용(저장) */
+    chatApply: (courseId: string) => `/api/v1/courses/${courseId}/chat/apply`,
+    /** 챗봇이 추천한 장소 1곳을 즉시 추가(+ 전체 재배치) */
+    addPlace: (courseId: string, placeId: number) =>
+      `/api/v1/courses/${courseId}/places/${placeId}`,
   },
   preference: {
     /** 성향 검사 질문 목록 조회 (기능명세 1.1.2 / 1.2.1) */
@@ -48,5 +59,12 @@ export const API_ENDPOINTS = {
     /** 내 위치 공유 설정 변경 (4.3.2) */
     locationSharing: (explorationId: string) =>
       `/api/v1/explorations/${explorationId}/participants/me/location-sharing`,
+  },
+  record: {
+    // TODO(백엔드 확인): 경로·페이지네이션 여부 미확정. (backend)
+    /** 내 방문 장소 목록 조회 (장소×사용자 단위, 여행 기록 화면) */
+    visits: "/api/v1/records/visits",
+    /** 방문 장소 인증 사진 업로드 */
+    visitPhoto: (visitId: number) => `/api/v1/records/visits/${visitId}/photo`,
   },
 } as const;

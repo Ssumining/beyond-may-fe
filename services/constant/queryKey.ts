@@ -7,8 +7,11 @@ export const QUERY_KEYS = {
   },
   COURSE: {
     ALL: ["course"] as const,
+    LIST: () => [...QUERY_KEYS.COURSE.ALL, "list"] as const,
     DETAIL: (courseId: string) =>
       [...QUERY_KEYS.COURSE.ALL, "detail", courseId] as const,
+    DRAFT: (courseId: string) =>
+      [...QUERY_KEYS.COURSE.ALL, "draft", courseId] as const,
   },
   PLACE: {
     ALL: ["place"] as const,
@@ -25,5 +28,9 @@ export const QUERY_KEYS = {
       [...QUERY_KEYS.EXPLORATION.ALL, "list", status] as const,
     STATUS: (explorationId: string) =>
       [...QUERY_KEYS.EXPLORATION.ALL, "status", explorationId] as const,
+  },
+  RECORD: {
+    ALL: ["record"] as const,
+    VISITS: () => [...QUERY_KEYS.RECORD.ALL, "visits"] as const,
   },
 } as const;

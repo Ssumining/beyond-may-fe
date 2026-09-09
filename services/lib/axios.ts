@@ -1,6 +1,16 @@
 import axios from "axios";
 import type { AxiosInstance } from "axios";
 import type { ApiResponse } from "@/types/common";
+import { API_ENDPOINTS } from "@/services/constant/endpoint";
+
+/**
+ * 로그인 실패("닉네임/식별코드가 올바르지 않음")도 401로 내려오는데, 이건 세션 만료가
+ * 아니라 그냥 잘못된 입력값이다. 각 폼이 인라인 에러로 보여주므로 전역 처리에서 제외한다.
+ */
+const AUTH_ATTEMPT_PATHS: string[] = [
+  API_ENDPOINTS.auth.login,
+  API_ENDPOINTS.auth.signup,
+];
 
 // 인터셉터가 response.data(공통 래퍼)를 반환하므로,
 // get/post 등이 ApiResponse<T>를 직접 반환하도록 타입을 재정의
@@ -58,11 +68,15 @@ api.interceptors.response.use(
     return body;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthAttempt = AUTH_ATTEMPT_PATHS.some((path) =>
+      error.config?.url?.includes(path),
+    );
+    if (error.response?.status === 401 && !isAuthAttempt) {
       // 인증 만료/무효 — 세션 정리 후 로그인 유도 (refresh API 없음)
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
-        // TODO: 세션 스토어 clear + 로그인 화면 이동 (구현 방식 팀 논의)
+        localStorage.removeItem("session-storage");
+        window.location.assign("/?session=expired");
       }
     }
     return Promise.reject(error);

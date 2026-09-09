@@ -10,8 +10,8 @@ interface CircleIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 const VARIANT_CLASS: Record<CircleIconButtonVariant, string> = {
-  light: "bg-neutral-01 text-neutral-04 shadow-soft",
-  dark: "bg-neutral-07 text-neutral-01 shadow-strong",
+  light: "bg-white text-neutral-07 shadow-soft hover:bg-neutral-01",
+  dark: "bg-neutral-07 text-neutral-01 shadow-strong hover:bg-neutral-06",
 };
 
 /**
@@ -29,7 +29,7 @@ const CircleIconButton = ({
   <button
     type={type}
     className={cn(
-      "flex cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-50",
+      "focus-visible:outline-primary-03 disabled:bg-neutral-03 disabled:text-neutral-04 flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100",
       VARIANT_CLASS[variant],
       className,
     )}

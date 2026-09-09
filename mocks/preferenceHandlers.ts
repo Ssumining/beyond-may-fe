@@ -1,7 +1,16 @@
 import { http, HttpResponse, delay } from "msw";
 
 import { API_ENDPOINTS } from "@/services/constant/endpoint";
-import type { PreferenceQuestion } from "@/types/preference";
+import type {
+  PreferencePercentages,
+  PreferenceQuestion,
+  PreferenceSubmitRequest,
+  PreferenceType,
+} from "@/types/preference";
+import {
+  getMockPlaceDetail,
+  MOCK_PLACE_RECOMMENDATIONS,
+} from "@/mocks/placeHandlers";
 
 /**
  * 성향 검사 질문 mock.
@@ -350,61 +359,31 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 // type과 mbtiName만 유형별로 다르며, 테마 색은 프론트가 type으로 결정.
 // TODO: 추천 장소 이미지 URL, 유형 설명 텍스트, userId 획득 경로 확정. (backend)
 
-/** 공통 추천 장소 5개 (사색러 기준, 모든 유형 동일) */
-const MOCK_RECOMMENDED_PLACES = [
-  {
-    placeId: 1,
-    placeImg: "",
-    placeIntro:
-      "느린 걸음으로 걷기 좋은 오래된 골목. 담벼락 사이로 시간이 멈춘 듯한 풍경.",
-    placeName: "양림동 근대골목",
-    address: "광주 남구 양림동",
-    category: "history",
-  },
-  {
-    placeId: 2,
-    placeImg: "",
-    placeIntro: "도심을 내려다보며 생각을 정리하기 좋은 조용한 전망 자리.",
-    placeName: "사직공원 전망타워",
-    address: "광주 남구 사직길",
-    category: "view",
-  },
-  {
-    placeId: 3,
-    placeImg: "",
-    placeIntro: "숲의 정취 속에서 혼자 오래 걷기 좋은 완만한 산책로.",
-    placeName: "무등산 자락 옛길",
-    address: "광주 동구 무등산",
-    category: "nature",
-  },
-  {
-    placeId: 4,
-    placeImg: "",
-    placeIntro: "물소리와 함께 마음을 비우며 걷는 강변 산책 코스.",
-    placeName: "광주천 억새길",
-    address: "광주 동구 광주천",
-    category: "nature",
-  },
-  {
-    placeId: 5,
-    placeImg: "",
-    placeIntro: "책과 빛이 흐르는 열린 공간, 오래 앉아 사색하기 좋은 곳.",
-    placeName: "ACC 라이브러리파크",
-    address: "광주 동구 국립아시아문화전당",
-    category: "culture",
-  },
-];
+/** 추천 장소 개수 (결과 카드·우표 엽서 모두 5장 기준) */
+const RECOMMENDED_PLACE_COUNT = 5;
+
+/**
+ * 뽑힌 유형에 맞는 추천 장소를 장소 카탈로그(mocks/placeHandlers.ts)에서 그대로 가져온다.
+ * (예전엔 유형과 무관하게 사색러 장소 5개가 고정으로 나갔음)
+ */
+const getRecommendedPlaces = (type: PreferenceType) =>
+  MOCK_PLACE_RECOMMENDATIONS.filter((place) => place.travelMbtiType === type)
+    .slice(0, RECOMMENDED_PLACE_COUNT)
+    .map((place) => {
+      const detail = getMockPlaceDetail(place.placeId);
+      return {
+        placeId: place.placeId,
+        placeImg: place.thumbnailUrl ?? "/images/place.jpg",
+        placeIntro: detail?.description ?? "",
+        placeName: place.name,
+        address: detail?.address ?? "",
+        category: place.category,
+      };
+    });
 
 /** 공통 설명·비율 (모든 유형 동일, 텍스트는 추후 수정) */
 const MOCK_DESCRIPTION =
   "혼자만의 속도로 도시를 걷는 사람. 익숙한 골목에서 낯선 풍경을 발견하고, 조용한 자리에 오래 머물며 하루의 생각을 천천히 정리합니다. 광주의 느린 장소를 모아봤어요.";
-
-const MOCK_PERCENTAGES = {
-  thinker: 40,
-  foodie: 20,
-  artist: 20,
-  remember: 20,
-};
 
 /** 유형별 식별자 ↔ 유형명. 나머지 필드는 공통 */
 const MOCK_TYPES = [
@@ -413,6 +392,34 @@ const MOCK_TYPES = [
   { type: "artist", mbtiName: "예술러", mbtiTag: ["문화", "예술"] },
   { type: "remember", mbtiName: "기억러", mbtiTag: ["민주화", "추모"] },
 ] as const;
+
+/**
+ * 뽑힌 유형이 항상 1등(40~60%)이 되도록 4유형 비율을 무작위로 만든다. 합은 100 유지.
+ * (예전엔 고정값이라 뽑힌 유형과 무관하게 항상 사색러가 1등으로 보였음)
+ */
+const buildRandomPercentages = (
+  dominantType: PreferenceType,
+): PreferencePercentages => {
+  const others = MOCK_TYPES.map(({ type }) => type).filter(
+    (type) => type !== dominantType,
+  );
+  const dominant = 40 + Math.floor(Math.random() * 21); // 40~60
+  const remaining = 100 - dominant;
+
+  const weights = others.map(() => Math.random());
+  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
+  const [first, second] = weights
+    .slice(0, 2)
+    .map((weight) => Math.round((weight / weightSum) * remaining));
+  const third = remaining - first - second;
+
+  const percentages = { thinker: 0, foodie: 0, artist: 0, remember: 0 };
+  percentages[dominantType] = dominant;
+  percentages[others[0]] = first;
+  percentages[others[1]] = second;
+  percentages[others[2]] = third;
+  return percentages;
+};
 
 /** 4유형 중 랜덤 하나의 결과를 만든다 (mock). 새로고침마다 유형이 바뀌어 색 확인 가능. */
 const buildRandomResult = () => {
@@ -423,8 +430,8 @@ const buildRandomResult = () => {
     mbtiTag: [...picked.mbtiTag],
     mbtiImg: "",
     mbtiDescription: MOCK_DESCRIPTION,
-    percentages: MOCK_PERCENTAGES,
-    recommendedPlaces: MOCK_RECOMMENDED_PLACES,
+    percentages: buildRandomPercentages(picked.type),
+    recommendedPlaces: getRecommendedPlaces(picked.type),
   };
 };
 
@@ -439,8 +446,38 @@ export const preferenceHandlers = [
     });
   }),
 
-  // 나의 성향(결과) 조회. userId는 어떤 값이 와도 mock 결과 반환.
-  http.get(`${BASE_URL}/api/users/:userId/preference`, async () => {
+  http.post(
+    `${BASE_URL}${API_ENDPOINTS.preference.submit(1)}`,
+    async ({ request }) => {
+      const body = (await request.json()) as Partial<PreferenceSubmitRequest>;
+
+      if (
+        !Array.isArray(body.answers) ||
+        body.answers.length !== SERVED_QUESTION_COUNT
+      ) {
+        return HttpResponse.json(
+          {
+            code: 400,
+            data: null,
+            message: "모든 질문에 답해 주세요.",
+            success: false,
+          },
+          { status: 400 },
+        );
+      }
+
+      await delay(600);
+      return HttpResponse.json({
+        code: 200,
+        data: null,
+        message: "성향 검사를 제출했습니다.",
+        success: true,
+      });
+    },
+  ),
+
+  // 나의 성향(결과) 조회. 현재 결과 화면의 임시 userId(1)에 응답한다.
+  http.get(`${BASE_URL}${API_ENDPOINTS.preference.result(1)}`, async () => {
     await delay(600);
     return HttpResponse.json({
       code: 200,

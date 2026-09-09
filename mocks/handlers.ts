@@ -6,7 +6,9 @@ import { preferenceHandlers } from "./preferenceHandlers";
 import { visitHandlers } from "./visitHandlers";
 import { participantHandlers } from "./participantHandlers";
 import { explorationStatusHandlers } from "./explorationStatusHandlers";
+import { joinHandlers } from "./joinHandlers";
 import { locationSharingHandlers } from "./locationSharingHandlers";
+import { recordHandlers } from "./recordHandlers";
 
 export const handlers = [
   ...preferenceHandlers,
@@ -17,5 +19,7 @@ export const handlers = [
   ...placeHandlers,
   ...participantHandlers,
   ...explorationStatusHandlers,
+  ...joinHandlers,
   ...locationSharingHandlers,
+  ...recordHandlers,
 ];

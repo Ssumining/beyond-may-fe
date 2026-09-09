@@ -9,6 +9,7 @@ import AppHeader from "@/components/layout/AppHeader";
 import QuizIntro from "@/features/onboarding/components/QuizIntro";
 import QuizProgressBar from "@/features/onboarding/components/QuizProgressBar";
 import QuizQuestion from "@/features/onboarding/components/QuizQuestion";
+import Button from "@/components/ui/Button";
 
 /**
  * 성향 검사 온보딩 페이지 (기능명세 1.1.2 / 1.2.1).
@@ -80,17 +81,16 @@ const OnboardingPage = () => {
         <AppHeader className="text-neutral-04" />
 
         {isError ? (
-          <section className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
-            <p className="text-neutral-07/70 text-[15px]">
+          <section className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+            <p className="text-neutral-07 text-[20px] font-semibold">
               질문을 불러오지 못했어요.
             </p>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="border-neutral-07 text-neutral-07 rounded-full border px-6 py-3 text-[15px] font-medium"
-            >
-              다시 시도
-            </button>
+            <p className="text-neutral-04 mt-2 text-[13px] leading-[1.5]">
+              연결 상태를 확인한 뒤 다시 시도해 주세요.
+            </p>
+            <Button size="lg" onClick={() => refetch()} className="mt-5">
+              질문 다시 불러오기
+            </Button>
           </section>
         ) : (
           <QuizIntro isLoading />
