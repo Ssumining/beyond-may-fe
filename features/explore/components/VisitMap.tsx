@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import KakaoMap from "@/components/map/Map";
+import MyLocationButton from "@/components/map/MyLocationButton";
 import PlaceDetailSheet from "@/components/place-detail/PlaceDetailSheet";
 import VisitFooter from "@/features/explore/components/VisitFooter";
 import useGetPlaceDetailQuery from "@/features/explore/hooks/useGetPlaceDetailQuery";
@@ -35,7 +36,10 @@ const VisitMap = ({
   // 선택된 장소의 placeId (핀 클릭 시). null이면 시트 닫힘
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
 
-  // 선택된 장소의 상세 조회 (placeId 있을 때만)
+  // 내 위치로 이동 트리거
+  const [panTo, setPanTo] = useState<LatLng | null>(null);
+  const [panToNonce, setPanToNonce] = useState(0);
+
   const { data: placeDetail, isPending: isPlaceDetailPending } =
     useGetPlaceDetailQuery(selectedPlaceId);
 
@@ -50,10 +54,7 @@ const VisitMap = ({
 
   const handleMarkerClick = (markerId: string): void => {
     const numericId = Number(markerId);
-    if (Number.isNaN(numericId)) {
-      return;
-    }
-    // 카카오맵 이벤트 사이클 밖에서 상태 변경 → 즉시 리렌더
+    if (Number.isNaN(numericId)) return;
     setTimeout(() => setSelectedPlaceId(numericId), 0);
   };
 
@@ -69,7 +70,13 @@ const VisitMap = ({
 
   const handleClose = (): void => setSelectedPlaceId(null);
 
-  // 선택 장소의 방문 여부 (핀 색 판단과 동일 소스)
+  // 내 위치로 버튼 — 현재 위치로 지도 이동 (같은 위치 반복 대응 nonce)
+  const handleMyLocation = (): void => {
+    if (!myLocation) return;
+    setPanTo(myLocation);
+    setPanToNonce((prev) => prev + 1);
+  };
+
   const isSelectedVisited =
     selectedPlaceId !== null && visitedPlaceIds.has(selectedPlaceId);
 
@@ -79,9 +86,18 @@ const VisitMap = ({
         center={center}
         markers={markers}
         myLocation={myLocation}
+        panTo={panTo}
+        panToNonce={panToNonce}
         glow
         onMarkerClick={handleMarkerClick}
       />
+
+      {myLocation && (
+        <MyLocationButton
+          onClick={handleMyLocation}
+          className="absolute right-4 bottom-6 z-30"
+        />
+      )}
 
       {selectedPlaceId !== null && (
         <div className="fixed inset-0 z-50">
