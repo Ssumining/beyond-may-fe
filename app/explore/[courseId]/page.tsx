@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import ExpiredState from "@/components/ui/ExpiredState";
+import { getApiCode } from "@/services/lib/axios";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import useJoinMutation from "@/features/explore/hooks/useJoinMutation";
 import { usePostLoginMutation } from "@/components/layout/sidebar/usePostLoginMutation";
@@ -52,7 +54,7 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
     isPending,
     isError,
   } = useGetCourseDetailQuery(courseId);
-  const { mutate: join } = useJoinMutation();
+  const { mutate: join, error: joinError } = useJoinMutation();
   const {
     mutate: signup,
     data: signupResult,
@@ -117,6 +119,10 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
     );
   }
 
+  if (joinError && getApiCode(joinError) === "EXPLORATION410") {
+    return <ExpiredState />;
+  }
+
   if (isLoggedIn && !isCodeModalOpen) {
     return (
       <div className="flex h-dvh items-center justify-center">
@@ -125,7 +131,7 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
     );
   }
 
-  // TODO(담당자): 초대자(코스 소유자) 이름은 코스 응답에 없음.
+  // TODO: 초대자(코스 소유자) 이름은 코스 응답에 없음. (담당자)
   // 팀 합류/참여자 API에서 가져와야 함. 우선 기본값으로 표시.
   const inviterName = "친구";
 

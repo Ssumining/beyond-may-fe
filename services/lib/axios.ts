@@ -63,7 +63,9 @@ api.interceptors.response.use(
     const body = response.data;
     // 공통 실패 처리: success가 false면 throw (판단은 success 필드로 — 팀 합의)
     if (body && body.success === false) {
-      throw new Error(body.message ?? "요청에 실패했습니다.");
+      const apiError = new Error(body.message ?? "요청에 실패했습니다.");
+      (apiError as Error & { apiCode?: string }).apiCode = body.code;
+      throw apiError;
     }
     return body;
   },
@@ -79,6 +81,26 @@ api.interceptors.response.use(
         window.location.assign("/?session=expired");
       }
     }
+    // HTTP 에러(410/409/404 등) body의 서버 code를 apiCode로 보존.
+    // axios 네이티브 error.code(ECONNABORTED 등)는 건드리지 않음 → 타임아웃 감지용.
+    const apiCode = error.response?.data?.code;
+    if (apiCode) {
+      (error as typeof error & { apiCode?: string }).apiCode = apiCode;
+    }
     return Promise.reject(error);
   },
 );
+
+/**
+ * 서버 비즈니스 코드(EXPLORATION410 등)를 꺼냄.
+ * 인터셉터가 error에 붙인 apiCode를 읽는다. (axios 네이티브 .code 아님)
+ */
+export const getApiCode = (e: unknown): string | undefined =>
+  (e as { apiCode?: string })?.apiCode;
+
+/**
+ * 클라이언트 타임아웃 여부. axios가 요청을 끊으면 네이티브 code가 ECONNABORTED.
+ * 서버 503 타임아웃(COURSE_GENERATION_TIMEOUT 등)과는 다른 축 — 그건 getApiCode로 잡음.
+ */
+export const isTimeout = (e: unknown): boolean =>
+  (e as { code?: string })?.code === "ECONNABORTED";
