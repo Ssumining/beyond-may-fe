@@ -6,10 +6,14 @@ import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import KakaoMap from "@/components/map/Map";
 import PlaceDetailSheet from "@/components/place-detail/PlaceDetailSheet";
+import ShareSheet from "@/components/share-sheet/ShareSheet";
 import Button from "@/components/ui/Button";
 import ChevronRight from "@/components/ui/icons/ChevronRight";
+import Modal from "@/components/ui/Modal";
+import LitMapShareCard from "@/features/record/components/LitMapShareCard";
 import useGetVisitedPlacesQuery from "@/features/record/hooks/useGetVisitedPlacesQuery";
 import useUploadVisitPhotoMutation from "@/features/record/hooks/useUploadVisitPhotoMutation";
+import { useCaptureImage } from "@/hooks/useCaptureImage";
 import { cn } from "@/lib/cn";
 import {
   formatRecordDate,
@@ -19,6 +23,8 @@ import {
 import type { MapMarker } from "@/types/map";
 import type { PlaceDetailResponse } from "@/types/place";
 import type { VisitedPlaceRecord } from "@/types/record";
+
+const LIT_MAP_SHARE_VERSIONS = [{ id: "lit-map", label: "밝힌 지도" }];
 
 type RecordTab = "ongoing" | "completed" | "visits" | "map";
 
@@ -49,7 +55,14 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
   const isEmpty = state === "empty";
   const records = isEmpty ? [] : MOCK_TRAVEL_RECORDS;
   const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
-  const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [isLitMapShareOpen, setIsLitMapShareOpen] = useState(false);
+  const [hasLitMapCaptureError, setHasLitMapCaptureError] = useState(false);
+  const {
+    ref: litMapShareCardRef,
+    isCapturing: isLitMapCapturing,
+    download: downloadLitMap,
+    share: shareLitMap,
+  } = useCaptureImage<HTMLDivElement>();
   const {
     data: visitedPlacesData,
     isLoading: isVisitsLoading,
@@ -89,6 +102,23 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
     : null;
 
   const stateSuffix = isEmpty ? "&state=empty" : "";
+
+  const handleDownloadLitMap = async (): Promise<void> => {
+    try {
+      await downloadLitMap({ fileName: "beyond-may-lit-map" });
+    } catch {
+      setHasLitMapCaptureError(true);
+    }
+  };
+
+  const handleShareLitMap = async (): Promise<void> => {
+    const result = await shareLitMap({
+      fileName: "beyond-may-lit-map",
+      shareTitle: "내가 밝힌 광주",
+      shareText: `${mapMarkers.length}곳에 빛을 남겼어요.`,
+    });
+    if (result === "failed") setHasLitMapCaptureError(true);
+  };
 
   return (
     <main className="bg-neutral-01 mx-auto min-h-dvh w-full max-w-[430px] pb-[max(40px,env(safe-area-inset-bottom))]">
@@ -316,9 +346,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
             <Button
               size="lg"
               disabled={mapMarkers.length === 0}
-              onClick={() =>
-                setShareStatus("밝힌 지도 이미지를 저장할 준비가 됐어요.")
-              }
+              onClick={() => setIsLitMapShareOpen(true)}
             >
               이미지 저장
             </Button>
@@ -326,32 +354,51 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
               variant="solid"
               size="lg"
               disabled={mapMarkers.length === 0}
-              onClick={() => {
-                if (navigator.share) {
-                  void navigator.share({
-                    title: "내가 밝힌 광주",
-                    text: `${mapMarkers.length}곳에 빛을 남겼어요.`,
-                    url: window.location.href,
-                  });
-                } else {
-                  void navigator.clipboard?.writeText(window.location.href);
-                  setShareStatus("공유 링크를 복사했어요.");
-                }
-              }}
+              onClick={() => setIsLitMapShareOpen(true)}
             >
               지도 공유
             </Button>
           </div>
-          {shareStatus && (
-            <p
-              className="bg-neutral-07 text-neutral-01 mt-3 rounded-full px-4 py-3 text-center text-[12px]"
-              role="status"
-            >
-              {shareStatus}
-            </p>
-          )}
         </section>
       )}
+
+      <ShareSheet
+        open={isLitMapShareOpen}
+        onClose={() => setIsLitMapShareOpen(false)}
+        versions={LIT_MAP_SHARE_VERSIONS}
+        selectedVersionId="lit-map"
+        onSelectVersion={() => undefined}
+        onDownload={handleDownloadLitMap}
+        onShare={handleShareLitMap}
+        isProcessing={isLitMapCapturing}
+      >
+        <div ref={litMapShareCardRef}>
+          <LitMapShareCard
+            visitCount={mapMarkers.length}
+            placeNames={mapMarkers
+              .map((marker) => marker.label)
+              .filter((label): label is string => !!label)}
+          />
+        </div>
+      </ShareSheet>
+
+      <Modal
+        open={hasLitMapCaptureError}
+        onClose={() => setHasLitMapCaptureError(false)}
+      >
+        <h2 className="text-[17px] font-bold">이미지를 만들지 못했어요</h2>
+        <p className="text-neutral-04 mt-2 text-[13px] leading-[1.6]">
+          잠시 후 다시 시도해 주세요.
+        </p>
+        <Button
+          variant="solid"
+          size="lg"
+          className="mt-5 w-full"
+          onClick={() => setHasLitMapCaptureError(false)}
+        >
+          확인
+        </Button>
+      </Modal>
 
       {selectedPlaceDetail && selectedVisit && (
         <div className="fixed inset-0 z-50">
