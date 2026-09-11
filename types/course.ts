@@ -91,16 +91,32 @@ export interface CourseListResponse {
   courses: CourseResponse[];
 }
 
-/* ── 코스 수정 (3.2 / 9·10번, 먼 작업) ──
-   TODO(9·10번): release 구조는 collection과 다름. 해당 단계에서 재정의.
-   - 직접수정(10번): PUT /courses/{id}/places, body { places:[{placeId,dayNumber,visitOrder}] }
-   - AI수정(9번): POST /courses/{id}/chat → { type, message, proposedPlaces, recommendations, remainingRevisions }
-                 + POST /courses/{id}/chat/apply
-   아래는 지금 통과용 최소 정의. */
-export interface RefineCourseRequest {
+/* ── AI 코스 수정 (챗봇) (3.2.1 / 9번) — collection(_5) 실측 기준 ──
+   POST /courses/{id}/chat        → 수정 요청 (ChatCourseResponse)
+   POST /courses/{id}/chat/apply  → 제안 적용 (body: CoursePlacesRequest → CourseResponse)
+   POST /courses/{id}/places/{placeId} → 추천 장소 추가 (→ CourseResponse) */
+
+/** 챗봇 수정 요청 body */
+export interface ChatCourseRequest {
   message: string;
 }
 
-export interface UpdateCourseRequest {
+/** 챗봇 응답 종류.
+ *  COURSE_REVISION: 순서·구성 보정 제안 / ADD_RECOMMENDATION: 추천 장소 제시 */
+export type ChatResponseType = "COURSE_REVISION" | "ADD_RECOMMENDATION";
+
+/** 챗봇 수정 요청 응답. proposedPlaces는 미리보기용 제안 코스,
+ *  recommendations는 추가 후보 장소, remainingRevisions는 남은 요청 횟수(최대 2). */
+export interface ChatCourseResponse {
+  type: ChatResponseType;
+  message: string;
+  proposedPlaces: CoursePlace[];
+  recommendations: CoursePlace[];
+  remainingRevisions: number;
+}
+
+/* ── 코스 장소 순서 저장 (직접 수정 10번 / 챗봇 적용 9번 공용) ──
+   body가 동일해 공용. 10번에서 재검토. */
+export interface CoursePlacesRequest {
   places: Array<{ placeId: number; dayNumber: number; visitOrder: number }>;
 }
