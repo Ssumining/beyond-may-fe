@@ -44,4 +44,16 @@ export const disconnectClient = (): void => {
   }
 };
 
+/** STOMP 메시지 발행 (SEND). destination에 JSON body 전송. */
+export const publishMessage = (destination: string, body: unknown): void => {
+  const current = getClient();
+  if (current.active && current.connected) {
+    current.publish({
+      destination,
+      body: JSON.stringify(body),
+      headers: { "content-type": "application/json" },
+    });
+  }
+};
+
 export type { IMessage };

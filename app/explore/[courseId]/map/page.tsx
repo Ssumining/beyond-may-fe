@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import { useGetNearbyPlacesQuery } from "@/hooks/queries/useGetNearbyPlacesQuery";
@@ -8,6 +8,7 @@ import { getCourseMapData } from "@/features/course/utils/courseMapAdapter";
 import { toLatLng } from "@/features/explore/utils/toLatLng";
 import { isInGwangju } from "@/lib/geo/gwangju";
 
+import useExplorationSocket from "@/features/explore/hooks/useExplorationSocket";
 import VisitMap from "@/features/explore/components/VisitMap";
 import ExploreHeader from "@/features/explore/components/ExploreHeader";
 import TeamBadge from "@/features/explore/components/TeamBadge";
@@ -53,6 +54,39 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   useGeolocation({ enabled: true });
   const coordinates = useGeolocationStore((state) => state.coordinates);
   const isAccurate = useGeolocationStore((state) => state.isAccurate);
+
+  // STOMP 연결 (구독: visits·locations·events)
+  const { sendLocation } = useExplorationSocket({
+    explorationId: explorationId ?? 0,
+    token:
+      typeof window !== "undefined"
+        ? (localStorage.getItem("accessToken") ?? undefined)
+        : undefined,
+    enabled: explorationId !== null,
+    onVisit: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
+      });
+    },
+    onLocation: (payload) => {
+      console.log("팀원 위치:", payload);
+    },
+    onEvent: (payload) => {
+      console.log("이벤트:", payload);
+    },
+  });
+
+  // 내 위치를 팀에 발행 (GPS 좌표 변경 시)
+  useEffect(() => {
+    if (coordinates && explorationId !== null) {
+      sendLocation({
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        accuracyMeters: coordinates.accuracy,
+        recordedAt: new Date().toISOString(),
+      });
+    }
+  }, [coordinates, explorationId, sendLocation]);
 
   const {
     data: course,
