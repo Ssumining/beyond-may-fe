@@ -56,4 +56,6 @@ export interface ExplorationStatePayload {
 export interface LocationUpdatePayload {
   latitude: number;
   longitude: number;
+  accuracyMeters: number;
+  recordedAt: string; // ISO 8601
 }

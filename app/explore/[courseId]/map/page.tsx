@@ -8,6 +8,7 @@ import { getCourseMapData } from "@/features/course/utils/courseMapAdapter";
 import { toLatLng } from "@/features/explore/utils/toLatLng";
 import { isInGwangju } from "@/lib/geo/gwangju";
 
+import useExplorationSocket from "@/features/explore/hooks/useExplorationSocket";
 import VisitMap from "@/features/explore/components/VisitMap";
 import ExploreHeader from "@/features/explore/components/ExploreHeader";
 import TeamBadge from "@/features/explore/components/TeamBadge";
@@ -53,6 +54,30 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   useGeolocation({ enabled: true });
   const coordinates = useGeolocationStore((state) => state.coordinates);
   const isAccurate = useGeolocationStore((state) => state.isAccurate);
+
+  // STOMP 연결 (구독: visits·locations·events)
+  useExplorationSocket({
+    explorationId: explorationId ?? 0,
+    token:
+      typeof window !== "undefined"
+        ? (localStorage.getItem("accessToken") ?? undefined)
+        : undefined,
+    enabled: explorationId !== null,
+    onVisit: () => {
+      // 방문 전파 → 밝힌 장소 재조회 (핀 갱신)
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
+      });
+    },
+    onLocation: (payload) => {
+      // TODO: 팀원 위치 마커 (2단계)
+      console.log("팀원 위치:", payload);
+    },
+    onEvent: (payload) => {
+      // TODO: 팀원 합류/상태 → 팀원 목록 갱신
+      console.log("이벤트:", payload);
+    },
+  });
 
   const {
     data: course,
