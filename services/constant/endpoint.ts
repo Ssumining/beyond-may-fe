@@ -14,7 +14,10 @@ export const API_ENDPOINTS = {
     detail: (courseId: string) => `/api/v1/courses/${courseId}`,
     draft: (courseId: string) => `/api/v1/courses/${courseId}/draft`,
     confirm: (courseId: string) => `/api/v1/courses/${courseId}/confirm`,
-    refine: (courseId: string) => `/api/v1/courses/${courseId}/ai-refine`,
+    chat: (courseId: string) => `/api/v1/courses/${courseId}/chat`,
+    chatApply: (courseId: string) => `/api/v1/courses/${courseId}/chat/apply`,
+    placeAdd: (courseId: string, placeId: number) =>
+      `/api/v1/courses/${courseId}/places/${placeId}`,
     aiGeneration: "/api/v1/courses/ai-generation",
   },
   preference: {
