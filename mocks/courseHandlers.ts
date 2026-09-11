@@ -3,8 +3,9 @@ import { http, HttpResponse, delay } from "msw";
 import type {
   CourseResponse,
   GenerateCourseRequest,
-  RefineCourseRequest,
-  UpdateCourseRequest,
+  ChatCourseRequest,
+  ChatCourseResponse,
+  CoursePlacesRequest,
 } from "@/types/course";
 
 /**
@@ -187,12 +188,12 @@ export const courseHandlers = [
     },
   ),
 
-  /** 자연어 요청으로 코스 순서를 다시 추천받는다. */
+  /** 자연어로 코스 수정을 요청한다. (챗봇 — 제안만 반환, 저장 안 함) */
   http.post(
-    `${BASE_URL}/api/v1/courses/:courseId/ai-refine`,
+    `${BASE_URL}/api/v1/courses/:courseId/chat`,
     async ({ params, request }) => {
       const courseId = Number(params.courseId);
-      const body = (await request.json()) as Partial<RefineCourseRequest>;
+      const body = (await request.json()) as Partial<ChatCourseRequest>;
       await delay(1200);
 
       if (!body.message?.trim() || body.message.includes("실패")) {
@@ -208,15 +209,112 @@ export const courseHandlers = [
       }
 
       const course = getMockCourse(courseId);
-      const refinedCourse: CourseResponse = {
-        ...course,
-        places: [...course.places]
-          .reverse()
-          .map((place, index) => ({ ...place, visitOrder: index + 1 })),
-      };
-      courseOverrides.set(courseId, refinedCourse);
 
-      return HttpResponse.json(wrap(refinedCourse));
+      // "추가"·"추천" 포함 시 ADD_RECOMMENDATION, 그 외 COURSE_REVISION으로 흉내
+      const isAdd = /추가|추천/.test(body.message);
+
+      const response: ChatCourseResponse = isAdd
+        ? {
+            type: "ADD_RECOMMENDATION",
+            message: "이런 장소는 어떠세요?",
+            proposedPlaces: [],
+            recommendations: [
+              {
+                placeId: 201,
+                name: "동명동 카페거리",
+                category: "카페",
+                address: "광주광역시 동구 동명동",
+                latitude: 35.1465,
+                longitude: 126.9223,
+                dayNumber: 1,
+                visitOrder: course.places.length + 1,
+                estimatedStayMinutes: 60,
+                travelModeFromPrevious: "WALK",
+                travelMbtiType: "FOODIE",
+              },
+            ],
+            remainingRevisions: 1,
+          }
+        : {
+            type: "COURSE_REVISION",
+            message: "이동 거리가 짧아지도록 순서를 바꿨어요.",
+            proposedPlaces: [...course.places]
+              .reverse()
+              .map((place, index) => ({ ...place, visitOrder: index + 1 })),
+            recommendations: [],
+            remainingRevisions: 1,
+          };
+
+      return HttpResponse.json(wrap(response));
+    },
+  ),
+
+  /** 챗봇이 제안한 순서를 적용한다. (적용 시점에 override 저장) */
+  http.post(
+    `${BASE_URL}/api/v1/courses/:courseId/chat/apply`,
+    async ({ params, request }) => {
+      const courseId = Number(params.courseId);
+      const body = (await request.json()) as Partial<CoursePlacesRequest>;
+      const course = getMockCourse(courseId);
+      await delay(700);
+
+      if (!Array.isArray(body.places) || body.places.length === 0) {
+        return HttpResponse.json(
+          {
+            code: "COURSE400",
+            data: null,
+            message: "적용할 장소 순서를 확인해 주세요.",
+            success: false,
+          },
+          { status: 400 },
+        );
+      }
+
+      const placesById = new Map(
+        course.places.map((place) => [place.placeId, place]),
+      );
+      const places = body.places.flatMap(
+        ({ placeId, dayNumber, visitOrder }) => {
+          const place = placesById.get(placeId);
+          return place ? [{ ...place, dayNumber, visitOrder }] : [];
+        },
+      );
+
+      const updatedCourse = { ...course, places };
+      courseOverrides.set(courseId, updatedCourse);
+      return HttpResponse.json(wrap(updatedCourse));
+    },
+  ),
+
+  /** 챗봇이 추천한 장소를 코스에 추가한다. (:id/places/:placeId 가 :id/places 보다 먼저) */
+  http.post(
+    `${BASE_URL}/api/v1/courses/:courseId/places/:placeId`,
+    async ({ params }) => {
+      const courseId = Number(params.courseId);
+      const placeId = Number(params.placeId);
+      const course = getMockCourse(courseId);
+      await delay(600);
+
+      const newPlace: CourseResponse["places"][number] = {
+        placeId,
+        name: "동명동 카페거리",
+        category: "카페",
+        address: "광주광역시 동구 동명동",
+        latitude: 35.1465,
+        longitude: 126.9223,
+        dayNumber: 1,
+        visitOrder: course.places.length + 1,
+        estimatedStayMinutes: 60,
+        travelModeFromPrevious: "WALK",
+        travelMbtiType: "FOODIE",
+      };
+
+      const updatedCourse = {
+        ...course,
+        places: [...course.places, newPlace],
+      };
+      courseOverrides.set(courseId, updatedCourse);
+      return HttpResponse.json(wrap(updatedCourse));
     },
   ),
 
@@ -225,7 +323,7 @@ export const courseHandlers = [
     `${BASE_URL}/api/v1/courses/:courseId`,
     async ({ params, request }) => {
       const courseId = Number(params.courseId);
-      const body = (await request.json()) as Partial<UpdateCourseRequest>;
+      const body = (await request.json()) as Partial<CoursePlacesRequest>;
       const course = getMockCourse(courseId);
       await delay(700);
 
