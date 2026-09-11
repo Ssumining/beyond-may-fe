@@ -15,6 +15,9 @@ import TeamParticipantsSheet from "@/features/explore/components/TeamParticipant
 import NearbyPlacesSheet from "@/features/explore/components/NearbyPlacesSheet";
 import NearbyEmptyToast from "@/features/explore/components/NearbyEmptyToast";
 import LocationSharingModal from "@/features/explore/components/LocationSharingModal";
+import { useQueryClient } from "@tanstack/react-query";
+import PlaceDetailContainer from "@/features/explore/components/PlaceDetailContainer";
+import { QUERY_KEYS } from "@/services/constant/queryKey";
 import OutOfGwangjuBanner from "@/features/explore/components/OutOfGwangjuBanner";
 import Sidebar from "@/components/layout/sidebar/Sidebar";
 import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
@@ -44,6 +47,8 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocationSharingOpen, setIsLocationSharingOpen] = useState(true);
   const [isNearbyRequested, setIsNearbyRequested] = useState(false);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
 
   useGeolocation({ enabled: true });
   const coordinates = useGeolocationStore((state) => state.coordinates);
@@ -181,9 +186,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
       {isNearbyRequested && isNearbySuccess && nearbyPlaces.length > 0 && (
         <NearbyPlacesSheet
           places={nearbyPlaces}
-          onSelectPlace={(placeId) => {
-            console.log("select place:", placeId);
-          }}
+          onSelectPlace={(placeId) => setSelectedPlaceId(placeId)}
           onClose={() => setIsNearbyRequested(false)}
         />
       )}
@@ -193,6 +196,21 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
       )}
 
       {isOutOfGwangju && <OutOfGwangjuBanner />}
+      <PlaceDetailContainer
+        placeId={selectedPlaceId}
+        explorationId={explorationId}
+        isVisited={
+          selectedPlaceId !== null &&
+          initialVisitedPlaceIds.includes(selectedPlaceId)
+        }
+        onClose={() => setSelectedPlaceId(null)}
+        onVisitSuccess={() => {
+          queryClient.invalidateQueries({
+            queryKey: QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
+          });
+          setSelectedPlaceId(null);
+        }}
+      />
     </div>
   );
 };
