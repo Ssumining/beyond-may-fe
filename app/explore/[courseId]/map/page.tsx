@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import { useGetNearbyPlacesQuery } from "@/hooks/queries/useGetNearbyPlacesQuery";
@@ -56,7 +56,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const isAccurate = useGeolocationStore((state) => state.isAccurate);
 
   // STOMP 연결 (구독: visits·locations·events)
-  useExplorationSocket({
+  const { sendLocation } = useExplorationSocket({
     explorationId: explorationId ?? 0,
     token:
       typeof window !== "undefined"
@@ -64,20 +64,29 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         : undefined,
     enabled: explorationId !== null,
     onVisit: () => {
-      // 방문 전파 → 밝힌 장소 재조회 (핀 갱신)
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
       });
     },
     onLocation: (payload) => {
-      // TODO: 팀원 위치 마커 (2단계)
       console.log("팀원 위치:", payload);
     },
     onEvent: (payload) => {
-      // TODO: 팀원 합류/상태 → 팀원 목록 갱신
       console.log("이벤트:", payload);
     },
   });
+
+  // 내 위치를 팀에 발행 (GPS 좌표 변경 시)
+  useEffect(() => {
+    if (coordinates && explorationId !== null) {
+      sendLocation({
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        accuracyMeters: coordinates.accuracy,
+        recordedAt: new Date().toISOString(),
+      });
+    }
+  }, [coordinates, explorationId, sendLocation]);
 
   const {
     data: course,
