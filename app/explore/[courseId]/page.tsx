@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -43,6 +44,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
  */
 const ExplorePage = ({ params }: ExplorePageProps) => {
   const { courseId } = use(params);
+  const router = useRouter();
   const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
 
   const [mode, setMode] = useState<"signup" | "login">("signup");
@@ -80,9 +82,13 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
 
   useEffect(() => {
     if (course && isLoggedIn && !isCodeModalOpen) {
-      join(courseId);
+      join(courseId, {
+        onSuccess: () => {
+          router.push(`/explore/${courseId}/map`);
+        },
+      });
     }
-  }, [course, isLoggedIn, courseId, join, isCodeModalOpen]);
+  }, [course, isLoggedIn, courseId, join, isCodeModalOpen, router]);
 
   const onSignup = (values: SignupFormValues) => {
     signup(values, { onSuccess: () => setIsCodeModalOpen(true) });
@@ -90,7 +96,9 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
 
   const handleCodeModalClose = () => {
     setIsCodeModalOpen(false);
-    join(courseId);
+    join(courseId, {
+      onSuccess: () => router.push(`/explore/${courseId}/map`),
+    });
   };
 
   const onLogin = (values: LoginFormValues) => {
@@ -99,7 +107,12 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
         nickname: values.nickname,
         identificationCode: Number(values.identificationCode),
       },
-      { onSuccess: () => join(courseId) },
+      {
+        onSuccess: () =>
+          join(courseId, {
+            onSuccess: () => router.push(`/explore/${courseId}/map`),
+          }),
+      },
     );
   };
 
