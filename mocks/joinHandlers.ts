@@ -27,7 +27,7 @@ export const joinHandlers = [
         {
           message: "이미 다른 탐험에 참여 중입니다.",
           code: "EXPLORATION409",
-          data: null,
+          data: { activeExplorationId: 44 },
           success: false,
         },
         { status: 409 },

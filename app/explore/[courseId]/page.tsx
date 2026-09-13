@@ -7,7 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import ExpiredState from "@/components/ui/ExpiredState";
-import { getApiCode } from "@/services/lib/axios";
+import { getApiCode, getApiErrorData } from "@/services/lib/axios";
+import DuplicateExplorationState from "@/features/explore/components/DuplicateExplorationState";
+import type { DuplicateExplorationErrorData } from "@/types/exploration";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import useJoinMutation from "@/features/explore/hooks/useJoinMutation";
 import { usePostLoginMutation } from "@/components/layout/sidebar/usePostLoginMutation";
@@ -134,6 +136,20 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
 
   if (joinError && getApiCode(joinError) === "EXPLORATION410") {
     return <ExpiredState />;
+  }
+
+  const duplicateData = getApiErrorData<DuplicateExplorationErrorData>(joinError);
+  if (joinError && getApiCode(joinError) === "EXPLORATION409" && duplicateData) {
+    return (
+      <DuplicateExplorationState
+        activeExplorationId={duplicateData.activeExplorationId}
+        onLeaveSuccess={() =>
+          join(courseId, {
+            onSuccess: () => router.push(`/explore/${courseId}/map`),
+          })
+        }
+      />
+    );
   }
 
   if (isLoggedIn && !isCodeModalOpen) {

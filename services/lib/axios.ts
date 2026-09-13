@@ -99,6 +99,13 @@ export const getApiCode = (e: unknown): string | undefined =>
   (e as { apiCode?: string })?.apiCode;
 
 /**
+ * 에러 응답의 data를 꺼냄 (EXPLORATION409의 activeExplorationId 등).
+ * 인터셉터가 변형하지 않은 axios 원본 error.response.data.data를 그대로 읽음.
+ */
+export const getApiErrorData = <T,>(e: unknown): T | undefined =>
+  (e as { response?: { data?: { data?: T } } })?.response?.data?.data;
+
+/**
  * 클라이언트 타임아웃 여부. axios가 요청을 끊으면 네이티브 code가 ECONNABORTED.
  * 서버 503 타임아웃(COURSE_GENERATION_TIMEOUT 등)과는 다른 축 — 그건 getApiCode로 잡음.
  */
