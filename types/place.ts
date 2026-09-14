@@ -6,8 +6,6 @@ export interface PlaceDetailResponse {
   name: string;
   /** 장소의 업종·형태를 나타내는 화면 표시용 분류 (예: "전시"). travelMbtiType과는 별개 필드 */
   category: string;
-  // TODO(백엔드 확인): 실제 값은 THINKER/FOODIE/ARTIST/REMEMBERER(대문자)로 내려옴.
-  //   팀 전체 4유형 값 통일 논의 후 값 형식 맞출 예정, 우선 기존 PlaceCategory(소문자) 유지.
   travelMbtiType: PlaceCategory;
   tags: string[];
   address: string;

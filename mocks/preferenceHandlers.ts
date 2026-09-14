@@ -11,6 +11,7 @@ import {
   getMockPlaceDetail,
   MOCK_PLACE_RECOMMENDATIONS,
 } from "@/mocks/placeHandlers";
+import { getRegisteredUser } from "@/mocks/authHandlers";
 
 /**
  * 성향 검사 질문 mock.
@@ -387,10 +388,10 @@ const MOCK_DESCRIPTION =
 
 /** 유형별 식별자 ↔ 유형명. 나머지 필드는 공통 */
 const MOCK_TYPES = [
-  { type: "thinker", mbtiName: "사색러", mbtiTag: ["성찰", "역사"] },
-  { type: "foodie", mbtiName: "미식러", mbtiTag: ["음식", "골목"] },
-  { type: "artist", mbtiName: "예술러", mbtiTag: ["문화", "예술"] },
-  { type: "remember", mbtiName: "기억러", mbtiTag: ["민주화", "추모"] },
+  { type: "THINKER", mbtiName: "사색러", mbtiTag: ["성찰", "역사"] },
+  { type: "FOODIE", mbtiName: "미식러", mbtiTag: ["음식", "골목"] },
+  { type: "ARTIST", mbtiName: "예술러", mbtiTag: ["문화", "예술"] },
+  { type: "REMEMBERER", mbtiName: "기억러", mbtiTag: ["민주화", "추모"] },
 ] as const;
 
 /**
@@ -413,7 +414,7 @@ const buildRandomPercentages = (
     .map((weight) => Math.round((weight / weightSum) * remaining));
   const third = remaining - first - second;
 
-  const percentages = { thinker: 0, foodie: 0, artist: 0, remember: 0 };
+  const percentages = { THINKER: 0, FOODIE: 0, ARTIST: 0, REMEMBERER: 0 };
   percentages[dominantType] = dominant;
   percentages[others[0]] = first;
   percentages[others[1]] = second;
@@ -483,6 +484,37 @@ export const preferenceHandlers = [
       code: 200,
       data: buildRandomResult(),
       message: "OK",
+    });
+  }),
+
+  // 나의 성향 조회 — 가입 시 배정된(mock) 유형을 그대로 돌려준다.
+  http.get(`${BASE_URL}${API_ENDPOINTS.preference.me}`, async () => {
+    await delay(400);
+    const registeredUser = getRegisteredUser();
+    const preferenceType = registeredUser?.preferenceType ?? "THINKER";
+    const nickname = registeredUser?.nickname ?? "김감자";
+
+    const scores: Record<PreferenceType, number> = {
+      THINKER: 1,
+      FOODIE: 1,
+      ARTIST: 1,
+      REMEMBERER: 1,
+    };
+    scores[preferenceType] = 5;
+
+    return HttpResponse.json({
+      code: "COMMON200",
+      data: {
+        userId: 1,
+        nickname,
+        preferenceType,
+        thinkerScore: scores.THINKER,
+        foodieScore: scores.FOODIE,
+        artistScore: scores.ARTIST,
+        remembererScore: scores.REMEMBERER,
+      },
+      message: "성공입니다.",
+      success: true,
     });
   }),
 ];

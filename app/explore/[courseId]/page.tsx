@@ -138,8 +138,13 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
     return <ExpiredState />;
   }
 
-  const duplicateData = getApiErrorData<DuplicateExplorationErrorData>(joinError);
-  if (joinError && getApiCode(joinError) === "EXPLORATION409" && duplicateData) {
+  const duplicateData =
+    getApiErrorData<DuplicateExplorationErrorData>(joinError);
+  if (
+    joinError &&
+    getApiCode(joinError) === "EXPLORATION409" &&
+    duplicateData
+  ) {
     return (
       <DuplicateExplorationState
         activeExplorationId={duplicateData.activeExplorationId}

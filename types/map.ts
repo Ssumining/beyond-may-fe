@@ -4,8 +4,8 @@ export interface LatLng {
   lng: number;
 }
 
-/** 장소 유형 (Curated Layer 4분류, 성향 검사의 personalityType과 동일 형식) */
-export type PlaceCategory = "thinker" | "foodie" | "artist" | "remember";
+/** 장소 유형 (Curated Layer 4분류). 백엔드 travelMbtiType과 값 형식 통일(대문자, REMEMBERER) */
+export type PlaceCategory = "THINKER" | "FOODIE" | "ARTIST" | "REMEMBERER";
 
 /* 지도에 찍는 핀 하나 */
 export interface MapMarker {
@@ -14,7 +14,6 @@ export interface MapMarker {
   order?: number; // 코스 순서 번호 (코스 지도용)
   visited?: boolean; // 방문 여부 (탐험·밝힌 지도용)
   label?: string; // 핀에 띄울 이름
-  // TODO(백엔드 확인): 4유형 값 형식 제안함, 확정되면 조정
   category?: PlaceCategory; // 핀·glow 색상 결정
   isCurrent?: boolean; // 다음 목적지 (프론트에서 order·visited로 계산)
   /** 팀원 위치 마커. 생략하면 기존 장소 핀으로 렌더한다. */

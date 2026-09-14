@@ -6,8 +6,6 @@ import type {
   ConfirmCourseResponse,
   CourseResponse,
   CourseListResponse,
-  GenerateCourseRequest,
-  GenerateCourseResponse,
   UpdateCourseRequest,
 } from "@/types/course";
 
@@ -53,14 +51,11 @@ export const postCourseConfirm = async (
   return response.data!;
 };
 
-/** 선택한 장소를 이동 순서에 맞춘 초안 코스로 생성한다. (3.1.0)
- *  TODO(생성 플로우): collection은 생성 응답이 전체 코스(CourseResponse). 반환타입 교체 예정. */
-export const postCourseGeneration = async (
-  body: GenerateCourseRequest,
-): Promise<GenerateCourseResponse> => {
-  const response = await api.post<GenerateCourseResponse>(
+/** 현재 추천 세트에 저장된 좋아요 장소와 여행 기간으로 초안 코스를 생성한다. (3.1.0)
+ *  본문 없음 — 서버가 인증 사용자의 현재 추천 세트를 그대로 사용한다. */
+export const postCourseGeneration = async (): Promise<CourseResponse> => {
+  const response = await api.post<CourseResponse>(
     API_ENDPOINTS.course.aiGeneration,
-    body,
   );
   return response.data!;
 };
