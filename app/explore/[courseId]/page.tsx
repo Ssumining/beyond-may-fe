@@ -42,8 +42,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
  * 공유 링크 팀 합류 진입 (4.1.1).
  * 세션 있으면 자동 합류. 없으면 신규(초대장+닉네임→postSignup) 기본,
  * "이미 가입?" 링크로 기존(로그인) 전환.
- * TODO: 합류 성공 시 explorationId 저장 + 탐험 화면(4.2.1) 이동
- * TODO: 오류 처리 (404/410/409)
  */
 const ExplorePage = ({ params }: ExplorePageProps) => {
   const { courseId } = use(params);
