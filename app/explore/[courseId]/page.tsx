@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import ExpiredState from "@/components/ui/ExpiredState";
+import CompletedExplorationState from "@/components/ui/CompletedExplorationState";
 import { getApiCode, getApiErrorData } from "@/services/lib/axios";
 import DuplicateExplorationState from "@/features/explore/components/DuplicateExplorationState";
 import type { DuplicateExplorationErrorData } from "@/types/exploration";
@@ -136,6 +137,10 @@ const ExplorePage = ({ params }: ExplorePageProps) => {
 
   if (joinError && getApiCode(joinError) === "EXPLORATION410") {
     return <ExpiredState />;
+  }
+
+  if (joinError && getApiCode(joinError) === "EXPLORATION409_2") {
+    return <CompletedExplorationState />;
   }
 
   const duplicateData = getApiErrorData<DuplicateExplorationErrorData>(joinError);
