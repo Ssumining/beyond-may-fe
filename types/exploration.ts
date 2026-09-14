@@ -150,6 +150,12 @@ export interface CurrentParticipant {
   locationSharingEnabled: boolean;
 }
 
+/** 서버가 계산한 현재 참여자 권한 (탐험 시작·조기 종료 버튼 노출 제어용) */
+export interface ExplorationPermissions {
+  canStart: boolean;
+  canCompleteEarly: boolean;
+}
+
 /** 탐험 상태 조회 응답 (GET /explorations/{id}) */
 export interface ExplorationStatusResponse {
   explorationId: number;
@@ -163,6 +169,7 @@ export interface ExplorationStatusResponse {
   teamVisitedPlaceCount: number;
   courseProgress: CourseProgress;
   currentParticipant: CurrentParticipant;
+  permissions: ExplorationPermissions;
 }
 
 /* ---------------- 위치 공유 설정 변경 (4.3.2) ---------------- */
