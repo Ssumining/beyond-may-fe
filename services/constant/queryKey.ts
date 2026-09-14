@@ -4,6 +4,7 @@ export const QUERY_KEYS = {
     QUESTIONS: () => [...QUERY_KEYS.PREFERENCE.ALL, "questions"] as const,
     RESULT: (userId: number) =>
       [...QUERY_KEYS.PREFERENCE.ALL, "result", userId] as const,
+    ME: () => [...QUERY_KEYS.PREFERENCE.ALL, "me"] as const,
   },
   COURSE: {
     ALL: ["course"] as const,

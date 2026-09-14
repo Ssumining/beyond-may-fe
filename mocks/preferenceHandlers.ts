@@ -11,6 +11,7 @@ import {
   getMockPlaceDetail,
   MOCK_PLACE_RECOMMENDATIONS,
 } from "@/mocks/placeHandlers";
+import { getRegisteredUser } from "@/mocks/authHandlers";
 
 /**
  * 성향 검사 질문 mock.
@@ -483,6 +484,37 @@ export const preferenceHandlers = [
       code: 200,
       data: buildRandomResult(),
       message: "OK",
+    });
+  }),
+
+  // 나의 성향 조회 — 가입 시 배정된(mock) 유형을 그대로 돌려준다.
+  http.get(`${BASE_URL}${API_ENDPOINTS.preference.me}`, async () => {
+    await delay(400);
+    const registeredUser = getRegisteredUser();
+    const preferenceType = registeredUser?.preferenceType ?? "THINKER";
+    const nickname = registeredUser?.nickname ?? "김감자";
+
+    const scores: Record<PreferenceType, number> = {
+      THINKER: 1,
+      FOODIE: 1,
+      ARTIST: 1,
+      REMEMBERER: 1,
+    };
+    scores[preferenceType] = 5;
+
+    return HttpResponse.json({
+      code: "COMMON200",
+      data: {
+        userId: 1,
+        nickname,
+        preferenceType,
+        thinkerScore: scores.THINKER,
+        foodieScore: scores.FOODIE,
+        artistScore: scores.ARTIST,
+        remembererScore: scores.REMEMBERER,
+      },
+      message: "성공입니다.",
+      success: true,
     });
   }),
 ];

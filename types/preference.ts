@@ -98,6 +98,22 @@ interface PreferenceResultResponse {
   recommendedPlaces: RecommendedPlace[];
 }
 
+/**
+ * 나의 성향 조회 응답 (GET /api/v1/users/me/preference).
+ * 토큰의 주인 기준으로 본인 것만 조회되며 path/query 파라미터가 없다 — 위
+ * PreferenceResultResponse(구 GET /users/{userId}/preference, 추천 장소 포함)와
+ * 달리 유형·유형별 선택 횟수만 가볍게 담은 별도 계약이다.
+ */
+interface MyPreferenceResponse {
+  userId: number;
+  nickname: string;
+  preferenceType: PreferenceType;
+  thinkerScore: number;
+  foodieScore: number;
+  artistScore: number;
+  remembererScore: number;
+}
+
 export type {
   OptionLabel,
   PreferenceOption,
@@ -109,4 +125,5 @@ export type {
   PreferencePercentages,
   RecommendedPlace,
   PreferenceResultResponse,
+  MyPreferenceResponse,
 };
