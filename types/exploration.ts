@@ -1,3 +1,5 @@
+import type { PlaceCategory } from "@/types/map";
+
 /** 참여자 역할 */
 export type ParticipantRole = "OWNER" | "MEMBER";
 
@@ -104,8 +106,7 @@ export interface VisitedPlace {
   placeId: number;
   name: string;
   category: string;
-  /** THINKER/FOODIE/ARTIST/REMEMBERER — 프론트 remember와 변환 필요 (팀 통일 대기) */
-  travelMbtiType: string;
+  travelMbtiType: PlaceCategory;
   latitude: number;
   longitude: number;
   thumbnailUrl: string | null;

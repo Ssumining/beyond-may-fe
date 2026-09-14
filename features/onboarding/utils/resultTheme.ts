@@ -29,28 +29,28 @@ interface ResultTheme {
 }
 
 const RESULT_THEME: Record<PreferenceType, ResultTheme> = {
-  thinker: {
+  THINKER: {
     gradientFrom: "var(--color-theme-purple-01)",
     gradientTo: "var(--color-theme-purple-02)",
     isLight: false,
     accent: "var(--color-theme-purple-01)",
     image: "/images/thinker.png",
   },
-  artist: {
+  ARTIST: {
     gradientFrom: "var(--color-theme-green-01)",
     gradientTo: "var(--color-theme-green-02)",
     isLight: true,
     accent: "var(--color-theme-green-02)",
     image: "/images/artist.png",
   },
-  foodie: {
+  FOODIE: {
     gradientFrom: "var(--color-theme-orange-02)",
     gradientTo: "var(--color-theme-orange-01)",
     isLight: true,
     accent: "var(--color-theme-orange-01)",
     image: "/images/foodie.png",
   },
-  remember: {
+  REMEMBERER: {
     gradientFrom: "var(--color-theme-blue-01)",
     gradientTo: "var(--color-theme-blue-02)",
     isLight: false,
@@ -68,8 +68,8 @@ export const getResultTheme = (type: PreferenceType): ResultTheme =>
  * 비율 목록 전체를 그리려면 4유형 이름을 프론트에서 알고 있어야 한다.
  */
 export const PREFERENCE_TYPE_LABEL: Record<PreferenceType, string> = {
-  thinker: "사색러",
-  foodie: "미식러",
-  artist: "예술러",
-  remember: "기억러",
+  THINKER: "사색러",
+  FOODIE: "미식러",
+  ARTIST: "예술러",
+  REMEMBERER: "기억러",
 };

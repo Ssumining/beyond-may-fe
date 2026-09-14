@@ -16,12 +16,12 @@ const ROUTE_STROKE_WEIGHT = 3;
 
 // 유형 ↔ 핀·glow 색 (연한 세트, globals.css --color-pin-*-rgb)
 const CATEGORY_COLORS: Record<PlaceCategory, string> = {
-  thinker: "var(--color-pin-thinker-rgb)",
-  foodie: "var(--color-pin-foodie-rgb)",
-  artist: "var(--color-pin-artist-rgb)",
-  remember: "var(--color-pin-remember-rgb)",
+  THINKER: "var(--color-pin-thinker-rgb)",
+  FOODIE: "var(--color-pin-foodie-rgb)",
+  ARTIST: "var(--color-pin-artist-rgb)",
+  REMEMBERER: "var(--color-pin-remember-rgb)",
 };
-const DEFAULT_COLOR = CATEGORY_COLORS.thinker;
+const DEFAULT_COLOR = CATEGORY_COLORS.THINKER;
 
 const GLOW_SIZE = 250;
 const GLOW_OPACITY_INNER = 0.55;
