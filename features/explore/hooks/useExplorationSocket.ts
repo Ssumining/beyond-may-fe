@@ -59,7 +59,7 @@ const useExplorationSocket = ({
     };
 
     client.onConnect = () => {
-      subscriptionsRef.current.forEach((sub) => sub.unsubscribe());
+      subscriptionsRef.current = [];
       const visitSub = client.subscribe(
         `/topic/explorations/${explorationId}/visits`,
         (message: IMessage) => {
