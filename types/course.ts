@@ -59,6 +59,10 @@ export interface CourseResponse {
   endDate: string; // ISO date
   startTime: string; // "09:00:00"
   places: CoursePlace[];
+  /** CONFIRMED일 때만 존재. 확정 직후 세션 상태에만 의존하면 새로고침·재방문 시
+   *  유실되어 탐험 시작이 막히므로, 조회 응답에도 포함해 그 값을 우선 쓴다.
+   *  TODO(백엔드): 실제 응답 필드명·존재 여부 확인 필요 — collection 미확인. */
+  explorationId: number | null;
 }
 
 /* ── 코스 확정 (3.3.1 / 6번) — collection(_5) 실측 기준 ──
@@ -91,32 +95,42 @@ export interface CourseListResponse {
   courses: CourseResponse[];
 }
 
-/* ── AI 코스 수정 (챗봇) (3.2.1 / 9번) — collection(_5) 실측 기준 ──
-   POST /courses/{id}/chat        → 수정 요청 (ChatCourseResponse)
-   POST /courses/{id}/chat/apply  → 제안 적용 (body: CoursePlacesRequest → CourseResponse)
-   POST /courses/{id}/places/{placeId} → 추천 장소 추가 (→ CourseResponse) */
-
-/** 챗봇 수정 요청 body */
+/* ── 코스 수정 (3.2 / 9·10번) — collection 실측 기준 ──
+   - 직접수정(10번): PUT /courses/{id}/places, body { places:[{placeId,dayNumber,visitOrder}] }
+   - AI수정(9번): POST /courses/{id}/chat → ChatCourseResponse (저장 안 됨, 미리보기만)
+                 + POST /courses/{id}/chat/apply, body { places:[...] } → 저장 */
 export interface ChatCourseRequest {
   message: string;
 }
 
-/** 챗봇 응답 종류.
- *  COURSE_REVISION: 순서·구성 보정 제안 / ADD_RECOMMENDATION: 추천 장소 제시 */
-export type ChatResponseType = "COURSE_REVISION" | "ADD_RECOMMENDATION";
+/** AI 챗봇 응답 종류 — 순서 재배치 제안(COURSE_REVISION) vs 추가할 장소 추천(ADD_RECOMMENDATION) */
+export type CourseChatType = "COURSE_REVISION" | "ADD_RECOMMENDATION";
 
-/** 챗봇 수정 요청 응답. proposedPlaces는 미리보기용 제안 코스,
- *  recommendations는 추가 후보 장소, remainingRevisions는 남은 요청 횟수(최대 2). */
+/** ADD_RECOMMENDATION일 때의 추천 장소 하나 — CoursePlace보다 필드가 적고 reason이 추가됨 */
+export interface CourseChatRecommendation {
+  placeId: number;
+  name: string;
+  category: string;
+  travelMbtiType: TravelMbtiType;
+  address: string;
+  latitude: number;
+  longitude: number;
+  /** AI가 이 장소를 추천한 이유 */
+  reason: string;
+}
+
 export interface ChatCourseResponse {
-  type: ChatResponseType;
+  type: CourseChatType;
+  /** AI의 자연어 설명 */
   message: string;
+  /** type이 COURSE_REVISION일 때만 채워짐(그 외엔 빈 배열) */
   proposedPlaces: CoursePlace[];
-  recommendations: CoursePlace[];
+  /** type이 ADD_RECOMMENDATION일 때만 채워짐(그 외엔 빈 배열) */
+  recommendations: CourseChatRecommendation[];
+  /** 남은 AI 수정 요청 횟수(최대 2회) */
   remainingRevisions: number;
 }
 
-/* ── 코스 장소 순서 저장 (직접 수정 10번 / 챗봇 적용 9번 공용) ──
-   body가 동일해 공용. 10번에서 재검토. */
-export interface CoursePlacesRequest {
+export interface UpdateCourseRequest {
   places: Array<{ placeId: number; dayNumber: number; visitOrder: number }>;
 }

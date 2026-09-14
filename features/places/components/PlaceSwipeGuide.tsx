@@ -48,8 +48,8 @@ const PlaceSwipeGuide = ({
           <ArrowRight className="text-neutral-04 h-5 w-5 rotate-180 opacity-50" />
 
           <div className="relative h-28 w-22.5">
-            <div className="bg-neutral-07/20 rounded-card absolute inset-0 -translate-x-1.5 translate-y-1" />
-            <div className="border-neutral-07 bg-neutral-01 shadow-soft rounded-card motion-safe:animate-card-sway absolute inset-0 overflow-hidden border-2">
+            <div className="bg-neutral-07/20 absolute inset-0 -translate-x-1.5 translate-y-1 rounded-2xl" />
+            <div className="border-neutral-07 bg-neutral-01 shadow-soft motion-safe:animate-card-sway absolute inset-0 overflow-hidden rounded-2xl border-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/place.jpg"

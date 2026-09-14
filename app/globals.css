@@ -86,6 +86,7 @@
   --animate-hint-bounce: hint-bounce 1.8s ease-in-out infinite;
   --animate-location-pulse: location-pulse 1.8s ease-out infinite;
   --animate-card-sway: card-sway 1.4s ease-in-out infinite;
+  --animate-card-pendulum: card-pendulum 2.6s ease-in-out infinite;
 }
 
 @layer base {
@@ -159,6 +160,17 @@
   }
   75% {
     transform: translateX(10px) rotate(6deg);
+  }
+}
+
+/* 아래쪽 축(origin-bottom)을 고정한 채 살짝 좌우로 흔들리는 진자 모션. 이동 없이 회전만. */
+@keyframes card-pendulum {
+  0%,
+  100% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
   }
 }
 

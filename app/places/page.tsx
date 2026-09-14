@@ -356,7 +356,7 @@ export default function PlacesPage() {
           <button
             type="button"
             onClick={() => setIsSelectionOpen(true)}
-            className="border-neutral-03 focus-visible:outline-primary-03 mb-3 flex min-h-12 w-full items-center justify-between rounded-2xl border bg-white px-4 text-left shadow-[0_4px_18px_rgba(20,20,20,0.05)]"
+            className="border-neutral-03 focus-visible:outline-primary-03 mt-3 mb-3 flex min-h-12 w-full items-center justify-between rounded-2xl border bg-white px-4 text-left shadow-[0_4px_18px_rgba(20,20,20,0.05)]"
           >
             <span className="text-neutral-07 text-[14px] font-semibold">
               내가 고른 장소
@@ -672,13 +672,31 @@ const SelectionModal = ({
             <button
               type="button"
               onClick={() => onOpenDetail(place.placeId)}
-              className="min-w-0 flex-1 text-left"
+              className="flex min-w-0 flex-1 items-center gap-3 text-left"
             >
-              <span className="text-neutral-07 block truncate text-[14px] font-semibold">
-                {place.name}
-              </span>
-              <span className="text-neutral-04 mt-0.5 block text-[11px]">
-                {place.category}
+              {place.thumbnailUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={place.thumbnailUrl}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                />
+              ) : (
+                <span
+                  className="bg-primary-04 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                  aria-hidden="true"
+                >
+                  <ImageIcon className="text-neutral-06 h-5 w-5" />
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="text-neutral-07 block truncate text-[14px] font-semibold">
+                  {place.name}
+                </span>
+                <span className="text-neutral-04 mt-0.5 block text-[11px]">
+                  {place.category}
+                </span>
               </span>
             </button>
             <button

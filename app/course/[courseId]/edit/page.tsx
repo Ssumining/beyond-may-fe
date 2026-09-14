@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
@@ -11,16 +11,22 @@ import useGetPlaceRecommendationsQuery from "@/features/places/hooks/useGetPlace
 import { getMinimumSelectionCount } from "@/features/places/utils/travelSchedule";
 import { moveCoursePlace } from "@/features/course/utils/reorderCoursePlaces";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
+
 import {
-  patchCourse,
+  postCourseAddPlace,
   postCourseChat,
   postCourseChatApply,
+  putCoursePlaces,
 } from "@/services/api/course/courseApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
-import type { CourseResponse, CoursePlace } from "@/types/course";
+import type {
+  CourseResponse,
+  CoursePlace,
+  CourseChatRecommendation,
+} from "@/types/course";
+
 import AlertCircle from "@/components/ui/icons/AlertCircle";
 import ArrowRight from "@/components/ui/icons/ArrowRight";
-
 import KakaoMap from "@/components/map/Map";
 import { getCourseMapData } from "@/features/course/utils/courseMapAdapter";
 import Sparkle from "@/components/ui/icons/Sparkle";
@@ -46,6 +52,14 @@ const SUGGESTIONS = [
   "로컬 맛집 추가",
 ];
 
+const NEW_PLACE_DEFAULTS = {
+  address: "장소 상세에서 확인",
+  latitude: 35.1469,
+  longitude: 126.9199,
+  estimatedStayMinutes: 60,
+  travelModeFromPrevious: null,
+} as const;
+
 const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -54,16 +68,26 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     [...course.places].sort((a, b) => a.visitOrder - b.visitOrder),
   );
   const [instruction, setInstruction] = useState("");
+
+  // AI 모드 관련 상태
   const [proposedPlaces, setProposedPlaces] = useState<CoursePlace[] | null>(
     null,
   );
+  const [chatRecommendations, setChatRecommendations] = useState<
+    CourseChatRecommendation[]
+  >([]);
   const [remainingRevisions, setRemainingRevisions] = useState(2);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+
+  // 수동 편집 관련 상태
   const [history, setHistory] = useState<CoursePlace[][]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
   const [isAddingPlace, setIsAddingPlace] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+
   const { data: recommendations = [] } = useGetPlaceRecommendationsQuery();
   const minimumPlaceCount = getMinimumSelectionCount(course.travelSchedule);
+
   const availablePlaces = recommendations.filter(
     (place) => !places.some(({ placeId }) => placeId === place.placeId),
   );
@@ -72,6 +96,32 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
   const detailHref = `/course/${course.courseId}/detail${fromHub ? "?from=hub" : ""}`;
   const manualHref = `/course/${course.courseId}/edit?mode=manual${fromHub ? "&from=hub" : ""}`;
 
+  // 수동 모드의 토스트 알림 처리
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 2000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  const handleSaveSuccess = (updatedCourse: CourseResponse): void => {
+    queryClient.setQueryData(
+      QUERY_KEYS.COURSE.DETAIL(String(course.courseId)),
+      updatedCourse,
+    );
+    void queryClient.invalidateQueries({
+      queryKey: QUERY_KEYS.COURSE.LIST(),
+    });
+    router.push(detailHref);
+  };
+
+  const toPlacesPayload = (targetPlaces: CoursePlace[]) =>
+    targetPlaces.map((place, index) => ({
+      placeId: place.placeId,
+      dayNumber: place.dayNumber,
+      visitOrder: index + 1,
+    }));
+
+  // 1. AI 수정 요청 (제안 또는 추천)
   const chatMutation = useMutation({
     mutationFn: () =>
       postCourseChat(String(course.courseId), {
@@ -81,51 +131,43 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
       setRemainingRevisions(res.remainingRevisions);
       if (res.type === "COURSE_REVISION") {
         setProposedPlaces(res.proposedPlaces);
+        setChatRecommendations([]);
+      } else {
+        setChatRecommendations(res.recommendations);
+        setProposedPlaces(null);
       }
     },
   });
 
+  // 2. AI 수정(미리보기) 적용
   const applyMutation = useMutation({
-    mutationFn: () => {
-      const target = proposedPlaces ?? places;
-      return postCourseChatApply(String(course.courseId), {
-        places: target.map((place, index) => ({
-          placeId: place.placeId,
-          dayNumber: place.dayNumber,
-          visitOrder: index + 1,
-        })),
-      });
-    },
-    onSuccess: (updated) => {
-      queryClient.setQueryData(
-        QUERY_KEYS.COURSE.DETAIL(String(course.courseId)),
-        updated,
-      );
-      void queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.COURSE.LIST(),
-      });
-      router.push(detailHref);
-    },
+    mutationFn: () =>
+      postCourseChatApply(String(course.courseId), {
+        places: toPlacesPayload(proposedPlaces ?? places),
+      }),
+    onSuccess: handleSaveSuccess,
   });
 
+  // 3. 직접 수정 저장
   const saveMutation = useMutation({
     mutationFn: () =>
-      patchCourse(String(course.courseId), {
-        places: places.map((place, index) => ({
-          placeId: place.placeId,
-          dayNumber: place.dayNumber,
-          visitOrder: index + 1,
-        })),
+      putCoursePlaces(String(course.courseId), {
+        places: toPlacesPayload(places),
       }),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(
-        QUERY_KEYS.COURSE.DETAIL(String(course.courseId)),
-        updated,
+    onSuccess: handleSaveSuccess,
+  });
+
+  // 4. AI 추천 장소 즉시 추가
+  const addPlaceMutation = useMutation({
+    mutationFn: (placeId: number) =>
+      postCourseAddPlace(String(course.courseId), placeId),
+    onSuccess: (updatedCourse, placeId) => {
+      setPlaces(
+        [...updatedCourse.places].sort((a, b) => a.visitOrder - b.visitOrder),
       );
-      void queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.COURSE.LIST(),
-      });
-      router.push(detailHref);
+      setChatRecommendations((current) =>
+        current.filter((place) => place.placeId !== placeId),
+      );
     },
   });
 
@@ -136,6 +178,7 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
       ?.filter((p) => !places.some((o) => o.placeId === p.placeId))
       .map((p) => p.placeId) ?? [];
 
+  // 수동 편집 핸들러들
   const handleMove = (index: number, direction: -1 | 1) => {
     setPlaces((current) => {
       const next = moveCoursePlace(current, index, direction);
@@ -145,7 +188,10 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
   };
 
   const handleDelete = (index: number): void => {
-    if (places.length <= minimumPlaceCount) return;
+    if (places.length <= minimumPlaceCount) {
+      setNotice(`최소 ${minimumPlaceCount}개 장소가 필요해요`);
+      return;
+    }
     setHistory((items) => [...items, places]);
     setPlaces((current) =>
       current
@@ -156,7 +202,10 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
 
   const handleUndo = (): void => {
     const previous = history.at(-1);
-    if (!previous) return;
+    if (!previous) {
+      setNotice("더 되돌릴 항목이 없어요");
+      return;
+    }
     setPlaces(previous);
     setHistory((items) => items.slice(0, -1));
   };
@@ -175,9 +224,7 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
   };
 
   const handleAddPlace = (placeId: number): void => {
-    const recommendation = recommendations.find(
-      (place) => place.placeId === placeId,
-    );
+    const recommendation = recommendations.find((r) => r.placeId === placeId);
     if (!recommendation) return;
     setHistory((items) => [...items, places]);
     setPlaces((current) => [
@@ -187,21 +234,18 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
         name: recommendation.name,
         category: recommendation.category,
         summary: `${recommendation.category} · ${recommendation.tags[0] ?? "추천 장소"}`,
-        address: "장소 상세에서 확인",
-        latitude: 35.1469,
-        longitude: 126.9199,
-        dayNumber: places.at(-1)?.dayNumber ?? 1,
+        dayNumber: current.at(-1)?.dayNumber ?? 1,
         visitOrder: current.length + 1,
-        estimatedStayMinutes: 60,
-        travelModeFromPrevious: null,
+        ...NEW_PLACE_DEFAULTS,
       },
     ]);
+    setIsAddingPlace(false);
   };
 
-  // ── 직접 수정(manual) 모드 — 10번에서 3.2.2 디자인으로 재작성 예정 ──
+  // ── 직접 수정(manual) 모드 (기존 3.2.2 유지) ──
   if (!isAiMode) {
     return (
-      <main className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] flex-col">
+      <main className="bg-neutral-01 relative mx-auto flex h-dvh w-full max-w-[430px] flex-col">
         <AppHeader
           backHref={detailHref}
           showMenu={false}
@@ -300,30 +344,33 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  <MoveButton
-                    place={place}
-                    label="위로 이동"
+                  <button
+                    type="button"
+                    aria-label="위로 이동"
                     disabled={index === 0}
                     onClick={() => handleMove(index, -1)}
+                    className="border-neutral-03 text-neutral-06 disabled:text-neutral-03 flex h-8 w-8 items-center justify-center rounded-full border text-[14px]"
                   >
                     ↑
-                  </MoveButton>
-                  <MoveButton
-                    place={place}
-                    label="아래로 이동"
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="아래로 이동"
                     disabled={index === places.length - 1}
                     onClick={() => handleMove(index, 1)}
+                    className="border-neutral-03 text-neutral-06 disabled:text-neutral-03 flex h-8 w-8 items-center justify-center rounded-full border text-[14px]"
                   >
                     ↓
-                  </MoveButton>
-                  <MoveButton
-                    place={place}
-                    label="코스에서 삭제"
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="코스에서 삭제"
                     disabled={places.length <= minimumPlaceCount}
                     onClick={() => handleDelete(index)}
+                    className="border-neutral-03 text-neutral-06 disabled:text-neutral-03 flex h-8 w-8 items-center justify-center rounded-full border text-[14px]"
                   >
                     ×
-                  </MoveButton>
+                  </button>
                 </div>
               </li>
             ))}
@@ -340,6 +387,17 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
             개수에서는 삭제할 수 없습니다.
           </p>
         </div>
+
+        {notice && (
+          <div className="pointer-events-none absolute bottom-[90px] left-1/2 w-max max-w-[90%] -translate-x-1/2">
+            <p
+              className="bg-neutral-07 text-neutral-01 rounded-full px-4 py-2 text-[12px] shadow-sm"
+              role="status"
+            >
+              {notice}
+            </p>
+          </div>
+        )}
 
         <div className="border-neutral-03 border-t bg-white px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
           <Button
@@ -403,7 +461,9 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
             다시 시도
           </Button>
         </div>
-      ) : remainingRevisions <= 0 && !hasProposal ? (
+      ) : remainingRevisions <= 0 &&
+        !hasProposal &&
+        chatRecommendations.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-[14px] px-10">
           <span className="border-neutral-03 text-neutral-04 rounded-full border px-[14px] py-[6px] text-[11px] font-medium">
             2 / 2 사용
@@ -491,6 +551,57 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
                 </div>
               </section>
 
+              {/* develop의 '장소 추천(ADD_RECOMMENDATION)' 처리 블록 */}
+              {chatRecommendations.length > 0 && (
+                <section
+                  className="px-[30px] pb-6"
+                  aria-labelledby="ai-recs-title"
+                >
+                  <h2
+                    id="ai-recs-title"
+                    className="text-neutral-07 text-[14px] font-semibold"
+                  >
+                    추천 장소
+                  </h2>
+                  <ul className="mt-3 space-y-2">
+                    {chatRecommendations.map((place) => (
+                      <li
+                        key={place.placeId}
+                        className="border-neutral-03 rounded-[18px] border bg-white p-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-neutral-07 truncate text-[14px] font-semibold">
+                              {place.name}
+                            </p>
+                            <p className="text-neutral-04 mt-0.5 text-[11px]">
+                              {place.category}
+                            </p>
+                            <p className="text-neutral-06 mt-1 text-[12px] leading-[1.5]">
+                              {place.reason}
+                            </p>
+                          </div>
+                          <Button
+                            size="md"
+                            className="shrink-0"
+                            isLoading={
+                              addPlaceMutation.isPending &&
+                              addPlaceMutation.variables === place.placeId
+                            }
+                            onClick={() =>
+                              addPlaceMutation.mutate(place.placeId)
+                            }
+                          >
+                            추가
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* 제안(COURSE_REVISION) 처리 블록 */}
               {hasProposal && (
                 <section aria-labelledby="ai-preview-title">
                   <h2
@@ -550,32 +661,6 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     </main>
   );
 };
-
-interface MoveButtonProps {
-  place: CoursePlace;
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-  children: string;
-}
-
-const MoveButton = ({
-  place,
-  label,
-  disabled,
-  onClick,
-  children,
-}: MoveButtonProps) => (
-  <button
-    type="button"
-    aria-label={`${place.name} ${label}`}
-    disabled={disabled}
-    onClick={onClick}
-    className="border-neutral-03 text-neutral-07 disabled:text-neutral-03 disabled:bg-neutral-02 flex h-9 w-9 items-center justify-center rounded-full border text-[16px]"
-  >
-    {children}
-  </button>
-);
 
 const CourseEditPage = ({ params, searchParams }: CourseEditPageProps) => {
   const { courseId } = use(params);

@@ -49,6 +49,7 @@ const ResultPage = () => {
 
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isLeaveOpen, setIsLeaveOpen] = useState(false);
+  const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
   const [isAlmostDone, setIsAlmostDone] = useState(false);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [shareVersion, setShareVersion] = useState<ShareVersionId>("record");
@@ -72,6 +73,9 @@ const ResultPage = () => {
 
   // 결과 유형이 확정되면 세션에 저장 — 사이드바 프로필 아바타 등에서 재사용한다.
   const setPreferenceType = useSessionStore((state) => state.setPreferenceType);
+  const clearPreferenceType = useSessionStore(
+    (state) => state.clearPreferenceType,
+  );
   useEffect(() => {
     if (data) setPreferenceType(data.type);
   }, [data, setPreferenceType]);
@@ -175,7 +179,13 @@ const ResultPage = () => {
   // 결과 도착: 유형 카드 + 추천 장소 (흰 배경)
   return (
     <main className="bg-neutral-01 mx-auto min-h-[100dvh] w-full max-w-[430px] pb-[max(48px,env(safe-area-inset-bottom))]">
-      <AppHeader showMenu={false} className="text-neutral-04" />
+      <AppHeader
+        showMenu={false}
+        className="text-neutral-04"
+        onHome={
+          !hadSessionOnEnter ? () => setIsExitConfirmOpen(true) : undefined
+        }
+      />
 
       <ResultTypeCard result={data} />
 
@@ -206,7 +216,7 @@ const ResultPage = () => {
             size="lg"
             icon={<Share className="h-4.5 w-4.5" />}
             onClick={() => setIsShareOpen(true)}
-            className="flex-1"
+            className="flex-3"
           >
             결과 공유하기
           </Button>
@@ -214,7 +224,7 @@ const ResultPage = () => {
             size="lg"
             icon={<Undo className="h-4.5 w-4.5" />}
             onClick={() => router.push("/onboarding")}
-            className="shrink-0 px-4"
+            className="flex-2"
           >
             다시 검사
           </Button>
@@ -279,6 +289,38 @@ const ResultPage = () => {
             onClick={() => setCaptureRetry(null)}
           >
             닫기
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={isExitConfirmOpen}
+        onClose={() => setIsExitConfirmOpen(false)}
+      >
+        <h2 className="text-neutral-07 text-[20px] font-semibold">
+          닉네임 등록을 안 하고 나가시겠어요?
+        </h2>
+        <p className="text-neutral-04 mt-2 text-[13px] leading-[1.55]">
+          등록하지 않으면 이 결과를 나중에 다시 찾을 수 없어요.
+        </p>
+        <div className="mt-5 flex flex-col gap-2">
+          <Button
+            variant="solid"
+            size="lg"
+            className="w-full"
+            onClick={() => {
+              clearPreferenceType();
+              router.push("/");
+            }}
+          >
+            나가기
+          </Button>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => setIsExitConfirmOpen(false)}
+          >
+            계속 등록하기
           </Button>
         </div>
       </Modal>
