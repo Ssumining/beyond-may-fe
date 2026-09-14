@@ -65,7 +65,9 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     (state) => state.setEnabled,
   );
   const isTourRunning = useLocationSimulationStore((state) => state.isRunning);
-  const setTourRunning = useLocationSimulationStore((state) => state.setRunning);
+  const setTourRunning = useLocationSimulationStore(
+    (state) => state.setRunning,
+  );
   const { walkTo, stopWalk } = useSimulatedLocation();
   const { mutate: verifyVisit } = useCreateVisitMutation();
   const autoTourTimerRef = useRef<number | null>(null);
@@ -101,8 +103,11 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     },
   });
 
-  const lastSentLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
- 
+  const lastSentLocationRef = useRef<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
   // 내 위치를 팀에 발행 (GPS 좌표 변경 시, 10m 이상 이동했을 때만)
   useEffect(() => {
     if (!coordinates || explorationId === null) return;
@@ -112,7 +117,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
       !lastSentLocationRef.current ||
       getDistanceInMeters(lastSentLocationRef.current, coordinates) >= 10;
     if (!hasMovedEnough) return;
- 
+
     lastSentLocationRef.current = {
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
@@ -172,15 +177,15 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     );
   }
 
-    const { center } = getCourseMapData(course.places);
+  const { center } = getCourseMapData(course.places);
   const myLocation =
     coordinates && isAccurate ? toLatLng(coordinates) : undefined;
   const initialVisitedPlaceIds =
     visitedData?.visitedPlaces.map((place) => place.placeId) ?? [];
 
   // 위치 체험 모드: 버튼 한 번으로 코스 순서대로 자동 이동하며 방문 인증
-    const runAutoTour = (index: number) => {
-      if (!useLocationSimulationStore.getState().isRunning) return;
+  const runAutoTour = (index: number) => {
+    if (!useLocationSimulationStore.getState().isRunning) return;
 
     const orderedPlaces = [...course.places].sort(
       (a, b) => a.dayNumber - b.dayNumber || a.visitOrder - b.visitOrder,
@@ -195,19 +200,19 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
     autoTourIndexRef.current = index; // 중단·재개용 현재 위치 기억
     const place = orderedPlaces[index];
-        const goNext = () => {
+    const goNext = () => {
       autoTourTimerRef.current = window.setTimeout(
         () => runAutoTour(index + 1),
         1200,
       );
     };
 
-      walkTo({ latitude: place.latitude, longitude: place.longitude }, () => {
-        if (!useLocationSimulationStore.getState().isRunning) return;
-        if (initialVisitedPlaceIds.includes(place.placeId)) {
-          goNext();
-          return;
-        }
+    walkTo({ latitude: place.latitude, longitude: place.longitude }, () => {
+      if (!useLocationSimulationStore.getState().isRunning) return;
+      if (initialVisitedPlaceIds.includes(place.placeId)) {
+        goNext();
+        return;
+      }
       verifyVisit(
         {
           explorationId,
@@ -219,8 +224,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         {
           onSuccess: () => {
             queryClient.invalidateQueries({
-              queryKey:
-                QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
+              queryKey: QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
             });
             goNext();
           },

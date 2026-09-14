@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 
 import ChevronRight from "@/components/ui/icons/ChevronRight";
 import { postLogout } from "@/services/api/auth/authApi";
 import useSessionStore from "@/stores/sessionStore";
+import useGetMyPreferenceQuery from "@/features/onboarding/hooks/useGetMyPreferenceQuery";
 import {
   getResultTheme,
   PREFERENCE_TYPE_LABEL,
@@ -30,7 +32,17 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
     (state) => state.identificationCode,
   );
   const preferenceType = useSessionStore((state) => state.preferenceType);
+  const setPreferenceType = useSessionStore((state) => state.setPreferenceType);
   const clearSession = useSessionStore((state) => state.clearSession);
+
+  // 세션에 유형이 없을 때만(다른 기기 로그인 등) 서버에서 복구 시도
+  const { data: myPreference } = useGetMyPreferenceQuery(
+    preferenceType === null,
+  );
+
+  useEffect(() => {
+    if (myPreference) setPreferenceType(myPreference.preferenceType);
+  }, [myPreference, setPreferenceType]);
 
   // 성향 검사를 마쳤으면 유형별 아바타 이미지, 아니면 기존 단색 원.
   const avatarImage = preferenceType

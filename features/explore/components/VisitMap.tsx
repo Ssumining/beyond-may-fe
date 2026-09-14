@@ -5,7 +5,6 @@ import KakaoMap from "@/components/map/Map";
 import MyLocationButton from "@/components/map/MyLocationButton";
 import type { CoursePlace } from "@/types/course";
 import type { MapMarker, LatLng } from "@/types/map";
-import { normalizeCategory } from "@/features/course/utils/courseMapAdapter";
 
 interface VisitMapProps {
   places: CoursePlace[];
@@ -32,7 +31,7 @@ const VisitMap = ({
     position: { lat: place.latitude, lng: place.longitude },
     order: place.visitOrder,
     visited: visitedPlaceIds.includes(place.placeId),
-    category: normalizeCategory(place.travelMbtiType),
+    category: place.travelMbtiType,
   }));
 
   const handleMarkerClick = (markerId: string): void => {

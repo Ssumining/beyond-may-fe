@@ -63,7 +63,7 @@ const SidebarCodeAccordion = ({ code }: SidebarCodeAccordionProps) => {
         </span>
       </button>
 
-      <div className="border-neutral-03 bg-neutral-01 mt-2 flex min-h-12 items-center justify-between rounded-xl border px-4">
+      <div className="border-neutral-03 bg-neutral-01 mt-1 flex min-h-12 items-center justify-between rounded-xl border px-4">
         <span className="text-neutral-07 text-[15px] font-medium">{code}</span>
         <button
           type="button"

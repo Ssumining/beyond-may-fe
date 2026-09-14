@@ -32,8 +32,7 @@ const DuplicateExplorationState = ({
   const { data: activeStatus } = useGetExplorationStatusQuery(
     String(activeExplorationId),
   );
-  const { mutate: leave, isPending: isLeaving } =
-    useLeaveExplorationMutation();
+  const { mutate: leave, isPending: isLeaving } = useLeaveExplorationMutation();
 
   const handleGoToExisting = (): void => {
     if (!activeStatus) return;
@@ -67,8 +66,7 @@ const DuplicateExplorationState = ({
         </h2>
         <p className="text-neutral-04 mt-2 text-[13px] leading-[1.55]">
           한 번에 하나의 지도에만 참여할 수 있어요.
-          <br />
-          새 지도에 참여하려면 먼저 기존 지도에서 나가야 해요.
+          <br />새 지도에 참여하려면 먼저 기존 지도에서 나가야 해요.
         </p>
         <div className="mt-5 flex flex-col gap-2">
           <Button

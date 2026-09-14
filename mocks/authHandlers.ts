@@ -6,6 +6,18 @@ import type {
   SignupRequest,
   SignupResponse,
 } from "@/types/user";
+import type { PreferenceType } from "@/types/preference";
+
+/** 회원가입 시 프론트가 아직 점수를 안 보내므로(#2 관련 별도 작업 대기),
+ *  "나의 성향 조회" mock을 테스트해볼 수 있게 무작위로 하나 배정한다. */
+const PREFERENCE_TYPES: PreferenceType[] = [
+  "THINKER",
+  "FOODIE",
+  "ARTIST",
+  "REMEMBERER",
+];
+const pickRandomPreferenceType = (): PreferenceType =>
+  PREFERENCE_TYPES[Math.floor(Math.random() * PREFERENCE_TYPES.length)];
 
 /**
  * 회원가입·로그인(닉네임+식별코드) mock.
@@ -29,9 +41,10 @@ const REGISTERED_USER_KEY = "mock-registered-user";
 interface RegisteredUser {
   nickname: string;
   identificationCode: number;
+  preferenceType: PreferenceType;
 }
 
-const getRegisteredUser = (): RegisteredUser | null => {
+export const getRegisteredUser = (): RegisteredUser | null => {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(REGISTERED_USER_KEY);
   if (!raw) return null;
@@ -51,17 +64,19 @@ export const authHandlers = [
   http.post(`${BASE_URL}/api/v1/users/sign-up`, async ({ request }) => {
     await delay(500);
     const body = (await request.json()) as SignupRequest;
+    const preferenceType = pickRandomPreferenceType();
 
     const data: SignupResponse = {
       userId: Math.floor(Math.random() * 1000),
       nickname: body.nickname,
       identificationCode: Math.floor(Math.random() * 99) + 1,
-      preferenceType: null,
+      preferenceType,
       token: "mock-access-token",
     };
     setRegisteredUser({
       nickname: data.nickname,
       identificationCode: data.identificationCode,
+      preferenceType,
     });
 
     return HttpResponse.json({
