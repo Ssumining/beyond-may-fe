@@ -17,6 +17,11 @@ interface PreferenceOption {
   /** 선택지 표시 순서(1부터) */
   displayOrder: number;
   content: string;
+  /** 유형별 가중치 (실응답 포함, 클라 성향 계산용). mock엔 없어 optional */
+  thinkerWeight?: number;
+  foodieWeight?: number;
+  artistWeight?: number;
+  remembererWeight?: number;
 }
 
 /** 성향 검사 질문 하나 */

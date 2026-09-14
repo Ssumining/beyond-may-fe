@@ -59,7 +59,7 @@ const ResultPage = () => {
   const [hadSessionOnEnter] = useState(
     () => useSessionStore.getState().isLoggedIn,
   );
-
+  const localPreference = useSessionStore((state) => state.localPreference);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isLeaveOpen, setIsLeaveOpen] = useState(false);
   const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
@@ -76,15 +76,25 @@ const ResultPage = () => {
   } = useCaptureImage<HTMLDivElement>();
 
   const {
-    data: myPreference,
+    data: fetchedPreference,
     isLoading,
     isError,
     refetch,
-  } = useGetMyPreferenceQuery(true);
+  } = useGetMyPreferenceQuery(hadSessionOnEnter);
 
+  // 로그인 사용자는 서버 조회값, 비로그인은 설문 직후 계산한 값 사용
+  const myPreference = hadSessionOnEnter ? fetchedPreference : localPreference;
+
+  // 추천 장소 조회는 인증 필요 → 로그인 사용자만. 비로그인은 등록 후 /places에서 확인.
   const { data: recommendedPlacesRaw = [] } = useGetPlaceRecommendationsQuery(
-    myPreference?.preferenceType ?? null,
+    hadSessionOnEnter ? (myPreference?.preferenceType ?? null) : null,
   );
+
+  useEffect(() => {
+    if (!hadSessionOnEnter && !localPreference) {
+      router.replace("/onboarding");
+    }
+  }, [hadSessionOnEnter, localPreference, router]);
 
   const data: PreferenceResultResponse | undefined = myPreference
     ? {
@@ -230,6 +240,11 @@ const ResultPage = () => {
 
       <ResultTypeCard result={data} />
 
+      <RecommendedPlaceList
+        mbtiName={data.mbtiName}
+        places={data.recommendedPlaces.slice(0, 2)}
+      />
+
       {!hadSessionOnEnter ? (
         <NicknameRegisterSection />
       ) : (
@@ -244,11 +259,6 @@ const ResultPage = () => {
           </Button>
         </section>
       )}
-
-      <RecommendedPlaceList
-        mbtiName={data.mbtiName}
-        places={data.recommendedPlaces.slice(0, 2)}
-      />
 
       <section className="border-neutral-03 mt-10 border-t px-6 pt-8">
         <p className="text-neutral-04 text-[13px] font-medium">결과 보관하기</p>

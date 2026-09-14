@@ -15,11 +15,16 @@ export interface LoginResponse {
 
 /**
  * 회원가입 (POST /api/v1/users/sign-up) — 실질적인 "세션 생성" API.
- * 성향 검사 점수 4개는 전부 선택값 — 생략하면 preferenceType은 null.
- * 이번 이슈(닉네임/세션 등록)에서는 닉네임만 보낸다.
+ * 성향 검사 점수 4개는 전부 선택값 — 함께 보내면 서버가 preferenceType을 계산
+ * 응답에 담아주고, 생략하면 preferenceType은 null이 된다.
+ * 비로그인 설문 완료 후 닉네임 등록 시 클라에서 계산한 점수를 함께 전송.
  */
 export interface SignupRequest {
   nickname: string;
+  thinkerScore?: number;
+  foodieScore?: number;
+  artistScore?: number;
+  remembererScore?: number;
 }
 
 export interface SignupResponse {
