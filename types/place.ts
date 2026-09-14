@@ -20,10 +20,6 @@ export interface PlaceDetailResponse {
 
 /**
  * 장소 카드덱 추천 조회 응답 (GET /api/v1/places/recommendations).
- * 카드에는 이미지·카테고리·태그만 노출되므로 PlaceDetailResponse에서
- * 카드 표시에 필요한 필드만 추린 최소 형태로 가정한다.
- *
- * TODO(백엔드 확인): 응답 스펙 미확정 — 배열 형태, 필드 구성 모두 가정치. (backend)
  */
 export interface PlaceRecommendationResponse {
   placeId: number;
@@ -32,4 +28,9 @@ export interface PlaceRecommendationResponse {
   travelMbtiType: PlaceCategory;
   tags: string[];
   thumbnailUrl: string | null;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  businessHours?: string | null;
+  description?: string;
 }

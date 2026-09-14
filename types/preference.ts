@@ -5,9 +5,7 @@
  * 유형별 가중치·뼈대 질문 여부 같은 필드를 두지 않는다.
  * 프론트는 "질문을 보여주고 응답 배열을 모아 제출"하는 역할만 수행
  *
- * TODO: 아래는 API 응답 예시(JSON) 확정 전 계약 초안이다. (backend)
- *   - GET /api/preference-test/questions 응답 확정 시 필드명 재확인
- *   - 질문은 20개 풀 중 랜덤 선별된 배열로 내려옴 (개수는 서버 소관)
+ * 질문은 20개 풀 중 랜덤 선별된 배열로 내려옴 (개수는 서버 소관)
  */
 
 /** 선택지 라벨. 디자인상 A~D 4지선다지만 명세상 2~4개 가변 */
@@ -59,8 +57,7 @@ interface PreferencePercentages {
 }
 
 /**
- * 유형별 추천 장소. ERD corePlaces 기반.
- * TODO: 결과 조회에 포함할지, 별도 API로 뺄지 확정. (backend)
+ * 유형별 추천 장소. 
  */
 interface RecommendedPlace {
   placeId: number;
@@ -68,17 +65,16 @@ interface RecommendedPlace {
   placeImg: string;
   /** 간단한 소개 한 줄 (corePlaces.place_intro) */
   placeIntro: string;
-  /** 장소명 — TODO: corePlaces에 이름 필드 확인 (현재 ERD엔 명시 없음) (backend) */
+  /** 장소명 */
   placeName: string;
   address: string;
   category: string;
 }
 
 /**
- * GET /api/users/{userId}/preference 응답 데이터 (ApiResponse<T>의 T).
- * 결정된 유형 정보 + 추천 장소.
- *
- * TODO: mbtiDescription은 ERD T-MBTI에 없는 필드 → 추가 요청 필요. (backend)
+ * 결과 화면 뷰모델 (서버 응답 아님).
+ * me/preference(유형·유형별 점수) + 클라 상수(PREFERENCE_META: 유형명·태그·설명)를 조합,
+ * 추천 장소는 GET /places/recommendations로 별도 조회해 결과 페이지에서 조립.
  */
 interface PreferenceResultResponse {
   /** 유형 식별자 */
@@ -89,7 +85,7 @@ interface PreferenceResultResponse {
   mbtiTag: string[];
   /** 대표 일러스트 (T-MBTI.mbti_img) */
   mbtiImg: string;
-  /** 유형 설명 텍스트 — ERD에 없음, 백엔드 추가 필요 */
+  /** 유형 설명 (클라 PREFERENCE_META로 제공) */
   mbtiDescription: string;
   /** 4유형 비율 */
   percentages: PreferencePercentages;

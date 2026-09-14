@@ -6,7 +6,8 @@ export const API_ENDPOINTS = {
   },
   place: {
     detail: (placeId: number) => `/api/v1/places/${placeId}`,
-    recommendations: "/api/v1/places/recommendations",
+    recommendations: (type: string) =>
+      `/api/v1/places/recommendations?type=${type}`,
     search: "/api/v1/places/search",
   },
   recommendation: {

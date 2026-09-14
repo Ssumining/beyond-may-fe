@@ -17,6 +17,7 @@ import {
   putCoursePlaces,
 } from "@/services/api/course/courseApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
+import useSessionStore from "@/stores/sessionStore";
 import type {
   CourseResponse,
   CoursePlace,
@@ -74,7 +75,8 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     new Set(),
   );
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const { data: recommendations = [] } = useGetPlaceRecommendationsQuery();
+    const preferenceType = useSessionStore((state) => state.preferenceType);
+  const { data: recommendations = [] } = useGetPlaceRecommendationsQuery(preferenceType);
   const minimumPlaceCount = getMinimumSelectionCount(course.travelSchedule);
   const availablePlaces = recommendations.filter(
     (place) =>

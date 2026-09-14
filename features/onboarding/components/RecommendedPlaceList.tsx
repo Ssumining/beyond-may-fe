@@ -10,7 +10,7 @@ interface RecommendedPlaceListProps {
  * 결과 화면 추천 장소 목록 (기능명세 1.2.2).
  * "OOO를 위한 광주" 제목 + 장소 카드(사진 + 이름 + 한 줄 설명) 5개 이상.
  *
- * TODO: placeImg URL 확정 전까지 회색 placeholder 표시. (backend)
+ * placeImg URL 이미지 없으면 회색 placeholder 표시. 
  */
 
 const RecommendedPlaceList = ({
