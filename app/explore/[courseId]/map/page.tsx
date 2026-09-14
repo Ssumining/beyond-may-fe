@@ -29,6 +29,10 @@ import useGetParticipantsQuery from "@/features/explore/hooks/useGetParticipants
 import useGetExplorationStatusQuery from "@/features/explore/hooks/useGetExplorationStatusQuery";
 import useGeolocationStore from "@/stores/geolocationStore";
 import useSessionStore from "@/stores/sessionStore";
+import useLocationSimulationStore from "@/stores/locationSimulationStore";
+import useSimulatedLocation from "@/features/explore/hooks/useSimulatedLocation";
+import useCreateVisitMutation from "@/features/explore/hooks/useCreateVisitMutation";
+import type { CoursePlace } from "@/types/course";
 
 interface ExploreMapPageProps {
   params: Promise<{ courseId: string }>;
@@ -52,7 +56,20 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
-  useGeolocation({ enabled: true });
+  const isSimulationEnabled = useLocationSimulationStore(
+    (state) => state.isEnabled,
+  );
+  const setSimulationEnabled = useLocationSimulationStore(
+    (state) => state.setEnabled,
+  );
+  const isTourRunning = useLocationSimulationStore((state) => state.isRunning);
+  const setTourRunning = useLocationSimulationStore((state) => state.setRunning);
+  const { walkTo, stopWalk } = useSimulatedLocation();
+  const { mutate: verifyVisit } = useCreateVisitMutation();
+  const autoTourTimerRef = useRef<number | null>(null);
+  const autoTourIndexRef = useRef(0);
+
+  useGeolocation({ enabled: !isSimulationEnabled });
   const coordinates = useGeolocationStore((state) => state.coordinates);
   const isAccurate = useGeolocationStore((state) => state.isAccurate);
 
@@ -149,11 +166,62 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     );
   }
 
-  const { center } = getCourseMapData(course.places);
+    const { center } = getCourseMapData(course.places);
   const myLocation =
     coordinates && isAccurate ? toLatLng(coordinates) : undefined;
   const initialVisitedPlaceIds =
     visitedData?.visitedPlaces.map((place) => place.placeId) ?? [];
+
+  // 위치 체험 모드: 버튼 한 번으로 코스 순서대로 자동 이동하며 방문 인증
+    const runAutoTour = (index: number) => {
+      if (!useLocationSimulationStore.getState().isRunning) return;
+
+    const orderedPlaces = [...course.places].sort(
+      (a, b) => a.visitOrder - b.visitOrder,
+    );
+    if (index >= orderedPlaces.length) {
+      autoTourIndexRef.current = 0; // 끝까지 돌았으면 다음엔 처음부터
+      setTourRunning(false);
+      useGeolocationStore.getState().reset();
+      return;
+    }
+
+    autoTourIndexRef.current = index; // 중단·재개용 현재 위치 기억
+    const place = orderedPlaces[index];
+        const goNext = () => {
+      autoTourTimerRef.current = window.setTimeout(
+        () => runAutoTour(index + 1),
+        1200,
+      );
+    };
+
+      walkTo({ latitude: place.latitude, longitude: place.longitude }, () => {
+        if (!useLocationSimulationStore.getState().isRunning) return;
+        if (initialVisitedPlaceIds.includes(place.placeId)) {
+          goNext();
+          return;
+        }
+      verifyVisit(
+        {
+          explorationId,
+          placeId: place.placeId,
+          latitude: place.latitude,
+          longitude: place.longitude,
+          accuracyMeters: 5,
+        },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({
+              queryKey:
+                QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
+            });
+            goNext();
+          },
+          onError: goNext,
+        },
+      );
+    });
+  };
 
   const participantCount = participants?.participantCount ?? 0;
   const isOngoing = explorationStatus?.status === "ONGOING";
@@ -196,6 +264,29 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
           주변 더보기
         </button>
       )}
+
+      {/* 위치 체험 모드 — 심사·데모용, 실제 GPS 대신 코스를 따라 자동 이동 */}
+      <button
+        type="button"
+        onClick={() => {
+          if (isTourRunning) {
+            // 일시정지: 걷기·예약 타이머 취소. GPS는 계속 꺼둬서 점을 그 자리에 고정
+            if (autoTourTimerRef.current !== null) {
+              clearTimeout(autoTourTimerRef.current);
+              autoTourTimerRef.current = null;
+            }
+            stopWalk();
+            setTourRunning(false);
+          } else {
+            setSimulationEnabled(true);
+            setTourRunning(true);
+            runAutoTour(autoTourIndexRef.current);
+          }
+        }}
+        className="text-neutral-07 focus-visible:outline-primary-03 absolute bottom-34 left-4 z-30 min-h-11 rounded-full bg-white px-4 text-[13px] font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
+      >
+        {isTourRunning ? "위치 체험 정지" : "위치 체험 시작"}
+      </button>
 
       <ExploreHeader
         center={
