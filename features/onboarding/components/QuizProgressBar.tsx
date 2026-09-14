@@ -10,10 +10,7 @@ interface QuizProgressBarProps {
  * 성향 검사 상단 진행률 바.
  * 분모는 useQuiz에서 서버 문항 수 기준으로 계산해 넘겨준다.
  */
-const QuizProgressBar = ({
-  progress,
-  className,
-}: QuizProgressBarProps) => {
+const QuizProgressBar = ({ progress, className }: QuizProgressBarProps) => {
   const clamped = Math.min(100, Math.max(0, progress));
 
   return (

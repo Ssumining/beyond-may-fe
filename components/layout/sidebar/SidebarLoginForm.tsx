@@ -144,7 +144,10 @@ const SidebarLoginForm = () => {
         </Button>
       </form>
 
-      <nav className="border-neutral-03 mt-8 border-t pt-3" aria-label="서비스 메뉴">
+      <nav
+        className="border-neutral-03 mt-8 border-t pt-3"
+        aria-label="서비스 메뉴"
+      >
         <Link
           href="/"
           className="text-neutral-07 flex min-h-12 items-center text-[14px] font-medium"

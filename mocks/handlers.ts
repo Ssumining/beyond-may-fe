@@ -11,6 +11,7 @@ import { locationSharingHandlers } from "./locationSharingHandlers";
 import { recordHandlers } from "./recordHandlers";
 import { visitedPlacesHandlers } from "./visitedPlacesHandlers";
 import { nearbyHandlers } from "./nearbyHandlers";
+import { leaveHandlers } from "./leaveHandlers";
 
 export const handlers = [
   ...preferenceHandlers,
@@ -26,4 +27,5 @@ export const handlers = [
   ...recordHandlers,
   ...visitedPlacesHandlers,
   ...nearbyHandlers,
+  ...leaveHandlers,
 ];

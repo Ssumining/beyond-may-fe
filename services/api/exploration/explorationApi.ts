@@ -12,6 +12,7 @@ import type {
   LocationSharingRequest,
   LocationSharingResponse,
   NearbyPlacesResponse,
+  LeaveExplorationResponse,
 } from "@/types/exploration";
 
 /** 탐험에 합류 (4.1.1). */
@@ -105,6 +106,16 @@ export const getNearbyPlaces = async (
 ): Promise<NearbyPlacesResponse> => {
   const res = await api.get<NearbyPlacesResponse>(
     API_ENDPOINTS.exploration.nearbyPlaces(explorationId, latitude, longitude),
+  );
+  return res.data!;
+};
+
+/** 탐험에서 이탈 (6.4.1). participant status만 LEFT로 변경되고 방문 기록은 보존. */
+export const postLeaveExploration = async (
+  explorationId: string,
+): Promise<LeaveExplorationResponse> => {
+  const res = await api.post<LeaveExplorationResponse>(
+    API_ENDPOINTS.exploration.leave(explorationId),
   );
   return res.data!;
 };
