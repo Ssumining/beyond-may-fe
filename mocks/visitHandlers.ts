@@ -1,5 +1,6 @@
 import { http, HttpResponse, delay } from "msw";
 import type { VisitResponse } from "@/types/exploration";
+import { markPlaceVisited } from "@/mocks/visitedPlacesHandlers";
 
 /**
  * 방문 인증 mock (POST /api/v1/visits).
@@ -17,6 +18,8 @@ export const visitHandlers = [
       explorationId: number;
       placeId: number;
     };
+
+    markPlaceVisited(body.placeId);
 
     const response: VisitResponse = {
       visitId: 9001,

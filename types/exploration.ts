@@ -198,3 +198,21 @@ export interface NearbyPlace {
 export interface NearbyPlacesResponse {
   places: NearbyPlace[];
 }
+
+/* ---------------- 탐험 이탈 (6.4.1) ---------------- */
+
+/** 탐험 이탈 응답. participant status만 LEFT로 바뀌고 방문 기록은 보존. */
+export interface LeaveExplorationResponse {
+  explorationId: number;
+  participantId: number;
+  status: "LEFT";
+  /** ISO 8601 문자열 */
+  leftAt: string;
+  /** 소유자 이탈 시 승계된 participantId. 승계 없으면 null */
+  ownerParticipantId: number | null;
+}
+
+/** 중복 참여 차단(EXPLORATION409) 에러 응답의 data */
+export interface DuplicateExplorationErrorData {
+  activeExplorationId: number;
+}

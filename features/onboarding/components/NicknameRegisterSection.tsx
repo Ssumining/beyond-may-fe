@@ -106,8 +106,12 @@ const NicknameRegisterSection = () => {
             이 이름으로 여행 시작하기
           </Button>
           {isError && (
-            <p className="text-caution-02 mt-3 text-center text-[12px]" role="alert">
-              세션을 만들지 못했어요. 입력한 닉네임은 유지했으니 다시 시도해 주세요.
+            <p
+              className="text-caution-02 mt-3 text-center text-[12px]"
+              role="alert"
+            >
+              세션을 만들지 못했어요. 입력한 닉네임은 유지했으니 다시 시도해
+              주세요.
             </p>
           )}
         </form>

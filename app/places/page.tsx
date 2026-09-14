@@ -14,6 +14,8 @@ import Modal from "@/components/ui/Modal";
 import Close from "@/components/ui/icons/Close";
 import ImageIcon from "@/components/ui/icons/Image";
 import useGenerateCourseMutation from "@/features/course/hooks/useGenerateCourseMutation";
+import TimeoutState from "@/components/ui/TimeoutState";
+import { getApiCode } from "@/services/lib/axios";
 import PlaceCardDeck from "@/features/places/components/PlaceCardDeck";
 import PlaceSwipeGuide from "@/features/places/components/PlaceSwipeGuide";
 import TravelPeriodScreen from "@/features/places/components/TravelPeriodScreen";
@@ -142,6 +144,7 @@ export default function PlacesPage() {
     reset: resetGeneration,
     isPending: isCourseGenerating,
     isError: isCourseGenerationError,
+    error: courseGenerationError,
   } = useGenerateCourseMutation();
 
   const minimumSelectionCount =
@@ -404,6 +407,14 @@ export default function PlacesPage() {
 
   const canGenerateCourse = allLikedPlaces.length >= minimumSelectionCount;
 
+  const isCourseGenerationTimeout =
+    isCourseGenerationError &&
+    getApiCode(courseGenerationError) === "COURSE503_2";
+
+  if (isCourseGenerationTimeout) {
+    return <TimeoutState onRetry={handleGenerateCourse} />;
+  }
+
   if (step === "period") {
     return (
       <TravelPeriodScreen
@@ -578,7 +589,7 @@ export default function PlacesPage() {
                     여행 기간 다시 선택
                   </Button>
                 )}
-                {isCourseGenerationError && (
+                {isCourseGenerationError && !isCourseGenerationTimeout && (
                   <p className="text-error mt-3 text-[12px]" role="alert">
                     코스를 만들지 못했어요. 다시 시도해 주세요.
                   </p>

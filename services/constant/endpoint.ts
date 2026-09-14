@@ -77,6 +77,9 @@ export const API_ENDPOINTS = {
       longitude: number,
     ) =>
       `/api/v1/explorations/${explorationId}/nearby-places?latitude=${latitude}&longitude=${longitude}`,
+    /** 탐험 이탈 (6.4.1) */
+    leave: (explorationId: string) =>
+      `/api/v1/explorations/${explorationId}/leave`,
   },
   record: {
     // TODO(백엔드 확인): 경로·페이지네이션 여부 미확정. (backend)
