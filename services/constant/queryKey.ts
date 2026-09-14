@@ -20,6 +20,10 @@ export const QUERY_KEYS = {
     RECOMMENDATIONS: () =>
       [...QUERY_KEYS.PLACE.ALL, "recommendations"] as const,
   },
+  RECOMMENDATION: {
+    ALL: ["recommendation"] as const,
+    CURRENT: () => [...QUERY_KEYS.RECOMMENDATION.ALL, "current"] as const,
+  },
   EXPLORATION: {
     ALL: ["exploration"] as const,
     PARTICIPANTS: (explorationId: string) =>

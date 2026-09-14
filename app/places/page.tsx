@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { addDays, format, parseISO } from "date-fns";
-import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import AppHeader from "@/components/layout/AppHeader";
@@ -19,16 +18,21 @@ import PlaceCardDeck from "@/features/places/components/PlaceCardDeck";
 import PlaceSwipeGuide from "@/features/places/components/PlaceSwipeGuide";
 import TravelPeriodScreen from "@/features/places/components/TravelPeriodScreen";
 import useGetPlaceDetailQuery from "@/features/places/hooks/useGetPlaceDetailQuery";
-import useGetPlaceRecommendationsQuery from "@/features/places/hooks/useGetPlaceRecommendationsQuery";
+import useGetCurrentRecommendationQuery from "@/features/places/hooks/useGetCurrentRecommendationQuery";
+import useCreateRecommendationSetMutation from "@/features/places/hooks/useCreateRecommendationSetMutation";
+import useReplaceBatchReactionsMutation from "@/features/places/hooks/useReplaceBatchReactionsMutation";
 import {
   getCalculatedEndDate,
   getMinimumSelectionCount,
   isValidTravelPeriod,
   TRAVEL_SCHEDULE_OPTIONS,
 } from "@/features/places/utils/travelSchedule";
-import { QUERY_KEYS } from "@/services/constant/queryKey";
 import type { DurationType, TravelPeriod } from "@/types/course";
-import type { PlaceRecommendationResponse } from "@/types/place";
+import type {
+  RecommendationBatch,
+  RecommendationPlace,
+  RecommendationResponse,
+} from "@/types/recommendation";
 
 type PlacesStep = "period" | "recommendations" | "guide" | "deck";
 type DetailSource = "deck" | "selection";
@@ -51,9 +55,7 @@ const readDraft = (): PlacesDraft | null => {
       !value ||
       !TRAVEL_SCHEDULE_OPTIONS.some(({ id }) => id === value.travelSchedule) ||
       typeof value.startDate !== "string" ||
-      typeof value.endDate !== "string" ||
-      !Array.isArray(value.swipedPlaceIds) ||
-      !Array.isArray(value.likedPlaceIds)
+      typeof value.endDate !== "string"
     ) {
       return null;
     }
@@ -69,12 +71,18 @@ const readDraft = (): PlacesDraft | null => {
  * 카드덱 순서로 진행한다. 좋아요는 우측 스와이프/하트, 싫어요는 좌측 스와이프/X,
  * 직전 1건 되돌리기를 지원한다.
  *
- * TODO(백엔드 확인): 좋아요한 장소 목록을 서버에 저장하는 API 미확정 —
- *   우선 클라이언트 상태로만 관리. (backend)
+ * 추천은 최대 20곳씩 회차(batch) 단위로 받고, 한 회차를 다 넘기면 그 회차의
+ * 반응을 일괄 제출해야 다음 회차를 받는다(POST /recommendations/{id}/reactions).
+ * 되돌리기는 아직 제출하지 않은 현재 회차 안에서만 가능 — 이미 제출된 회차는
+ * 서버에 반응이 확정되어 있어 되돌릴 방법이 없다.
+ *
+ * "선택에서 빼기"도 같은 이유로 아직 제출하지 않은 현재 회차의 좋아요만 가능하다.
+ * 이미 제출된 회차의 좋아요는 서버에 확정되어 취소하는 API가 없고, AI 코스 생성이
+ * 그 저장값을 그대로 쓰므로 화면에서만 빼는 건 실제 생성 결과와 어긋난다 —
+ * 그래서 그 경우엔 빼기 자체를 제공하지 않는다(SelectionModal의 removablePlaceIds).
  */
 export default function PlacesPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [initialDraft] = useState(readDraft);
   const today = format(new Date(), "yyyy-MM-dd");
   const initialStartDate = initialDraft?.startDate ?? today;
@@ -95,23 +103,38 @@ export default function PlacesPage() {
       typeof window !== "undefined" &&
       localStorage.getItem(GUIDE_KEY) === "true",
   );
-  const [swipedPlaceIds, setSwipedPlaceIds] = useState<number[]>(
-    initialDraft?.swipedPlaceIds ?? [],
+
+  const [recommendationId, setRecommendationId] = useState<number | null>(null);
+  const [serverMinimum, setServerMinimum] = useState<number | null>(null);
+  const [selectionReady, setSelectionReady] = useState(false);
+  const [isDeckComplete, setIsDeckComplete] = useState(false);
+  /** 아직 서버에 제출하지 않은 현재 회차 */
+  const [currentBatch, setCurrentBatch] = useState<RecommendationBatch | null>(
+    null,
   );
-  const [likedPlaceIds, setLikedPlaceIds] = useState<Set<number>>(
-    () => new Set(initialDraft?.likedPlaceIds ?? []),
-  );
+  /** 현재 회차 안에서 스와이프한 순서 (되돌리기용, 회차 넘어가면 초기화) */
+  const [batchSwipedIds, setBatchSwipedIds] = useState<number[]>([]);
+  const [batchLikedIds, setBatchLikedIds] = useState<Set<number>>(new Set());
+  /** 이미 제출된 회차에서 좋아요한 장소 (누적) */
+  const [likedPlaces, setLikedPlaces] = useState<RecommendationPlace[]>([]);
+
   const [hasLoadingMinimumElapsed, setHasLoadingMinimumElapsed] =
     useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const generationCancelled = useRef(false);
 
+  const { data: existingRecommendation, refetch: refetchRecommendation } =
+    useGetCurrentRecommendationQuery();
   const {
-    data: places,
-    isLoading,
-    isError,
-    refetch,
-  } = useGetPlaceRecommendationsQuery();
+    mutate: createRecommendationSet,
+    isPending: isCreatingRecommendation,
+    isError: isCreateRecommendationError,
+  } = useCreateRecommendationSetMutation();
+  const {
+    mutate: replaceBatchReactions,
+    isPending: isSubmittingBatch,
+    isError: isBatchReactionsError,
+  } = useReplaceBatchReactionsMutation();
   const { data: placeDetail, isPending: isPlaceDetailPending } =
     useGetPlaceDetailQuery(selectedPlaceId);
   const {
@@ -121,20 +144,24 @@ export default function PlacesPage() {
     isError: isCourseGenerationError,
   } = useGenerateCourseMutation();
 
-  const minimumSelectionCount = getMinimumSelectionCount(travelSchedule);
+  const minimumSelectionCount =
+    serverMinimum ?? getMinimumSelectionCount(travelSchedule);
   const isPeriodValid = isValidTravelPeriod(
     travelSchedule,
     startDate,
     endDate,
     today,
   );
-  const hasPlaces = !isLoading && !isError && places && places.length > 0;
+  const currentBatchLikedPlaces =
+    currentBatch?.places.filter((place) => batchLikedIds.has(place.placeId)) ??
+    [];
+  const allLikedPlaces = [...likedPlaces, ...currentBatchLikedPlaces];
   const remainingPlaces =
-    places?.filter((place) => !swipedPlaceIds.includes(place.placeId)) ?? [];
-  const selectedPlaces =
-    places?.filter((place) => likedPlaceIds.has(place.placeId)) ?? [];
-  const isDeckComplete = hasPlaces && remainingPlaces.length === 0;
-  const selectionReady = likedPlaceIds.size >= minimumSelectionCount;
+    currentBatch?.places.filter(
+      (place) => !batchSwipedIds.includes(place.placeId),
+    ) ?? [];
+  const isRecommendationError =
+    isCreateRecommendationError || isBatchReactionsError;
 
   useEffect(() => {
     localStorage.setItem(
@@ -143,11 +170,9 @@ export default function PlacesPage() {
         travelSchedule,
         startDate,
         endDate,
-        swipedPlaceIds,
-        likedPlaceIds: [...likedPlaceIds],
-      } satisfies PlacesDraft),
+      } satisfies TravelPeriod),
     );
-  }, [endDate, likedPlaceIds, startDate, swipedPlaceIds, travelSchedule]);
+  }, [endDate, startDate, travelSchedule]);
 
   useEffect(() => {
     if (step !== "recommendations") return;
@@ -171,7 +196,12 @@ export default function PlacesPage() {
   }, [step]);
 
   useEffect(() => {
-    if (step !== "recommendations" || isLoading || !hasLoadingMinimumElapsed) {
+    if (
+      step !== "recommendations" ||
+      isCreatingRecommendation ||
+      !hasLoadingMinimumElapsed ||
+      (!currentBatch && !isDeckComplete)
+    ) {
       return;
     }
     const transitionTimer = window.setTimeout(
@@ -179,12 +209,75 @@ export default function PlacesPage() {
       0,
     );
     return () => window.clearTimeout(transitionTimer);
-  }, [hasLoadingMinimumElapsed, hasSeenGuide, isLoading, step]);
+  }, [
+    currentBatch,
+    hasLoadingMinimumElapsed,
+    hasSeenGuide,
+    isCreatingRecommendation,
+    isDeckComplete,
+    step,
+  ]);
+
+  /** GET /recommendations 응답으로 진행 상태를 복원한다 (이어서 진행하는 경우) */
+  const resumeFromRecommendation = (data: RecommendationResponse): void => {
+    setRecommendationId(data.recommendationId);
+    setServerMinimum(data.minimumSelectionCount);
+    setSelectionReady(data.selectionReady);
+    setLikedPlaces(
+      data.batches
+        .filter((batch) => batch.completed)
+        .flatMap((batch) =>
+          batch.places.filter((place) =>
+            batch.likedPlaceIds.includes(place.placeId),
+          ),
+        ),
+    );
+    setBatchSwipedIds([]);
+    setBatchLikedIds(new Set());
+    const activeBatch = data.batches.find((batch) => !batch.completed) ?? null;
+    setCurrentBatch(activeBatch);
+    setIsDeckComplete(!activeBatch);
+  };
 
   const handleLoadRecommendations = (): void => {
     setHasLoadingMinimumElapsed(false);
     setLoadingMessageIndex(0);
     setStep("recommendations");
+
+    const matchesExisting =
+      existingRecommendation &&
+      existingRecommendation.travelSchedule === travelSchedule &&
+      existingRecommendation.startDate === startDate &&
+      existingRecommendation.endDate === endDate;
+
+    if (matchesExisting) {
+      resumeFromRecommendation(existingRecommendation);
+      return;
+    }
+
+    createRecommendationSet(
+      { travelSchedule, startDate, endDate },
+      {
+        onSuccess: (data) => {
+          setRecommendationId(data.recommendationId);
+          setServerMinimum(data.minimumSelectionCount);
+          setLikedPlaces([]);
+          setBatchSwipedIds([]);
+          setBatchLikedIds(new Set());
+          setSelectionReady(false);
+
+          if (data.batch.completed) {
+            // 같은 일정으로 이미 끝까지 진행한 세트 — 최신 진행 상태를 다시 받아온다
+            void refetchRecommendation().then(({ data: refreshed }) => {
+              if (refreshed) resumeFromRecommendation(refreshed);
+            });
+            return;
+          }
+          setIsDeckComplete(false);
+          setCurrentBatch(data.batch);
+        },
+      },
+    );
   };
 
   const handleScheduleChange = (schedule: DurationType): void => {
@@ -202,9 +295,6 @@ export default function PlacesPage() {
   };
 
   const handleCancelRecommendations = (): void => {
-    void queryClient.cancelQueries({
-      queryKey: QUERY_KEYS.PLACE.RECOMMENDATIONS(),
-    });
     setStep("period");
   };
 
@@ -214,28 +304,69 @@ export default function PlacesPage() {
     setStep("deck");
   };
 
+  const submitBatch = (
+    batch: RecommendationBatch,
+    liked: Set<number>,
+  ): void => {
+    if (!recommendationId) return;
+    const likedPlaceIds = [...liked];
+    const dislikedPlaceIds = batch.places
+      .map((place) => place.placeId)
+      .filter((placeId) => !liked.has(placeId));
+
+    replaceBatchReactions(
+      { recommendationId, body: { likedPlaceIds, dislikedPlaceIds } },
+      {
+        onSuccess: (response) => {
+          setLikedPlaces((prev) => [
+            ...prev,
+            ...batch.places.filter((place) => liked.has(place.placeId)),
+          ]);
+          setServerMinimum(response.minimumSelectionCount);
+          setSelectionReady(response.selectionReady);
+          setBatchSwipedIds([]);
+          setBatchLikedIds(new Set());
+          if (response.hasNextBatch && response.nextBatch) {
+            setCurrentBatch(response.nextBatch);
+          } else {
+            setCurrentBatch(null);
+            setIsDeckComplete(true);
+          }
+        },
+      },
+    );
+  };
+
   const handleSwipe = (direction: "like" | "dislike"): void => {
     const topPlace = remainingPlaces[0];
-    if (!topPlace) return;
-    setSwipedPlaceIds((current) => [...current, topPlace.placeId]);
-    if (direction === "like") {
-      setLikedPlaceIds((current) => new Set(current).add(topPlace.placeId));
+    if (!topPlace || !currentBatch) return;
+    const nextSwipedIds = [...batchSwipedIds, topPlace.placeId];
+    const nextLikedIds = new Set(batchLikedIds);
+    if (direction === "like") nextLikedIds.add(topPlace.placeId);
+
+    setBatchSwipedIds(nextSwipedIds);
+    setBatchLikedIds(nextLikedIds);
+
+    if (nextSwipedIds.length === currentBatch.places.length) {
+      submitBatch(currentBatch, nextLikedIds);
     }
   };
 
   const handleUndo = (): void => {
-    const lastPlaceId = swipedPlaceIds.at(-1);
+    const lastPlaceId = batchSwipedIds.at(-1);
     if (lastPlaceId === undefined) return;
-    setSwipedPlaceIds((current) => current.slice(0, -1));
-    setLikedPlaceIds((current) => {
+    setBatchSwipedIds((current) => current.slice(0, -1));
+    setBatchLikedIds((current) => {
       const next = new Set(current);
       next.delete(lastPlaceId);
       return next;
     });
   };
 
+  /** 아직 제출하지 않은 현재 회차의 좋아요만 뺄 수 있다 — 컴포넌트 상단 설명 참고 */
   const handleRemovePlace = (placeId: number): void => {
-    setLikedPlaceIds((current) => {
+    if (!batchLikedIds.has(placeId)) return;
+    setBatchLikedIds((current) => {
       const next = new Set(current);
       next.delete(placeId);
       return next;
@@ -243,9 +374,7 @@ export default function PlacesPage() {
   };
 
   const handleRestart = (): void => {
-    setSwipedPlaceIds([]);
-    setLikedPlaceIds(new Set());
-    setStep("deck");
+    setStep("period");
   };
 
   const handleOpenDetail = (placeId: number, source: DetailSource): void => {
@@ -260,19 +389,20 @@ export default function PlacesPage() {
   };
 
   const handleGenerateCourse = (): void => {
-    if (!selectionReady) return;
+    if (!selectionReady && allLikedPlaces.length < minimumSelectionCount) {
+      return;
+    }
     generationCancelled.current = false;
-    generateCourse(
-      { placeIds: [...likedPlaceIds], travelSchedule },
-      {
-        onSuccess: ({ courseId }) => {
-          if (generationCancelled.current) return;
-          localStorage.removeItem(DRAFT_KEY);
-          router.push(`/course/${courseId}`);
-        },
+    generateCourse(undefined, {
+      onSuccess: ({ courseId }) => {
+        if (generationCancelled.current) return;
+        localStorage.removeItem(DRAFT_KEY);
+        router.push(`/course/${courseId}`);
       },
-    );
+    });
   };
+
+  const canGenerateCourse = allLikedPlaces.length >= minimumSelectionCount;
 
   if (step === "period") {
     return (
@@ -282,7 +412,7 @@ export default function PlacesPage() {
         endDate={endDate}
         today={today}
         isValid={isPeriodValid}
-        selectedCount={likedPlaceIds.size}
+        selectedCount={allLikedPlaces.length}
         onScheduleChange={handleScheduleChange}
         onStartDateChange={handleStartDateChange}
         onEndDateChange={setEndDate}
@@ -333,9 +463,9 @@ export default function PlacesPage() {
 
   return (
     <main className="bg-neutral-01 relative mx-auto flex min-h-dvh w-full max-w-[430px] flex-col px-6">
-      {step === "guide" && places && (
+      {step === "guide" && (
         <PlaceSwipeGuide
-          placeCount={places.length}
+          placeCount={currentBatch?.places.length ?? 0}
           onOpenMenu={() => setIsMenuOpen(true)}
           onStart={handleStartDeck}
         />
@@ -347,7 +477,8 @@ export default function PlacesPage() {
             onOpenMenu={() => setIsMenuOpen(true)}
             onBack={() => setStep("period")}
             centerLabel={
-              places && `확인 ${swipedPlaceIds.length}/${places.length}`
+              currentBatch &&
+              `확인 ${batchSwipedIds.length}/${currentBatch.places.length}`
             }
             onOpenHelp={() => setStep("guide")}
             className="-mx-6"
@@ -363,17 +494,17 @@ export default function PlacesPage() {
             </span>
             <span
               className={
-                selectionReady
+                canGenerateCourse
                   ? "text-primary-08 text-[13px] font-semibold"
                   : "text-neutral-04 text-[13px]"
               }
             >
-              {likedPlaceIds.size}개 · 최소 {minimumSelectionCount}개
+              {allLikedPlaces.length}개 · 최소 {minimumSelectionCount}개
             </span>
           </button>
 
           <div className="flex flex-1 flex-col items-center justify-center pb-[max(24px,env(safe-area-inset-bottom))]">
-            {isError && (
+            {isRecommendationError && (
               <section className="border-neutral-03 w-full rounded-[20px] border bg-white p-6 text-center">
                 <h1 className="text-neutral-07 text-[20px] font-semibold">
                   추천 장소를 불러오지 못했어요
@@ -385,7 +516,7 @@ export default function PlacesPage() {
                   variant="solid"
                   size="lg"
                   className="mt-5 w-full"
-                  onClick={() => refetch()}
+                  onClick={handleLoadRecommendations}
                 >
                   장소 다시 불러오기
                 </Button>
@@ -399,48 +530,30 @@ export default function PlacesPage() {
               </section>
             )}
 
-            {!isError && places?.length === 0 && (
-              <section className="border-neutral-03 w-full rounded-[20px] border bg-white p-6 text-center">
-                <h1 className="text-neutral-07 text-[20px] font-semibold">
-                  추천 장소를 준비 중이에요
-                </h1>
-                <p className="text-neutral-04 mt-2 text-[13px]">
-                  아직 맞는 장소가 없어 전체 장소를 준비하고 있어요.
-                </p>
-                <Button
-                  size="lg"
-                  className="mt-5 w-full"
-                  onClick={() => refetch()}
-                >
-                  다시 확인
-                </Button>
-              </section>
-            )}
-
-            {isDeckComplete && (
+            {!isRecommendationError && isDeckComplete && (
               <section className="border-neutral-03 w-full rounded-[24px] border bg-white p-6 text-center">
                 <p className="text-primary-08 text-[12px] font-semibold tracking-[0.08em]">
-                  {selectionReady ? "장소 선택 완료" : "추천 확인 완료"}
+                  {canGenerateCourse ? "장소 선택 완료" : "추천 확인 완료"}
                 </p>
                 <h1 className="text-neutral-07 mt-3 text-[24px] leading-[1.35] font-bold whitespace-pre-line">
-                  {selectionReady
+                  {canGenerateCourse
                     ? "가고 싶은 장소를\n모두 확인했어요"
                     : "더 이상 추천할\n장소가 없어요"}
                 </h1>
                 <p className="text-neutral-04 mt-3 text-[14px] leading-[1.55] whitespace-pre-line">
-                  {selectionReady
-                    ? `${likedPlaceIds.size}곳을 코스에 담았어요.`
-                    : `${minimumSelectionCount - likedPlaceIds.size}곳을 더 골라야 코스를 만들 수 있어요.\n기간을 줄이거나 선택을 다시 확인해 주세요.`}
+                  {canGenerateCourse
+                    ? `${allLikedPlaces.length}곳을 코스에 담았어요.`
+                    : `${minimumSelectionCount - allLikedPlaces.length}곳을 더 골라야 코스를 만들 수 있어요.\n기간을 줄이거나 선택을 다시 확인해 주세요.`}
                 </p>
                 <Button
                   variant="solid"
                   size="lg"
                   className="mt-6 w-full"
-                  disabled={!selectionReady}
+                  disabled={!canGenerateCourse}
                   isLoading={isCourseGenerating}
                   onClick={handleGenerateCourse}
                 >
-                  {likedPlaceIds.size}곳으로 코스 만들기
+                  {allLikedPlaces.length}곳으로 코스 만들기
                 </Button>
                 <Button
                   size="lg"
@@ -456,7 +569,7 @@ export default function PlacesPage() {
                 >
                   장소 다시 보기
                 </Button>
-                {!selectionReady && (
+                {!canGenerateCourse && (
                   <Button
                     size="lg"
                     className="mt-2 w-full"
@@ -473,17 +586,23 @@ export default function PlacesPage() {
               </section>
             )}
 
-            {hasPlaces && !isDeckComplete && (
+            {!isRecommendationError && !isDeckComplete && currentBatch && (
               <PlaceCardDeck
                 places={remainingPlaces}
-                likedCount={likedPlaceIds.size}
+                likedCount={allLikedPlaces.length}
                 onSelectTopPlace={(placeId) =>
                   handleOpenDetail(placeId, "deck")
                 }
                 onSwipe={handleSwipe}
                 onUndo={handleUndo}
-                canUndo={swipedPlaceIds.length > 0}
+                canUndo={batchSwipedIds.length > 0 && !isSubmittingBatch}
               />
+            )}
+
+            {isSubmittingBatch && (
+              <p className="text-neutral-04 mt-4 text-[12px]" role="status">
+                다음 장소를 불러오고 있어요…
+              </p>
             )}
           </div>
         </>
@@ -491,7 +610,8 @@ export default function PlacesPage() {
 
       <SelectionModal
         open={isSelectionOpen}
-        places={selectedPlaces}
+        places={allLikedPlaces}
+        removablePlaceIds={batchLikedIds}
         minimum={minimumSelectionCount}
         onClose={() => setIsSelectionOpen(false)}
         onOpenDetail={(placeId) => {
@@ -545,7 +665,7 @@ export default function PlacesPage() {
                         장소 담기
                       </Button>
                     </div>
-                  ) : (
+                  ) : batchLikedIds.has(placeDetail.placeId) ? (
                     <div className="flex items-center gap-3">
                       <Button
                         size="lg"
@@ -564,6 +684,20 @@ export default function PlacesPage() {
                         aria-label="닫기"
                         className="h-12 w-12"
                       />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-neutral-04 text-center text-[12px]">
+                        이미 제출된 선택이라 여기서는 뺄 수 없어요.
+                      </p>
+                      <Button
+                        variant="solid"
+                        size="lg"
+                        className="w-full"
+                        onClick={() => setSelectedPlaceId(null)}
+                      >
+                        확인
+                      </Button>
                     </div>
                   )
                 }
@@ -612,7 +746,9 @@ export default function PlacesPage() {
 
 interface SelectionModalProps {
   open: boolean;
-  places: PlaceRecommendationResponse[];
+  places: RecommendationPlace[];
+  /** 아직 서버에 제출하지 않은 현재 회차의 좋아요만 뺄 수 있다 */
+  removablePlaceIds: Set<number>;
   minimum: number;
   onClose: () => void;
   onOpenDetail: (placeId: number) => void;
@@ -623,6 +759,7 @@ interface SelectionModalProps {
 const SelectionModal = ({
   open,
   places,
+  removablePlaceIds,
   minimum,
   onClose,
   onOpenDetail,
@@ -699,14 +836,16 @@ const SelectionModal = ({
                 </span>
               </span>
             </button>
-            <button
-              type="button"
-              onClick={() => onRemove(place.placeId)}
-              aria-label={`${place.name} 선택 삭제`}
-              className="border-neutral-03 text-neutral-05 flex h-10 w-10 items-center justify-center rounded-full border"
-            >
-              ×
-            </button>
+            {removablePlaceIds.has(place.placeId) && (
+              <button
+                type="button"
+                onClick={() => onRemove(place.placeId)}
+                aria-label={`${place.name} 선택 삭제`}
+                className="border-neutral-03 text-neutral-05 flex h-10 w-10 items-center justify-center rounded-full border"
+              >
+                ×
+              </button>
+            )}
           </li>
         ))}
       </ul>

@@ -9,6 +9,15 @@ export const API_ENDPOINTS = {
     recommendations: "/api/v1/places/recommendations",
     search: "/api/v1/places/search",
   },
+  recommendation: {
+    /** 현재 추천 세트 조회 — 회차별 진행 상태 포함 */
+    current: "/api/v1/recommendations",
+    /** 추천 세트 생성 — 같은 일정으로 이미 있으면 그 결과를 반환 */
+    create: "/api/v1/recommendations/sets",
+    /** 현재 회차 반응 일괄 교체 */
+    reactions: (recommendationId: number) =>
+      `/api/v1/recommendations/${recommendationId}/reactions`,
+  },
   course: {
     list: "/api/v1/courses",
     detail: (courseId: string) => `/api/v1/courses/${courseId}`,
