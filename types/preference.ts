@@ -16,16 +16,15 @@ type OptionLabel = "A" | "B" | "C" | "D";
 /** 질문 하나의 선택지 */
 interface PreferenceOption {
   optionId: number;
-  label: OptionLabel;
-  text: string;
+  /** 선택지 표시 순서(1부터) */
+  displayOrder: number;
+  content: string;
 }
 
 /** 성향 검사 질문 하나 */
 interface PreferenceQuestion {
   questionId: number;
-  /** 화면 표시 순서(1부터). 진행률 계산은 서버가 준 전체 개수 기준 */
-  order: number;
-  text: string;
+  content: string;
   options: PreferenceOption[];
 }
 

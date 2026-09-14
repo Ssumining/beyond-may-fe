@@ -5,8 +5,12 @@ import type { PreferenceQuestion } from "@/types/preference";
 import AnswerOption from "./AnswerOption";
 import type { AnswerOptionState } from "./AnswerOption";
 
+const OPTION_LABELS = ["A", "B", "C", "D"] as const;
+
 interface QuizQuestionProps {
   question: PreferenceQuestion;
+  /** 화면에 표시할 문항 번호(1부터) */
+  order: number;
   /** 이 문항에서 고른 optionId (없으면 null) */
   selectedOptionId: number | null;
   /** 위로 스크롤할 수 있는 이전 문항이 있는지 (첫 문항은 ▲ 숨김) */
@@ -20,6 +24,7 @@ interface QuizQuestionProps {
  */
 const QuizQuestion = ({
   question,
+  order,
   selectedOptionId,
   hasPrevious,
   onSelect,
@@ -44,9 +49,9 @@ const QuizQuestion = ({
       </div>
 
       <div className="mt-16">
-        <p className="text-neutral-07 text-3xl font-bold">{question.order}.</p>
+        <p className="text-neutral-07 text-3xl font-bold">{order}.</p>
         <h2 className="text-neutral-07 mt-3 text-lg leading-snug font-semibold">
-          {question.text}
+          {question.content}
         </h2>
       </div>
 
@@ -54,7 +59,7 @@ const QuizQuestion = ({
         {question.options.map((option) => (
           <AnswerOption
             key={option.optionId}
-            text={`${option.label}. ${option.text}`}
+            text={`${OPTION_LABELS[option.displayOrder - 1] ?? ""}. ${option.content}`}
             state={getOptionState(option.optionId)}
             onSelect={() => onSelect(option.optionId)}
           />

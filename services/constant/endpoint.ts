@@ -33,10 +33,13 @@ export const API_ENDPOINTS = {
     /** 챗봇이 추천한 장소 1곳을 즉시 추가(+ 전체 재배치) */
     addPlace: (courseId: string, placeId: number) =>
       `/api/v1/courses/${courseId}/places/${placeId}`,
+        /** 코스별 탐험 ID 조회 */
+    exploration: (courseId: string) =>
+      `/api/v1/courses/${courseId}/exploration`,
   },
   preference: {
     /** 성향 검사 질문 목록 조회 (기능명세 1.1.2 / 1.2.1) */
-    questions: "/api/preference-test/questions",
+    questions: "/api/v1/preference-tests/questions",
     /**
      * 성향 검사 결과 제출 (1.2.2)
      * TODO: userId 경로 파라미터 확정 필요. (backend)
@@ -80,12 +83,14 @@ export const API_ENDPOINTS = {
     /** 탐험 이탈 (6.4.1) */
     leave: (explorationId: string) =>
       `/api/v1/explorations/${explorationId}/leave`,
+    /** 탐험 조기 완료 (OWNER) */
+    complete: (explorationId: string) =>
+      `/api/v1/explorations/${explorationId}/complete`,
   },
   record: {
-    // TODO(백엔드 확인): 경로·페이지네이션 여부 미확정. (backend)
-    /** 내 방문 장소 목록 조회 (장소×사용자 단위, 여행 기록 화면) */
+    /** 팀 방문 기록 조회 (여행 기록 화면) */
     visits: "/api/v1/records/visits",
     /** 방문 장소 인증 사진 업로드 */
-    visitPhoto: (visitId: number) => `/api/v1/records/visits/${visitId}/photo`,
+    visitPhoto: (visitId: number) => `/api/v1/visits/${visitId}/photos`,
   },
 } as const;

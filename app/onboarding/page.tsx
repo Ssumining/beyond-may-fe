@@ -117,6 +117,7 @@ const OnboardingPage = () => {
         >
           <QuizQuestion
             question={question}
+            order={index + 1}
             selectedOptionId={getSelectedOption(question.questionId)}
             hasPrevious={index > 0}
             onSelect={(optionId) => handleSelect(question.questionId, optionId)}
