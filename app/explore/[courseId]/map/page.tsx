@@ -102,6 +102,8 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     },
   });
 
+  const { data: explorationStatus } = useGetExplorationStatusQuery(explorationIdStr);
+
   const lastSentLocationRef = useRef<{
     latitude: number;
     longitude: number;
