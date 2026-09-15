@@ -95,8 +95,10 @@ const CourseTimelinePage = ({ params }: CourseTimelinePageProps) => {
         router.push(`/record/${explorationIdStr}`);
       },
       onError: (error) => {
-        // 이미 완료된 탐험이면 완료된 것으로 간주하고 기록으로 이동
         if (getApiCode(error) === "EXPLORATION409_2") {
+          void queryClient.invalidateQueries({
+            queryKey: QUERY_KEYS.EXPLORATION.ALL,
+          });
           setIsCompleteOpen(false);
           router.push(`/record/${explorationIdStr}`);
         }

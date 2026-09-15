@@ -14,7 +14,7 @@ const useCompleteExplorationMutation = () => {
       postCompleteExploration(explorationId),
     onSuccess: (_data, explorationId) => {
       void queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.EXPLORATION.STATUS(explorationId),
+        queryKey: QUERY_KEYS.EXPLORATION.ALL,
       });
     },
   });
