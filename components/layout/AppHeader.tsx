@@ -106,7 +106,7 @@ const AppHeader = ({
       )}
 
       {centerLabel !== undefined && (
-        <span className="absolute top-1/2 left-1/2 max-w-[60%] -translate-x-1/2 -translate-y-1/2 truncate pt-[max(12px,env(safe-area-inset-top))] text-[13px] font-medium text-current">
+        <span className="absolute top-1/2 left-1/2 max-w-[60%] -translate-x-1/2 -translate-y-1/2 truncate pt-[max(12px,env(safe-area-inset-top))] text-[15px] font-medium text-current">
           {centerLabel}
         </span>
       )}
