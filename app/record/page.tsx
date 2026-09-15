@@ -13,12 +13,12 @@ import Modal from "@/components/ui/Modal";
 import LitMapShareCard from "@/features/record/components/LitMapShareCard";
 import useGetVisitedPlacesQuery from "@/features/record/hooks/useGetVisitedPlacesQuery";
 import useUploadVisitPhotoMutation from "@/features/record/hooks/useUploadVisitPhotoMutation";
+import useGetExplorationsQuery from "@/features/explore/hooks/useGetExplorationsQuery";
 import { useCaptureImage } from "@/hooks/useCaptureImage";
 import { cn } from "@/lib/cn";
 import {
   formatRecordDate,
   formatRecordTime,
-  MOCK_TRAVEL_RECORDS,
 } from "@/features/record/mockRecords";
 import type { MapMarker } from "@/types/map";
 import type { PlaceDetailResponse } from "@/types/place";
@@ -53,7 +53,20 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
     ? (tab as RecordTab)
     : "ongoing";
   const isEmpty = state === "empty";
-  const records = isEmpty ? [] : MOCK_TRAVEL_RECORDS;
+  const {
+    data: ongoingData,
+    isLoading: isOngoingLoading,
+    isError: isOngoingError,
+  } = useGetExplorationsQuery("ONGOING");
+  const {
+    data: completedData,
+    isLoading: isCompletedLoading,
+    isError: isCompletedError,
+  } = useGetExplorationsQuery("COMPLETED");
+  const ongoingExplorations = isEmpty ? [] : (ongoingData?.explorations ?? []);
+  const completedExplorations = isEmpty
+    ? []
+    : (completedData?.explorations ?? []);
   const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
   const [isLitMapShareOpen, setIsLitMapShareOpen] = useState(false);
   const [hasLitMapCaptureError, setHasLitMapCaptureError] = useState(false);
@@ -67,7 +80,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
     data: visitedPlacesData,
     isLoading: isVisitsLoading,
     isError: isVisitsError,
-  } = useGetVisitedPlacesQuery();
+  } = useGetVisitedPlacesQuery(false);
   const visits = isEmpty
     ? []
     : [...(visitedPlacesData?.visits ?? [])].sort(
@@ -158,58 +171,104 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
 
       {activeTab === "ongoing" && (
         <section className="px-6 pt-6">
-          <SectionHeading title="진행 중인 코스" count={isEmpty ? 0 : 1} />
-          {isEmpty ? (
+          <SectionHeading
+            title="진행 중인 코스"
+            count={ongoingExplorations.length}
+          />
+          {isOngoingLoading && (
+            <p className="text-neutral-04 py-10 text-center text-[13px]" role="status">
+              여행을 불러오고 있어요…
+            </p>
+          )}
+          {isOngoingError && (
+            <p className="text-caution-02 py-10 text-center text-[13px]" role="alert">
+              여행을 불러오지 못했어요.
+            </p>
+          )}
+          {!isOngoingLoading && !isOngoingError && ongoingExplorations.length === 0 && (
             <EmptyRecordState
               title="아직 탐험 중인 코스가 없습니다"
               description="새 코스를 만들거나 초대받은 코스에서 탐험을 시작해 보세요."
               action="새 코스 만들기"
               href="/places"
             />
-          ) : (
-            <Link
-              href="/explore/course_01J?stage=ongoing"
-              className="border-neutral-03 mt-4 block overflow-hidden rounded-[24px] border bg-white p-5 shadow-[0_8px_28px_rgba(20,20,20,0.06)]"
-            >
-              <div className="flex items-center justify-between">
-                <span className="bg-primary-04 text-primary-08 rounded-full px-3 py-1.5 text-[11px] font-semibold">
-                  탐험 중
-                </span>
-                <ChevronRight className="text-neutral-04 h-4 w-4" />
-              </div>
-              <h2 className="text-neutral-07 mt-5 text-[21px] font-bold">
-                하루치 광주
-              </h2>
-              <p className="text-neutral-04 mt-2 text-[13px]">
-                2 / 5 장소 방문 · 팀원 4명
-              </p>
-              <div className="bg-neutral-02 mt-4 h-2 overflow-hidden rounded-full">
-                <div className="bg-primary-08 h-full w-2/5 rounded-full" />
-              </div>
-              <p className="text-primary-08 mt-4 text-[12px] font-semibold">
-                탐험 지도로 돌아가기
-              </p>
-            </Link>
+          )}
+          {!isOngoingLoading && !isOngoingError && ongoingExplorations.length > 0 && (
+            <div className="mt-4 space-y-4">
+              {ongoingExplorations.map((exploration) => (
+                <Link
+                  key={exploration.explorationId}
+                  href={`/explore/${exploration.courseId}?stage=ongoing`}
+                  className="border-neutral-03 mt-4 block overflow-hidden rounded-[24px] border bg-white p-5 shadow-[0_8px_28px_rgba(20,20,20,0.06)]"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="bg-primary-04 text-primary-08 rounded-full px-3 py-1.5 text-[11px] font-semibold">
+                      탐험 중
+                    </span>
+                    <ChevronRight className="text-neutral-04 h-4 w-4" />
+                  </div>
+                  <h2 className="text-neutral-07 mt-5 text-[21px] font-bold">
+                    {exploration.courseTitle}
+                  </h2>
+                  <p className="text-neutral-04 mt-2 text-[13px]">
+                    {exploration.completedCoursePlaceCount} /{" "}
+                    {exploration.totalCoursePlaceCount} 장소 방문 · 팀원{" "}
+                    {exploration.participantCount}명
+                  </p>
+                  <div className="bg-neutral-02 mt-4 h-2 overflow-hidden rounded-full">
+                    <div
+                      className="bg-primary-08 h-full rounded-full"
+                      style={{
+                        width: `${
+                          exploration.totalCoursePlaceCount > 0
+                            ? (exploration.completedCoursePlaceCount /
+                                exploration.totalCoursePlaceCount) *
+                              100
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-primary-08 mt-4 text-[12px] font-semibold">
+                    탐험 지도로 돌아가기
+                  </p>
+                </Link>
+              ))}
+            </div>
           )}
         </section>
       )}
 
       {activeTab === "completed" && (
         <section className="px-6 pt-6">
-          <SectionHeading title="완료한 코스" count={records.length} />
-          {records.length === 0 ? (
+          <SectionHeading
+            title="완료한 코스"
+            count={completedExplorations.length}
+          />
+          {isCompletedLoading && (
+            <p className="text-neutral-04 py-10 text-center text-[13px]" role="status">
+              여행을 불러오고 있어요…
+            </p>
+          )}
+          {isCompletedError && (
+            <p className="text-caution-02 py-10 text-center text-[13px]" role="alert">
+              여행을 불러오지 못했어요.
+            </p>
+          )}
+          {!isCompletedLoading && !isCompletedError && completedExplorations.length === 0 && (
             <EmptyRecordState
               title="아직 완료한 코스가 없습니다"
               description="팀과 함께 코스의 장소를 밝히면 이곳에 평생 보관돼요."
               action="여행 시작하기"
               href="/places"
             />
-          ) : (
+          )}
+          {!isCompletedLoading && !isCompletedError && completedExplorations.length > 0 && (
             <div className="mt-4 space-y-4">
-              {records.map((record, index) => (
+              {completedExplorations.map((exploration, index) => (
                 <Link
-                  key={record.recordId}
-                  href={`/record/${record.explorationId}`}
+                  key={exploration.explorationId}
+                  href={`/record/${exploration.explorationId}`}
                   className="border-neutral-03 block overflow-hidden rounded-[24px] border bg-white shadow-[0_8px_28px_rgba(20,20,20,0.06)]"
                 >
                   <div
@@ -225,16 +284,18 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
                   </div>
                   <div className="p-5">
                     <p className="text-neutral-04 text-[12px]">
-                      {formatRecordDate(record.completedAt)}
+                      {exploration.completedAt
+                        ? formatRecordDate(exploration.completedAt)
+                        : ""}
                     </p>
                     <div className="mt-1 flex items-center gap-3">
                       <h2 className="min-w-0 flex-1 truncate text-[20px] font-bold">
-                        {record.title}
+                        {exploration.courseTitle}
                       </h2>
                       <ChevronRight className="text-neutral-04 h-4 w-4" />
                     </div>
                     <p className="text-neutral-04 mt-2 text-[12px]">
-                      {record.companionNames.join(" · ")}
+                      {exploration.participantDisplayNames.join(" · ")}
                     </p>
                   </div>
                 </Link>
