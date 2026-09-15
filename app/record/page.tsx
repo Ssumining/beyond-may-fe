@@ -90,7 +90,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
         placeId: selectedVisit.placeId,
         name: selectedVisit.name,
         category: selectedVisit.category,
-        travelMbtiType: "remember",
+        travelMbtiType: "REMEMBERER",
         tags: selectedVisit.tags,
         address: "광주광역시",
         latitude: 35.1469,

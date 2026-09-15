@@ -1,13 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 
 import { postCourseGeneration } from "@/services/api/course/courseApi";
-import type {
-  GenerateCourseRequest,
-  GenerateCourseResponse,
-} from "@/types/course";
+import type { CourseResponse } from "@/types/course";
 
 const useGenerateCourseMutation = () =>
-  useMutation<GenerateCourseResponse, Error, GenerateCourseRequest>({
+  useMutation<CourseResponse, Error, void>({
     mutationFn: postCourseGeneration,
   });
 

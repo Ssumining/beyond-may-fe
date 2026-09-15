@@ -16,6 +16,8 @@ interface UseExplorationSocketParams {
   onVisit?: (payload: VisitConfirmedPayload) => void;
   onLocation?: (payload: MemberLocationPayload) => void;
   onEvent?: (payload: MemberPresencePayload) => void;
+  /** STOMP ERROR 프레임 수신 시 (message 헤더 = 에러 코드) */
+  onStompError?: (code: string | undefined) => void;
 }
 
 /**
@@ -29,16 +31,19 @@ const useExplorationSocket = ({
   onVisit,
   onLocation,
   onEvent,
+  onStompError,
 }: UseExplorationSocketParams) => {
   const onVisitRef = useRef(onVisit);
   const onLocationRef = useRef(onLocation);
   const onEventRef = useRef(onEvent);
+  const onStompErrorRef = useRef(onStompError);
 
   useEffect(() => {
     onVisitRef.current = onVisit;
     onLocationRef.current = onLocation;
     onEventRef.current = onEvent;
-  }, [onVisit, onLocation, onEvent]);
+    onStompErrorRef.current = onStompError;
+  }, [onVisit, onLocation, onEvent, onStompError]);
 
   const subscriptionsRef = useRef<StompSubscription[]>([]);
 
@@ -49,8 +54,12 @@ const useExplorationSocket = ({
 
     const client = connectClient(token);
 
+    client.onStompError = (frame) => {
+      onStompErrorRef.current?.(frame.headers.message);
+    };
+
     client.onConnect = () => {
-      subscriptionsRef.current.forEach((sub) => sub.unsubscribe());
+      subscriptionsRef.current = [];
       const visitSub = client.subscribe(
         `/topic/explorations/${explorationId}/visits`,
         (message: IMessage) => {

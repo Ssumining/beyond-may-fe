@@ -4,6 +4,7 @@ export const QUERY_KEYS = {
     QUESTIONS: () => [...QUERY_KEYS.PREFERENCE.ALL, "questions"] as const,
     RESULT: (userId: number) =>
       [...QUERY_KEYS.PREFERENCE.ALL, "result", userId] as const,
+    ME: () => [...QUERY_KEYS.PREFERENCE.ALL, "me"] as const,
   },
   COURSE: {
     ALL: ["course"] as const,
@@ -19,6 +20,10 @@ export const QUERY_KEYS = {
       [...QUERY_KEYS.PLACE.ALL, "detail", placeId] as const,
     RECOMMENDATIONS: () =>
       [...QUERY_KEYS.PLACE.ALL, "recommendations"] as const,
+  },
+  RECOMMENDATION: {
+    ALL: ["recommendation"] as const,
+    CURRENT: () => [...QUERY_KEYS.RECOMMENDATION.ALL, "current"] as const,
   },
   EXPLORATION: {
     ALL: ["exploration"] as const,

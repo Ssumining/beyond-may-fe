@@ -9,6 +9,15 @@ export const API_ENDPOINTS = {
     recommendations: "/api/v1/places/recommendations",
     search: "/api/v1/places/search",
   },
+  recommendation: {
+    /** 현재 추천 세트 조회 — 회차별 진행 상태 포함 */
+    current: "/api/v1/recommendations",
+    /** 추천 세트 생성 — 같은 일정으로 이미 있으면 그 결과를 반환 */
+    create: "/api/v1/recommendations/sets",
+    /** 현재 회차 반응 일괄 교체 */
+    reactions: (recommendationId: number) =>
+      `/api/v1/recommendations/${recommendationId}/reactions`,
+  },
   course: {
     list: "/api/v1/courses",
     detail: (courseId: string) => `/api/v1/courses/${courseId}`,
@@ -34,8 +43,10 @@ export const API_ENDPOINTS = {
      *   명세서: POST /api/users/{userId}/preference-test
      */
     submit: (userId: number) => `/api/users/${userId}/preference-test`,
-    /** 나의 성향(결과) 조회 (1.2.2) */
+    /** 나의 성향(결과) 조회 (1.2.2) — 유형·태그·추천 장소 포함하는 무거운 조회 */
     result: (userId: number) => `/api/users/${userId}/preference`,
+    /** 나의 성향 조회 — 유형·유형별 점수만 담은 가벼운 조회. 토큰 주인 기준, 파라미터 없음 */
+    me: "/api/v1/users/me/preference",
   },
   exploration: {
     /** 탐험 합류 - 공유 링크로 참여 (4.1.1). courseId 기준. */
@@ -66,6 +77,9 @@ export const API_ENDPOINTS = {
       longitude: number,
     ) =>
       `/api/v1/explorations/${explorationId}/nearby-places?latitude=${latitude}&longitude=${longitude}`,
+    /** 탐험 이탈 (6.4.1) */
+    leave: (explorationId: string) =>
+      `/api/v1/explorations/${explorationId}/leave`,
   },
   record: {
     // TODO(백엔드 확인): 경로·페이지네이션 여부 미확정. (backend)

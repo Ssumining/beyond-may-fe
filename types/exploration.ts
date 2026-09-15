@@ -1,3 +1,5 @@
+import type { PlaceCategory } from "@/types/map";
+
 /** 참여자 역할 */
 export type ParticipantRole = "OWNER" | "MEMBER";
 
@@ -104,8 +106,7 @@ export interface VisitedPlace {
   placeId: number;
   name: string;
   category: string;
-  /** THINKER/FOODIE/ARTIST/REMEMBERER — 프론트 remember와 변환 필요 (팀 통일 대기) */
-  travelMbtiType: string;
+  travelMbtiType: PlaceCategory;
   latitude: number;
   longitude: number;
   thumbnailUrl: string | null;
@@ -196,4 +197,22 @@ export interface NearbyPlace {
 /** 주변 장소 추천 응답 */
 export interface NearbyPlacesResponse {
   places: NearbyPlace[];
+}
+
+/* ---------------- 탐험 이탈 (6.4.1) ---------------- */
+
+/** 탐험 이탈 응답. participant status만 LEFT로 바뀌고 방문 기록은 보존. */
+export interface LeaveExplorationResponse {
+  explorationId: number;
+  participantId: number;
+  status: "LEFT";
+  /** ISO 8601 문자열 */
+  leftAt: string;
+  /** 소유자 이탈 시 승계된 participantId. 승계 없으면 null */
+  ownerParticipantId: number | null;
+}
+
+/** 중복 참여 차단(EXPLORATION409) 에러 응답의 data */
+export interface DuplicateExplorationErrorData {
+  activeExplorationId: number;
 }

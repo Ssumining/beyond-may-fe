@@ -1,3 +1,5 @@
+import type { PreferenceType } from "@/types/preference";
+
 /** 닉네임 + 식별코드로 이전 세션에 로그인 (POST /api/v1/users/login) */
 export interface LoginRequest {
   nickname: string;
@@ -25,8 +27,6 @@ export interface SignupResponse {
   nickname: string;
   /** 서버가 발급한 식별코드 (1~99) */
   identificationCode: number;
-  // TODO(백엔드 확인): 실제 값은 THINKER/FOODIE/ARTIST/REMEMBERER(대문자)로 내려옴.
-  //   팀 전체 4유형 값 통일 논의 후 값 형식 맞출 예정, 우선 string으로 둠.
-  preferenceType: string | null;
+  preferenceType: PreferenceType | null;
   token: string;
 }

@@ -24,7 +24,7 @@ export interface TravelPeriod {
   endDate: string;
 }
 
-/** 성향 유형 raw(대문자). 색 정규화(→PlaceCategory)는 courseMapAdapter가 담당 */
+/** 성향 유형. types/map.ts의 PlaceCategory와 값 형식 동일(대문자) */
 export type TravelMbtiType = "THINKER" | "FOODIE" | "ARTIST" | "REMEMBERER";
 
 /** 이전 장소→현재 장소 이동수단. 현재 WALK만 관측(없으면 null) */
@@ -78,16 +78,8 @@ export interface ConfirmCourseResponse {
 }
 
 /* ── 코스 생성 (3.1.0) ──
-   TODO(생성 플로우): collection은 생성 응답이 전체 코스(CourseResponse). 지금은 통과용 최소. */
-export interface GenerateCourseRequest {
-  placeIds: number[];
-  /** 여행 기간 선택 화면(4종)에서 넘어온 값 — CourseResponse.travelSchedule(2종)과 범위가 다름 */
-  travelSchedule?: DurationType;
-}
-
-export interface GenerateCourseResponse {
-  courseId: number;
-}
+   본문 없음 — 서버에 저장된 현재 추천 세트의 좋아요 장소와 여행 기간으로 생성한다.
+   응답은 생성된 DRAFT 코스 전체(CourseResponse)다. */
 
 /* ── 코스 목록 (여행 기록) ──
    TODO(추후): 실제 목록 응답 스키마 collection 확인 후 정교화. */
