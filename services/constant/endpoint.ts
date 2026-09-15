@@ -8,7 +8,6 @@ export const API_ENDPOINTS = {
     detail: (placeId: number) => `/api/v1/places/${placeId}`,
     recommendations: (type: string) =>
       `/api/v1/places/recommendations?type=${type}`,
-    search: "/api/v1/places/search",
   },
   recommendation: {
     /** 현재 추천 세트 조회 — 회차별 진행 상태 포함 */
