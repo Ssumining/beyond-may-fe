@@ -83,8 +83,6 @@ export const API_ENDPOINTS = {
       `/api/v1/visits?explorationId=${explorationId}`,
   },
   record: {
-    /** 팀 방문 기록 조회 (여행 기록 화면) */
-    visits: "/api/v1/records/visits",
     /** 방문 장소 인증 사진 업로드 */
     visitPhoto: (visitId: number) => `/api/v1/visits/${visitId}/photos`,
   },
