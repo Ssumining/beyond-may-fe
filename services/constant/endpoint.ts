@@ -41,14 +41,6 @@ export const API_ENDPOINTS = {
   preference: {
     /** 성향 검사 질문 목록 조회 (기능명세 1.1.2 / 1.2.1) */
     questions: "/api/v1/preference-tests/questions",
-    /**
-     * 성향 검사 결과 제출 (1.2.2)
-     * TODO: userId 경로 파라미터 확정 필요. (backend)
-     *   명세서: POST /api/users/{userId}/preference-test
-     */
-    submit: (userId: number) => `/api/users/${userId}/preference-test`,
-    /** 나의 성향(결과) 조회 (1.2.2) — 유형·태그·추천 장소 포함하는 무거운 조회 */
-    result: (userId: number) => `/api/users/${userId}/preference`,
     /** 나의 성향 조회 — 유형·유형별 점수만 담은 가벼운 조회. 토큰 주인 기준, 파라미터 없음 */
     me: "/api/v1/users/me/preference",
   },

@@ -2,33 +2,21 @@ import { http, HttpResponse, delay } from "msw";
 
 import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import type {
-  PreferencePercentages,
   PreferenceQuestion,
-  PreferenceSubmitRequest,
   PreferenceType,
 } from "@/types/preference";
-import {
-  getMockPlaceDetail,
-  MOCK_PLACE_RECOMMENDATIONS,
-} from "@/mocks/placeHandlers";
 import { getRegisteredUser } from "@/mocks/authHandlers";
 
 /**
  * 성향 검사 질문 mock.
  *
- * 실제 서비스에서는 백엔드가 전체 문제 풀 중 랜덤으로 선별해 내려준다.
- * 이 mock은 그 동작을 흉내 내기 위해, 아래 풀에서 무작위 7개를 뽑아 반환.
- * 백엔드 응답이 확정되면 이 파일을 제거.
+ * 실제 백엔드는 전체 문제 풀을 그대로 내려주고, 7개 선별은 프론트 소관
+ * (app/onboarding/page.tsx의 pickRandomQuestions). 이 mock도 전체 풀을 그대로 반환해
+ * 실제와 동일한 흐름을 재현. 
+ * 실API 동작 확정 — 실연결 후 이 파일 제거 예정.
  *
  * 질문 데이터는 기획 확정본(백엔드 반영 리스트)과 동일하게 유지.
- *
- *
- * TODO: 실제 선별 개수(현재 7)· 랜덤 규칙은 서버 소관. (backend)
- *   프론트는 "받은 배열 길이"만 사용하므로 개수가 바뀌어도 UI 변경 x.
  */
-
-/** 서버가 한 번에 내려주는 문항 수 (백엔드 확정 전 임시값) */
-const SERVED_QUESTION_COUNT = 7;
 
 /** 전체 문제 풀 (실제로는 백엔드 DB에 존재). order는 응답 시 재부여하므로 0으로 둠 */
 const QUESTION_POOL: PreferenceQuestion[] = [
@@ -316,101 +304,7 @@ const QUESTION_POOL: PreferenceQuestion[] = [
   },
 ];
 
-/** Fisher-Yates 셔플로 풀에서 count개를 뽑아 order를 1부터 재부여 */
-const pickRandomQuestions = (count: number): PreferenceQuestion[] => {
-  const shuffled = [...QUESTION_POOL];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [
-      shuffled[swapIndex],
-      shuffled[index],
-    ];
-  }
-  return shuffled.slice(0, count);
-};
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-
-// ── 결과(성향) mock ──────────────────────────────────────
-// 4유형 모두 정의하되, 장소·설명·태그는 동일하게 채운다 (텍스트는 추후 수정).
-// type과 mbtiName만 유형별로 다르며, 테마 색은 프론트가 type으로 결정.
-// TODO: 추천 장소 이미지 URL, 유형 설명 텍스트, userId 획득 경로 확정. (backend)
-
-/** 추천 장소 개수 (결과 카드·우표 엽서 모두 5장 기준) */
-const RECOMMENDED_PLACE_COUNT = 5;
-
-/**
- * 뽑힌 유형에 맞는 추천 장소를 장소 카탈로그(mocks/placeHandlers.ts)에서 그대로 가져온다.
- * (예전엔 유형과 무관하게 사색러 장소 5개가 고정으로 나갔음)
- */
-const getRecommendedPlaces = (type: PreferenceType) =>
-  MOCK_PLACE_RECOMMENDATIONS.filter((place) => place.travelMbtiType === type)
-    .slice(0, RECOMMENDED_PLACE_COUNT)
-    .map((place) => {
-      const detail = getMockPlaceDetail(place.placeId);
-      return {
-        placeId: place.placeId,
-        placeImg: place.thumbnailUrl ?? "/images/place.jpg",
-        placeIntro: detail?.description ?? "",
-        placeName: place.name,
-        address: detail?.address ?? "",
-        category: place.category,
-      };
-    });
-
-/** 공통 설명·비율 (모든 유형 동일, 텍스트는 추후 수정) */
-const MOCK_DESCRIPTION =
-  "혼자만의 속도로 도시를 걷는 사람. 익숙한 골목에서 낯선 풍경을 발견하고, 조용한 자리에 오래 머물며 하루의 생각을 천천히 정리합니다. 광주의 느린 장소를 모아봤어요.";
-
-/** 유형별 식별자 ↔ 유형명. 나머지 필드는 공통 */
-const MOCK_TYPES = [
-  { type: "THINKER", mbtiName: "사색러", mbtiTag: ["성찰", "역사"] },
-  { type: "FOODIE", mbtiName: "미식러", mbtiTag: ["음식", "골목"] },
-  { type: "ARTIST", mbtiName: "예술러", mbtiTag: ["문화", "예술"] },
-  { type: "REMEMBERER", mbtiName: "기억러", mbtiTag: ["민주화", "추모"] },
-] as const;
-
-/**
- * 뽑힌 유형이 항상 1등(40~60%)이 되도록 4유형 비율을 무작위로 만든다. 합은 100 유지.
- * (예전엔 고정값이라 뽑힌 유형과 무관하게 항상 사색러가 1등으로 보였음)
- */
-const buildRandomPercentages = (
-  dominantType: PreferenceType,
-): PreferencePercentages => {
-  const others = MOCK_TYPES.map(({ type }) => type).filter(
-    (type) => type !== dominantType,
-  );
-  const dominant = 40 + Math.floor(Math.random() * 21); // 40~60
-  const remaining = 100 - dominant;
-
-  const weights = others.map(() => Math.random());
-  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
-  const [first, second] = weights
-    .slice(0, 2)
-    .map((weight) => Math.round((weight / weightSum) * remaining));
-  const third = remaining - first - second;
-
-  const percentages = { THINKER: 0, FOODIE: 0, ARTIST: 0, REMEMBERER: 0 };
-  percentages[dominantType] = dominant;
-  percentages[others[0]] = first;
-  percentages[others[1]] = second;
-  percentages[others[2]] = third;
-  return percentages;
-};
-
-/** 4유형 중 랜덤 하나의 결과를 만든다 (mock). 새로고침마다 유형이 바뀌어 색 확인 가능. */
-const buildRandomResult = () => {
-  const picked = MOCK_TYPES[Math.floor(Math.random() * MOCK_TYPES.length)];
-  return {
-    type: picked.type,
-    mbtiName: picked.mbtiName,
-    mbtiTag: [...picked.mbtiTag],
-    mbtiImg: "",
-    mbtiDescription: MOCK_DESCRIPTION,
-    percentages: buildRandomPercentages(picked.type),
-    recommendedPlaces: getRecommendedPlaces(picked.type),
-  };
-};
 
 export const preferenceHandlers = [
   http.get(`${BASE_URL}${API_ENDPOINTS.preference.questions}`, async () => {
@@ -418,47 +312,7 @@ export const preferenceHandlers = [
     await delay(800);
     return HttpResponse.json({
       code: 200,
-      data: { questions: pickRandomQuestions(SERVED_QUESTION_COUNT) },
-      message: "OK",
-    });
-  }),
-
-  http.post(
-    `${BASE_URL}${API_ENDPOINTS.preference.submit(1)}`,
-    async ({ request }) => {
-      const body = (await request.json()) as Partial<PreferenceSubmitRequest>;
-
-      if (
-        !Array.isArray(body.answers) ||
-        body.answers.length !== SERVED_QUESTION_COUNT
-      ) {
-        return HttpResponse.json(
-          {
-            code: 400,
-            data: null,
-            message: "모든 질문에 답해 주세요.",
-            success: false,
-          },
-          { status: 400 },
-        );
-      }
-
-      await delay(600);
-      return HttpResponse.json({
-        code: 200,
-        data: null,
-        message: "성향 검사를 제출했습니다.",
-        success: true,
-      });
-    },
-  ),
-
-  // 나의 성향(결과) 조회. 현재 결과 화면의 임시 userId(1)에 응답한다.
-  http.get(`${BASE_URL}${API_ENDPOINTS.preference.result(1)}`, async () => {
-    await delay(600);
-    return HttpResponse.json({
-      code: 200,
-      data: buildRandomResult(),
+      data: { questions: QUESTION_POOL },
       message: "OK",
     });
   }),

@@ -42,11 +42,6 @@ interface PreferenceAnswer {
   optionId: number;
 }
 
-/** POST 결과 제출 요청 바디 */
-interface PreferenceSubmitRequest {
-  answers: PreferenceAnswer[];
-}
-
 /**
  * 성향 유형 식별자. ERD T-MBTI의 mbti_name에 대응.
  * 4가지: 사색러(성찰·역사) / 미식러(음식·골목) / 예술러(문화·예술) / 기억러(민주화·추모)
@@ -120,7 +115,6 @@ export type {
   PreferenceQuestion,
   PreferenceQuestionsResponse,
   PreferenceAnswer,
-  PreferenceSubmitRequest,
   PreferenceType,
   PreferencePercentages,
   RecommendedPlace,
