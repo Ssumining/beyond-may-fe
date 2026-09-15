@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use } from "react";
 import Link from "next/link";
 
 import AppHeader from "@/components/layout/AppHeader";
@@ -11,7 +11,6 @@ import { useQueries } from "@tanstack/react-query";
 import { getTeamVisits } from "@/services/api/record/recordApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
 import type { TeamVisit } from "@/types/record";
-import VisitRecordSheet from "@/features/record/components/VisitRecordSheet";
 
 type RecordTab = "ongoing" | "completed" | "visits";
 
@@ -62,9 +61,6 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
   });
   const isVisitsLoading = visitQueries.some((query) => query.isLoading);
   const isVisitsError = visitQueries.some((query) => query.isError);
-    const ongoingIdSet = new Set(
-    ongoingExplorations.map((exploration) => String(exploration.explorationId)),
-  );
 
   // {visit, explorationId}로 모아 placeId 기준 중복 제거 (최근 방문 우선)
   const visitedPlaces = isEmpty
@@ -90,14 +86,6 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
           .values(),
       );
 
-  const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
-  const selectedEntry =
-    visitedPlaces.find((entry) => entry.visit.visitId === selectedVisitId) ??
-    null;
-  const selectedVisit = selectedEntry?.visit ?? null;
-  const canUploadSelected = selectedEntry
-    ? ongoingIdSet.has(selectedEntry.explorationId)
-    : false;
   const stateSuffix = isEmpty ? "&state=empty" : "";
 
   return (
@@ -302,14 +290,13 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
           )}
           {!isVisitsLoading && !isVisitsError && visitedPlaces.length > 0 && (
             <ul className="mt-4 grid grid-cols-2 gap-3">
-              {visitedPlaces.map(({ visit }) => {
+              {visitedPlaces.map(({ visit, explorationId }) => {
                 const image =
                   visit.photos[0]?.imageUrl ?? visit.place.thumbnailUrl;
                 return (
                   <li key={visit.visitId}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedVisitId(visit.visitId)}
+                    <Link
+                      href={`/record/${explorationId}/visit/${visit.visitId}`}
                       className="border-neutral-03 block w-full overflow-hidden rounded-[18px] border bg-white text-left"
                     >
                       <div className="bg-neutral-02 relative h-32 w-full overflow-hidden">
@@ -336,7 +323,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
                           {formatRecordDate(visit.visitedAt)}
                         </p>
                       </div>
-                    </button>
+                    </Link>
                   </li>
                 );
               })}
@@ -344,11 +331,6 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
           )}
         </section>
       )}
-      <VisitRecordSheet
-        visit={selectedVisit}
-        canUpload={canUploadSelected}
-        onClose={() => setSelectedVisitId(null)}
-      />
     </main>
   );
 };
