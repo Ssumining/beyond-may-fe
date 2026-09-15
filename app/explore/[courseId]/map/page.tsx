@@ -10,6 +10,8 @@ import { isInGwangju } from "@/lib/geo/gwangju";
 import { getDistanceInMeters } from "@/lib/geo/distance";
 
 import useExplorationSocket from "@/features/explore/hooks/useExplorationSocket";
+import Toast from "@/components/ui/Toast";
+import { getStompErrorMessage } from "@/features/explore/utils/stompErrorMessages";
 import VisitMap from "@/features/explore/components/VisitMap";
 import ExploreHeader from "@/features/explore/components/ExploreHeader";
 import TeamBadge from "@/features/explore/components/TeamBadge";
@@ -74,6 +76,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   useGeolocation({ enabled: !isSimulationEnabled });
   const coordinates = useGeolocationStore((state) => state.coordinates);
   const isAccurate = useGeolocationStore((state) => state.isAccurate);
+  const [stompErrorMessage, setStompErrorMessage] = useState<string | null>(null);
 
   // STOMP 연결 (구독: visits·locations·events)
   const { sendLocation } = useExplorationSocket({
@@ -94,7 +97,12 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     onEvent: (payload) => {
       console.log("이벤트:", payload);
     },
+    onStompError: (code) => {
+      setStompErrorMessage(getStompErrorMessage(code));
+    },
   });
+
+  const { data: explorationStatus } = useGetExplorationStatusQuery(explorationIdStr);
 
   const lastSentLocationRef = useRef<{
     latitude: number;
@@ -104,6 +112,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   // 내 위치를 팀에 발행 (GPS 좌표 변경 시, 10m 이상 이동했을 때만)
   useEffect(() => {
     if (!coordinates || explorationId === null) return;
+    if (explorationStatus?.currentParticipant.locationSharingEnabled === false) return;
 
     const hasMovedEnough =
       !lastSentLocationRef.current ||
@@ -120,7 +129,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
       accuracyMeters: coordinates.accuracy,
       recordedAt: new Date().toISOString(),
     });
-  }, [coordinates, explorationId, sendLocation]);
+  }, [coordinates, explorationId, sendLocation, explorationStatus?.currentParticipant.locationSharingEnabled]);
 
   const {
     data: course,
@@ -134,8 +143,6 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     isPending: isParticipantsPending,
     isError: isParticipantsError,
   } = useGetParticipantsQuery(explorationIdStr);
-  const { data: explorationStatus } =
-    useGetExplorationStatusQuery(explorationIdStr);
   const { data: nearbyData, isSuccess: isNearbySuccess } =
     useGetNearbyPlacesQuery({
       explorationId,
@@ -337,6 +344,12 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
       )}
 
       {isOutOfGwangju && <OutOfGwangjuBanner />}
+      {stompErrorMessage && (
+        <Toast
+          message={stompErrorMessage}
+          onClose={() => setStompErrorMessage(null)}
+        />
+      )}
       <PlaceDetailContainer
         placeId={selectedPlaceId}
         explorationId={explorationId}
