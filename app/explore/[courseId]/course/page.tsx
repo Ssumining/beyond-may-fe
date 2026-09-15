@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import AppHeader from "@/components/layout/AppHeader";
 import Button from "@/components/ui/Button";
@@ -9,7 +10,9 @@ import CourseTimeline from "@/features/course/components/CourseTimeline";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import PlaceDetailContainer from "@/features/explore/components/PlaceDetailContainer";
+import useCompleteExplorationMutation from "@/features/explore/hooks/useCompleteExplorationMutation";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
+import { getApiCode } from "@/services/lib/axios";
 import useGetExplorationVisitedPlacesQuery from "@/features/explore/hooks/useGetExplorationVisitedPlacesQuery";
 import useGetExplorationStatusQuery from "@/features/explore/hooks/useGetExplorationStatusQuery";
 import useSessionStore from "@/stores/sessionStore";
@@ -31,6 +34,10 @@ const CourseTimelinePage = ({ params }: CourseTimelinePageProps) => {
   const [isCompleteOpen, setIsCompleteOpen] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+
+  const router = useRouter();
+  const { mutate: completeExploration, isPending: isCompleting } =
+    useCompleteExplorationMutation();
 
   const {
     data: course,
@@ -78,9 +85,23 @@ const CourseTimelinePage = ({ params }: CourseTimelinePageProps) => {
   const progressPercent =
     totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
+  const isExplorationCompleted = explorationStatus?.status === "COMPLETED";
+
   const handleComplete = () => {
-    setIsCompleteOpen(false);
-    // TODO: 탐험 완료 처리 API + 완료 코스(5.1.2) 이동
+    if (!explorationIdStr) return;
+    completeExploration(explorationIdStr, {
+      onSuccess: () => {
+        setIsCompleteOpen(false);
+        router.push(`/record/${explorationIdStr}`);
+      },
+      onError: (error) => {
+        // 이미 완료된 탐험이면 완료된 것으로 간주하고 기록으로 이동
+        if (getApiCode(error) === "EXPLORATION409_2") {
+          setIsCompleteOpen(false);
+          router.push(`/record/${explorationIdStr}`);
+        }
+      },
+    });
   };
 
   return (
@@ -118,16 +139,18 @@ const CourseTimelinePage = ({ params }: CourseTimelinePageProps) => {
         </div>
       </div>
 
-      {/* 코스 완료하기 — 텍스트 버튼(Tertiary), ink-muted */}
-      <div className="px-6 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
-        <button
-          type="button"
-          onClick={() => setIsCompleteOpen(true)}
-          className="text-neutral-04 focus-visible:outline-primary-03 hover:text-neutral-06 min-h-11 w-full text-center text-[13px] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          코스 완료하기
-        </button>
-      </div>
+      {/* 코스 완료하기 */}
+      {!isExplorationCompleted && (
+        <div className="px-6 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={() => setIsCompleteOpen(true)}
+            className="text-neutral-04 focus-visible:outline-primary-03 hover:text-neutral-06 min-h-11 w-full text-center text-[13px] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            코스 완료하기
+          </button>
+        </div>
+      )}
 
       {/* 완료 확인 모달 (5.1.2-B) — Modal 재사용 */}
       <Modal open={isCompleteOpen} onClose={() => setIsCompleteOpen(false)}>
@@ -142,6 +165,7 @@ const CourseTimelinePage = ({ params }: CourseTimelinePageProps) => {
             size="lg"
             className="flex-1"
             onClick={() => setIsCompleteOpen(false)}
+            disabled={isCompleting}
           >
             취소
           </Button>
@@ -150,6 +174,7 @@ const CourseTimelinePage = ({ params }: CourseTimelinePageProps) => {
             size="lg"
             className="flex-1"
             onClick={handleComplete}
+            isLoading={isCompleting}
           >
             완료하기
           </Button>
