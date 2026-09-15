@@ -578,32 +578,37 @@ export default function PlacesPage() {
       </Sidebar>
 
       {isCourseGenerating && (
-        <div className="bg-neutral-01 fixed inset-0 z-80 mx-auto flex w-full max-w-[430px] flex-col items-center justify-center px-8 text-center">
-          <div className="border-primary-08 h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
-          <p className="text-primary-08 mt-7 text-[12px] font-semibold tracking-[0.12em]">
-            AI COURSE DESIGN
-          </p>
-          <h2 className="text-neutral-07 mt-2 text-[24px] font-bold">
-            선택한 장소를
-            <br />
-            가장 좋은 순서로 잇고 있어요
-          </h2>
-          <p
-            className="text-neutral-04 mt-3 text-[13px] leading-[1.55]"
-            role="status"
-          >
-            이동 거리와 머무는 시간을 함께 계산하고 있어요.
-          </p>
-          <Button
-            size="lg"
-            className="mt-8 w-full"
-            onClick={() => {
-              generationCancelled.current = true;
-              resetGeneration();
-            }}
-          >
-            취소하고 장소로 돌아가기
-          </Button>
+        <div className="bg-neutral-01 fixed inset-0 z-80 mx-auto flex w-full max-w-[430px] flex-col">
+          <AppHeader
+            showMenu
+            centerLabel="코스 생성 중"
+            onOpenMenu={() => setIsMenuOpen(true)}
+          />
+          <div className="flex flex-1 flex-col items-center justify-center gap-[22px] px-8 text-center">
+            <div className="border-neutral-03 h-11 w-11 animate-spin rounded-full border-[3px] border-t-transparent" />
+            <div className="flex flex-col items-center gap-2">
+              <p
+                className="text-neutral-07 text-[15.9px] leading-[22px] font-medium"
+                role="status"
+              >
+                선택한 장소를
+                <br />
+                최적의 동선으로 짜고 있어요
+              </p>
+              <p className="text-neutral-05 text-[12.3px]">
+                잠시만 기다려 주세요
+              </p>
+            </div>
+            <Button
+              size="lg"
+              onClick={() => {
+                generationCancelled.current = true;
+                resetGeneration();
+              }}
+            >
+              취소하고 장소로 돌아가기
+            </Button>
+          </div>
         </div>
       )}
     </main>
