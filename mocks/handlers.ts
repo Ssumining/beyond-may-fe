@@ -11,6 +11,7 @@ import { locationSharingHandlers } from "./locationSharingHandlers";
 import { recordHandlers } from "./recordHandlers";
 import { visitedPlacesHandlers } from "./visitedPlacesHandlers";
 import { nearbyHandlers } from "./nearbyHandlers";
+import { recommendationHandlers } from "./recommendationHandlers";
 import { leaveHandlers } from "./leaveHandlers";
 
 export const handlers = [
@@ -27,5 +28,6 @@ export const handlers = [
   ...recordHandlers,
   ...visitedPlacesHandlers,
   ...nearbyHandlers,
+  ...recommendationHandlers,
   ...leaveHandlers,
 ];

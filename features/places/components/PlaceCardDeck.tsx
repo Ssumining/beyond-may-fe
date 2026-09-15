@@ -9,12 +9,20 @@ import ImageIcon from "@/components/ui/icons/Image";
 import Undo from "@/components/ui/icons/Undo";
 import Close from "@/components/ui/icons/Close";
 import HeartFilled from "@/components/ui/icons/HeartFilled";
-import type { PlaceRecommendationResponse } from "@/types/place";
 
 type SwipeDirection = "like" | "dislike";
 
+/** 카드 표시에 필요한 최소 필드. 추천 목록·추천 회차 등 어떤 장소 응답이든 이 모양만 맞으면 된다 */
+interface DeckPlace {
+  placeId: number;
+  name: string;
+  category: string;
+  tags: string[];
+  thumbnailUrl: string | null;
+}
+
 interface PlaceCardDeckProps {
-  places: PlaceRecommendationResponse[];
+  places: DeckPlace[];
   /** 지금까지 좋아요로 담은 장소 수 (늘어날 때마다 알림을 띄우는 데 사용) */
   likedCount: number;
   /** 최상단 카드 탭 시 (장소 상세 열기) */

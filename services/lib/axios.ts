@@ -102,7 +102,7 @@ export const getApiCode = (e: unknown): string | undefined =>
  * 에러 응답의 data를 꺼냄 (EXPLORATION409의 activeExplorationId 등).
  * 인터셉터가 변형하지 않은 axios 원본 error.response.data.data를 그대로 읽음.
  */
-export const getApiErrorData = <T,>(e: unknown): T | undefined =>
+export const getApiErrorData = <T>(e: unknown): T | undefined =>
   (e as { response?: { data?: { data?: T } } })?.response?.data?.data;
 
 /**

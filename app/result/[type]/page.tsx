@@ -11,25 +11,25 @@ const RESULTS: Record<
   PreferenceType,
   { name: string; tags: string[]; description: string }
 > = {
-  thinker: {
+  THINKER: {
     name: "사색러",
     tags: ["성찰", "느린 골목"],
     description:
       "익숙한 도시에서도 조용한 자리를 발견하고 천천히 생각을 쌓는 여행자예요.",
   },
-  foodie: {
+  FOODIE: {
     name: "미식러",
     tags: ["로컬 음식", "골목"],
     description:
       "한 끼의 맛과 오래된 가게의 이야기를 따라 도시를 기억하는 여행자예요.",
   },
-  artist: {
+  ARTIST: {
     name: "예술러",
     tags: ["문화", "영감"],
     description:
       "전시와 공연, 골목의 작은 장면에서 새로운 감각을 발견하는 여행자예요.",
   },
-  remember: {
+  REMEMBERER: {
     name: "기억러",
     tags: ["역사", "도시의 이야기"],
     description:

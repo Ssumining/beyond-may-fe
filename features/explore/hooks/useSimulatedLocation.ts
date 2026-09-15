@@ -50,8 +50,7 @@ const useSimulatedLocation = () => {
           latitude:
             current.latitude + (target.latitude - current.latitude) * ratio,
           longitude:
-            current.longitude +
-            (target.longitude - current.longitude) * ratio,
+            current.longitude + (target.longitude - current.longitude) * ratio,
           accuracy: SIMULATED_ACCURACY_METERS,
         });
         setAccurate(true);

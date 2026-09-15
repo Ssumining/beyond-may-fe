@@ -3,9 +3,15 @@ import { http, HttpResponse, delay } from "msw";
 import type {
   ChatCourseRequest,
   CourseResponse,
-  GenerateCourseRequest,
+  TravelMode,
   UpdateCourseRequest,
 } from "@/types/course";
+import { TRAVEL_SCHEDULE_OPTIONS } from "@/features/places/utils/travelSchedule";
+import { getMockPlaceDetail } from "@/mocks/placeHandlers";
+import {
+  getCurrentRecommendationLikedPlaces,
+  getCurrentRecommendationSchedule,
+} from "@/mocks/recommendationHandlers";
 
 /**
  * 코스 조회 mock (collection _5 구조 기준).
@@ -132,6 +138,9 @@ const MOCK_COURSE_DRAFT: CourseResponse = {
 /** 개발 세션 안에서 확정·보정·직접수정 결과를 다음 조회까지 유지한다. */
 const courseOverrides = new Map<number, CourseResponse>();
 
+/** AI 생성 코스에 발급할 courseId. 고정 mock(1)과 겹치지 않게 별도 채번 */
+let nextGeneratedCourseId = 1000;
+
 /** 코스별 AI 챗봇(POST /chat) 호출 횟수 — 최대 2회까지 remainingRevisions 계산용 */
 const chatCallCounts = new Map<number, number>();
 
@@ -162,30 +171,74 @@ export const courseHandlers = [
     return HttpResponse.json(wrap({ courses: [getMockCourse(1)] }));
   }),
 
-  /** 선택한 장소를 이동 순서에 맞춘 초안 코스로 생성한다. */
-  http.post(`${BASE_URL}/api/v1/courses/ai-generation`, async ({ request }) => {
-    const body = (await request.json()) as Partial<GenerateCourseRequest>;
+  /** 현재 추천 세트에 저장된 좋아요 장소로 초안 코스를 생성한다. 본문 없음. */
+  http.post(`${BASE_URL}/api/v1/courses/ai-generation`, async () => {
+    const likedPlaces = getCurrentRecommendationLikedPlaces();
 
-    if (
-      !Array.isArray(body.placeIds) ||
-      body.placeIds.length === 0 ||
-      body.placeIds.some((placeId) => !Number.isInteger(placeId))
-    ) {
+    if (likedPlaces.length === 0) {
       return HttpResponse.json(
         {
-          code: "COURSE400",
+          code: "RECOMMENDATION404",
           data: null,
-          message: "코스에 담을 장소를 한 곳 이상 선택해 주세요.",
+          message: "현재 추천을 찾을 수 없습니다.",
           success: false,
         },
-        { status: 400 },
+        { status: 404 },
       );
     }
 
     await delay(1800);
 
-    // TODO(생성 플로우): collection은 생성 응답이 전체 코스(CourseResponse). 지금은 통과용 최소.
-    return HttpResponse.json(wrap({ courseId: 1 }));
+    const schedule = getCurrentRecommendationSchedule();
+    const travelSchedule = schedule?.travelSchedule ?? "DAY_TRIP";
+    const dayCount =
+      TRAVEL_SCHEDULE_OPTIONS.find(({ id }) => id === travelSchedule)?.days ??
+      Math.max(0, Math.ceil(likedPlaces.length / 5) - 1);
+    const totalDays = dayCount + 1;
+    const perDay = Math.ceil(likedPlaces.length / totalDays);
+
+    const places: CourseResponse["places"] = likedPlaces.map((place, index) => {
+      const detail = getMockPlaceDetail(place.placeId);
+      const visitOrder = (index % perDay) + 1;
+      return {
+        placeId: place.placeId,
+        name: place.name,
+        category: place.category,
+        address: detail?.address ?? "광주광역시",
+        latitude: detail?.latitude ?? 35.1595,
+        longitude: detail?.longitude ?? 126.8526,
+        dayNumber: Math.floor(index / perDay) + 1,
+        visitOrder,
+        estimatedStayMinutes: 60,
+        travelModeFromPrevious: (visitOrder === 1
+          ? null
+          : "WALK") as TravelMode | null,
+        travelMbtiType: detail?.travelMbtiType,
+        summary: place.summary ?? detail?.description,
+      };
+    });
+
+    const courseId = nextGeneratedCourseId;
+    nextGeneratedCourseId += 1;
+
+    const generatedCourse: CourseResponse = {
+      courseId,
+      title: "광주 여행",
+      status: "DRAFT",
+      travelSchedule:
+        travelSchedule === "CUSTOM" ||
+        travelSchedule === "TWO_NIGHTS_THREE_DAYS"
+          ? "ONE_NIGHT_TWO_DAYS"
+          : travelSchedule,
+      startDate: schedule?.startDate ?? MOCK_COURSE.startDate,
+      endDate: schedule?.endDate ?? MOCK_COURSE.endDate,
+      startTime: "09:00:00",
+      places,
+      explorationId: null,
+    };
+    courseOverrides.set(courseId, generatedCourse);
+
+    return HttpResponse.json(wrap(generatedCourse));
   }),
 
   /** 초안 코스를 확정해 탐험에 사용할 수 있게 한다. */

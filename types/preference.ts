@@ -49,14 +49,14 @@ interface PreferenceSubmitRequest {
  * 성향 유형 식별자. ERD T-MBTI의 mbti_name에 대응.
  * 4가지: 사색러(성찰·역사) / 미식러(음식·골목) / 예술러(문화·예술) / 기억러(민주화·추모)
  */
-type PreferenceType = "thinker" | "foodie" | "artist" | "remember";
+type PreferenceType = "THINKER" | "FOODIE" | "ARTIST" | "REMEMBERER";
 
 /** 4유형 비율(%) — ERD User의 *_percentage. 결과 화면 참고용 */
 interface PreferencePercentages {
-  thinker: number;
-  foodie: number;
-  artist: number;
-  remember: number;
+  THINKER: number;
+  FOODIE: number;
+  ARTIST: number;
+  REMEMBERER: number;
 }
 
 /**
@@ -98,6 +98,22 @@ interface PreferenceResultResponse {
   recommendedPlaces: RecommendedPlace[];
 }
 
+/**
+ * 나의 성향 조회 응답 (GET /api/v1/users/me/preference).
+ * 토큰의 주인 기준으로 본인 것만 조회되며 path/query 파라미터가 없다 — 위
+ * PreferenceResultResponse(구 GET /users/{userId}/preference, 추천 장소 포함)와
+ * 달리 유형·유형별 선택 횟수만 가볍게 담은 별도 계약이다.
+ */
+interface MyPreferenceResponse {
+  userId: number;
+  nickname: string;
+  preferenceType: PreferenceType;
+  thinkerScore: number;
+  foodieScore: number;
+  artistScore: number;
+  remembererScore: number;
+}
+
 export type {
   OptionLabel,
   PreferenceOption,
@@ -109,4 +125,5 @@ export type {
   PreferencePercentages,
   RecommendedPlace,
   PreferenceResultResponse,
+  MyPreferenceResponse,
 };
