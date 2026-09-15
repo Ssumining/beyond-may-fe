@@ -29,7 +29,12 @@ import AlertCircle from "@/components/ui/icons/AlertCircle";
 import ArrowRight from "@/components/ui/icons/ArrowRight";
 import KakaoMap from "@/components/map/Map";
 import { getCourseMapData } from "@/features/course/utils/courseMapAdapter";
-import Sparkle from "@/components/ui/icons/Sparkle";
+
+// 사이드바 연동을 위한 Import
+import Sidebar from "@/components/layout/sidebar/Sidebar";
+import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
+import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
+import useSessionStore from "@/stores/sessionStore";
 
 type EditMode = "ai" | "manual";
 
@@ -42,6 +47,8 @@ interface CourseEditorProps {
   course: CourseResponse;
   initialMode: EditMode;
   fromHub: boolean;
+  onBack: () => void;
+  onOpenMenu: () => void;
 }
 
 const SUGGESTIONS = [
@@ -60,7 +67,13 @@ const NEW_PLACE_DEFAULTS = {
   travelModeFromPrevious: null,
 } as const;
 
-const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
+const CourseEditor = ({
+  course,
+  initialMode,
+  fromHub,
+  onBack,
+  onOpenMenu,
+}: CourseEditorProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [title, setTitle] = useState(course.title);
@@ -94,7 +107,6 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
 
   const isAiMode = initialMode === "ai";
   const detailHref = `/course/${course.courseId}/detail${fromHub ? "?from=hub" : ""}`;
-  const manualHref = `/course/${course.courseId}/edit?mode=manual${fromHub ? "&from=hub" : ""}`;
 
   // 수동 모드의 토스트 알림 처리
   useEffect(() => {
@@ -135,6 +147,15 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
       } else {
         setChatRecommendations(res.recommendations);
         setProposedPlaces(null);
+      }
+    },
+    onError: (error) => {
+      const status = (error as { response?: { status?: number } })?.response
+        ?.status;
+      if (status === 409) {
+        setRemainingRevisions(0);
+        setProposedPlaces(null);
+        setChatRecommendations([]);
       }
     },
   });
@@ -242,13 +263,14 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
     setIsAddingPlace(false);
   };
 
-  // ── 직접 수정(manual) 모드 (기존 3.2.2 유지) ──
+  // ── 직접 수정(manual) 모드 (기존 3.2.2 유지 + 헤더 햄버거/뒤로가기 동기화) ──
   if (!isAiMode) {
     return (
       <main className="bg-neutral-01 relative mx-auto flex h-dvh w-full max-w-[430px] flex-col">
         <AppHeader
-          backHref={detailHref}
-          showMenu={false}
+          onBack={onBack}
+          showMenu={true}
+          onOpenMenu={onOpenMenu}
           centerLabel="순서 편집"
         />
         <div className="flex-1 overflow-y-auto px-6 pt-7 pb-5">
@@ -400,16 +422,18 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
         )}
 
         <div className="border-neutral-03 border-t bg-white px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
-          <Button
-            variant="solid"
-            size="lg"
-            className="w-full"
-            disabled={!title.trim() || places.length < minimumPlaceCount}
-            isLoading={saveMutation.isPending}
+          <button
+            type="button"
+            disabled={
+              !title.trim() ||
+              places.length < minimumPlaceCount ||
+              saveMutation.isPending
+            }
             onClick={() => saveMutation.mutate()}
+            className="flex h-[50px] w-full items-center justify-center rounded-[29px] bg-[#141414] font-['Gothic_A1'] text-[14px] font-[800] tracking-[1px] text-[#FDFFFA] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] disabled:opacity-50"
           >
             {saveMutation.isPending ? "저장 중" : "수정 완료"}
-          </Button>
+          </button>
           {saveMutation.isError && (
             <p
               className="text-caution-02 mt-2 text-center text-[12px]"
@@ -424,15 +448,26 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
   }
 
   // ── AI 수정 모드 (3.2.1) ──
+  const isMapView = hasProposal && viewMode === "map";
+
   return (
-    <main className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] flex-col">
-      <AppHeader
-        backHref={detailHref}
-        showMenu={false}
-        centerLabel="AI로 코스 다듬기"
-      />
+    <main className="bg-neutral-01 relative mx-auto flex h-dvh w-full max-w-[430px] flex-col">
+      {/* 지도 뷰면 헤더를 지도 위 오버레이로 (배경 투명) */}
+      <div
+        className={
+          isMapView ? "absolute inset-x-0 top-0 z-30" : "relative z-10"
+        }
+      >
+        <AppHeader
+          onBack={onBack}
+          showMenu={true}
+          onOpenMenu={onOpenMenu}
+          centerLabel="AI로 코스 다듬기"
+        />
+      </div>
 
       {chatMutation.isPending ? (
+        // 로딩 (C)
         <div className="flex flex-1 flex-col items-center justify-center gap-[22px]">
           <div className="border-neutral-03 border-t-neutral-07 h-11 w-11 animate-spin rounded-full border-[3px]" />
           <div className="flex flex-col items-center gap-2">
@@ -442,7 +477,10 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
             <p className="text-neutral-05 text-[12px]">잠시만 기다려 주세요</p>
           </div>
         </div>
-      ) : chatMutation.isError ? (
+      ) : chatMutation.isError &&
+        (chatMutation.error as { response?: { status?: number } })?.response
+          ?.status !== 409 ? (
+        // 오류 (G) — 409(소진)는 제외
         <div className="flex flex-1 flex-col items-center justify-center gap-[14px] px-10">
           <span className="border-neutral-03 text-neutral-04 flex h-[52px] w-[52px] items-center justify-center rounded-full border-2">
             <AlertCircle className="h-[26px] w-[26px]" />
@@ -464,6 +502,7 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
       ) : remainingRevisions <= 0 &&
         !hasProposal &&
         chatRecommendations.length === 0 ? (
+        // 수정 횟수 초과 (F)
         <div className="flex flex-1 flex-col items-center justify-center gap-[14px] px-10">
           <span className="border-neutral-03 text-neutral-04 rounded-full border px-[14px] py-[6px] text-[11px] font-medium">
             2 / 2 사용
@@ -480,183 +519,210 @@ const CourseEditor = ({ course, initialMode, fromHub }: CourseEditorProps) => {
             variant="solid"
             size="lg"
             className="mt-[18px] w-full"
-            onClick={() => router.push(manualHref)}
+            onClick={() =>
+              router.push(
+                `/course/${course.courseId}/edit?mode=manual${fromHub ? "&from=hub" : ""}`,
+              )
+            }
           >
             직접 수정하기
           </Button>
         </div>
-      ) : (
-        <>
-          {hasProposal && viewMode === "map" ? (
-            // 3.2.1-D 지도 뷰
-            <div className="relative flex-1">
-              <KakaoMap {...getCourseMapData(previewPlaces)} />
+      ) : hasProposal ? (
+        // 결과 화면 (E 목록 / D 지도)
+        viewMode === "map" ? (
+          // 지도 뷰 — flex-1로 공간 차지, 헤더는 위 오버레이가 덮음
+          <div className="relative flex-1">
+            <KakaoMap {...getCourseMapData(previewPlaces)} />
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className="bg-neutral-01 border-neutral-03 text-neutral-07 absolute top-[80px] right-4 z-40 flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12px] font-semibold shadow-sm"
+            >
+              ≡ 목록
+            </button>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <section aria-labelledby="ai-preview-title">
+              <h2
+                id="ai-preview-title"
+                className="text-neutral-04 px-[25px] pt-6 pb-3 text-[10px] font-normal tracking-[1px] uppercase"
+              >
+                수정된 코스 · {previewPlaces.length}곳
+              </h2>
+              <CourseTimeline
+                places={previewPlaces}
+                addedPlaceIds={addedPlaceIds}
+              />
               <button
                 type="button"
-                onClick={() => setViewMode("list")}
-                className="bg-neutral-01 border-neutral-03 text-neutral-07 absolute top-20 right-4 z-10 flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12px] font-semibold shadow-sm"
+                onClick={() => setViewMode("map")}
+                className="text-neutral-05 mt-4 mb-2 w-full text-center text-[13.4px] font-semibold underline underline-offset-4"
               >
-                ≡ 목록
+                지도로 보기
               </button>
-              <span className="bg-neutral-07 text-neutral-01 absolute top-20 left-4 z-10 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-semibold">
-                <Sparkle className="h-3.5 w-3.5" />
-                AI 수정안
-              </span>
-            </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto">
-              <section className="px-[30px] pt-9 pb-6">
-                <h1 className="text-neutral-07 text-[19px] leading-[30px] font-medium">
-                  어떻게 바꿀까요?
-                  <br />
-                  원하는 방향을 편하게 말해주세요.
-                </h1>
+            </section>
+          </div>
+        )
+      ) : (
+        // 입력 화면 (제안 없을 때)
+        <div className="flex-1 overflow-y-auto">
+          <section className="px-[30px] pt-9 pb-6">
+            <h1 className="text-neutral-07 text-[19px] leading-[30px] font-medium">
+              어떻게 바꿀까요?
+              <br />
+              원하는 방향을 편하게 말해주세요.
+            </h1>
 
-                <p className="text-neutral-04 mt-8 text-[11.6px] font-bold tracking-[0.1em]">
-                  추천 키워드
-                </p>
-                <div className="mt-3 flex flex-wrap gap-[6px]">
-                  {SUGGESTIONS.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => setInstruction(suggestion)}
-                      className="border-neutral-03 text-neutral-04 rounded-full border bg-white px-4 py-[10px] text-[13.5px] font-medium"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-
-                <p className="text-neutral-05 mt-9 text-right text-[11px] tabular-nums">
-                  {instruction.length} / 150
-                </p>
-                <div className="border-neutral-07 mt-[6px] flex items-center gap-3 border px-4 py-[18px]">
-                  <input
-                    value={instruction}
-                    onChange={(event) => setInstruction(event.target.value)}
-                    maxLength={150}
-                    placeholder="내용을 입력해주세요."
-                    className="text-neutral-07 placeholder:text-neutral-03 flex-1 text-[15px] outline-none"
-                  />
-                  <button
-                    type="button"
-                    aria-label="수정 요청 보내기"
-                    disabled={!instruction.trim() || remainingRevisions <= 0}
-                    onClick={() => chatMutation.mutate()}
-                    className="text-neutral-05 disabled:text-neutral-03 shrink-0"
-                  >
-                    <ArrowRight className="h-5 w-5" />
-                  </button>
-                </div>
-              </section>
-
-              {/* develop의 '장소 추천(ADD_RECOMMENDATION)' 처리 블록 */}
-              {chatRecommendations.length > 0 && (
-                <section
-                  className="px-[30px] pb-6"
-                  aria-labelledby="ai-recs-title"
+            <p className="text-neutral-04 mt-8 text-[11.6px] font-bold tracking-[0.1em]">
+              추천 키워드
+            </p>
+            <div className="mt-3 flex flex-wrap gap-[6px]">
+              {SUGGESTIONS.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setInstruction(suggestion)}
+                  className="border-neutral-03 text-neutral-04 rounded-full border bg-white px-4 py-[10px] text-[13.5px] font-medium"
                 >
-                  <h2
-                    id="ai-recs-title"
-                    className="text-neutral-07 text-[14px] font-semibold"
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-neutral-05 mt-9 text-right text-[11px] tabular-nums">
+              {instruction.length} / 150
+            </p>
+            <div className="border-neutral-07 mt-[6px] flex items-center gap-3 border px-4 py-[18px]">
+              <input
+                value={instruction}
+                onChange={(event) => setInstruction(event.target.value)}
+                maxLength={150}
+                placeholder="내용을 입력해주세요."
+                className="text-neutral-07 placeholder:text-neutral-03 flex-1 text-[15px] outline-none"
+              />
+              <button
+                type="button"
+                aria-label="수정 요청 보내기"
+                disabled={!instruction.trim() || remainingRevisions <= 0}
+                onClick={() => chatMutation.mutate()}
+                className="text-neutral-05 disabled:text-neutral-03 shrink-0"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </div>
+          </section>
+
+          {chatRecommendations.length > 0 && (
+            <section className="px-[30px] pb-6" aria-labelledby="ai-recs-title">
+              <h2
+                id="ai-recs-title"
+                className="text-neutral-07 text-[14px] font-semibold"
+              >
+                추천 장소
+              </h2>
+              <ul className="mt-3 space-y-2">
+                {chatRecommendations.map((place) => (
+                  <li
+                    key={place.placeId}
+                    className="border-neutral-03 rounded-[18px] border bg-white p-3"
                   >
-                    추천 장소
-                  </h2>
-                  <ul className="mt-3 space-y-2">
-                    {chatRecommendations.map((place) => (
-                      <li
-                        key={place.placeId}
-                        className="border-neutral-03 rounded-[18px] border bg-white p-3"
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-neutral-07 truncate text-[14px] font-semibold">
+                          {place.name}
+                        </p>
+                        <p className="text-neutral-04 mt-0.5 text-[11px]">
+                          {place.category}
+                        </p>
+                        <p className="text-neutral-06 mt-1 text-[12px] leading-[1.5]">
+                          {place.reason}
+                        </p>
+                      </div>
+                      <Button
+                        size="md"
+                        className="shrink-0"
+                        isLoading={
+                          addPlaceMutation.isPending &&
+                          addPlaceMutation.variables === place.placeId
+                        }
+                        onClick={() => addPlaceMutation.mutate(place.placeId)}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="text-neutral-07 truncate text-[14px] font-semibold">
-                              {place.name}
-                            </p>
-                            <p className="text-neutral-04 mt-0.5 text-[11px]">
-                              {place.category}
-                            </p>
-                            <p className="text-neutral-06 mt-1 text-[12px] leading-[1.5]">
-                              {place.reason}
-                            </p>
-                          </div>
-                          <Button
-                            size="md"
-                            className="shrink-0"
-                            isLoading={
-                              addPlaceMutation.isPending &&
-                              addPlaceMutation.variables === place.placeId
-                            }
-                            onClick={() =>
-                              addPlaceMutation.mutate(place.placeId)
-                            }
-                          >
-                            추가
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {/* 제안(COURSE_REVISION) 처리 블록 */}
-              {hasProposal && (
-                <section aria-labelledby="ai-preview-title">
-                  <h2
-                    id="ai-preview-title"
-                    className="text-neutral-04 px-[25px] pb-3 text-[10px] font-normal tracking-[1px] uppercase"
-                  >
-                    수정된 코스 · {previewPlaces.length}곳
-                  </h2>
-                  <CourseTimeline
-                    places={previewPlaces}
-                    addedPlaceIds={addedPlaceIds}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("map")}
-                    className="text-neutral-04 mt-2 w-full py-2 text-center text-[13.4px] font-semibold"
-                  >
-                    지도로 보기
-                  </button>
-                </section>
-              )}
-            </div>
+                        추가
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
+        </div>
+      )}
 
-          {hasProposal && (
-            <div className="border-neutral-03 border-t bg-white px-6 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
-              <div className="flex gap-3">
-                <Button
-                  size="lg"
-                  className="flex-1"
-                  onClick={() => setProposedPlaces(null)}
-                >
-                  원래 코스 유지
-                </Button>
-                <Button
-                  variant="solid"
-                  size="lg"
-                  className="flex-1"
-                  isLoading={applyMutation.isPending}
-                  onClick={() => applyMutation.mutate()}
-                >
-                  {applyMutation.isPending ? "변경 중" : "이 코스로 변경"}
-                </Button>
-              </div>
-              {applyMutation.isError && (
-                <p
-                  className="text-caution-02 mt-2 text-center text-[12px]"
-                  role="alert"
-                >
-                  저장하지 못했어요. 다시 시도해 주세요.
-                </p>
-              )}
-            </div>
+      {/* 결과 하단 패널 (제안 있을 때만) — 지도 뷰에서도 위에 뜨게 z-20 */}
+      {hasProposal && (
+        <div className="border-t border-[#DEDEDE] bg-[#FDFFFA] px-[25px] pt-[26px] pb-[max(20px,env(safe-area-inset-bottom))]">
+          <p className="text-[10px] font-normal tracking-[1px] text-[#77797F] uppercase">
+            수정된 코스
+          </p>
+          <h1 className="mt-[7px] text-[19.2px] leading-[24px] font-semibold text-[#141414]">
+            {title}
+          </h1>
+          <p className="mt-[5px] text-[11.6px] leading-[14px] text-[#BFC3C1]">
+            {previewPlaces.length}곳 ·{" "}
+            {course.travelSchedule === "DAY_TRIP" ? "당일치기" : "1박 2일"} ·{" "}
+            {previewPlaces[0]?.name ?? ""}부터
+          </p>
+
+          {/* 버튼 2개: 이 코스로 변경 / AI 수정 n/2 */}
+          <div className="mt-[29px] flex gap-[14px]">
+            <button
+              type="button"
+              onClick={() => applyMutation.mutate()}
+              disabled={applyMutation.isPending}
+              className="flex h-[50px] flex-1 items-center justify-center rounded-[29px] bg-[#141414] text-[13px] font-[800] tracking-[0.5px] text-[#FDFFFA] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] disabled:opacity-50"
+            >
+              {applyMutation.isPending ? "변경 중" : "이 코스로 변경"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (proposedPlaces) setPlaces(proposedPlaces);
+                setProposedPlaces(null);
+                setInstruction("");
+              }}
+              disabled={remainingRevisions <= 0}
+              className="flex h-[50px] flex-1 items-center justify-center rounded-[29px] border border-[#141414] bg-[#FDFFFA] text-[13px] font-[800] tracking-[0.5px] text-[#141414] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] disabled:opacity-40"
+            >
+              AI 수정 {2 - remainingRevisions}/2
+            </button>
+          </div>
+
+          {/* 밑줄: 코스 상세 수정 (지도로 보기는 리스트 하단/지도 우상단으로 이동) */}
+          <div className="mt-[14px] flex items-center justify-center text-[13px] font-semibold">
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  `/course/${course.courseId}/edit?mode=manual${fromHub ? "&from=hub" : ""}`,
+                )
+              }
+              className="text-neutral-04 underline underline-offset-4"
+            >
+              코스 상세 수정
+            </button>
+          </div>
+
+          {applyMutation.isError && (
+            <p
+              className="text-caution-02 mt-3 text-center text-[12px]"
+              role="alert"
+            >
+              저장하지 못했어요. 다시 시도해 주세요.
+            </p>
           )}
-        </>
+        </div>
       )}
     </main>
   );
@@ -666,6 +732,12 @@ const CourseEditPage = ({ params, searchParams }: CourseEditPageProps) => {
   const { courseId } = use(params);
   const { mode, from } = use(searchParams);
   const fromHub = from === "hub";
+  const router = useRouter();
+
+  // 상위에서 사이드바 메뉴 상태 관리 (헤더 동기화)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const nickname = useSessionStore((state) => state.nickname);
+
   const {
     data: course,
     isLoading,
@@ -673,12 +745,15 @@ const CourseEditPage = ({ params, searchParams }: CourseEditPageProps) => {
     refetch,
   } = useGetCourseDetailQuery(courseId);
 
+  const handleBack = () => router.back();
+
   if (isLoading) {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] flex-col">
         <AppHeader
-          backHref={`/course/${courseId}/detail${fromHub ? "?from=hub" : ""}`}
-          showMenu={false}
+          onBack={handleBack}
+          showMenu={true}
+          onOpenMenu={() => setIsMenuOpen(true)}
           centerLabel="코스 수정"
         />
         <div className="space-y-3 px-6 pt-8" role="status">
@@ -694,8 +769,9 @@ const CourseEditPage = ({ params, searchParams }: CourseEditPageProps) => {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] flex-col">
         <AppHeader
-          backHref={`/course/${courseId}/detail${fromHub ? "?from=hub" : ""}`}
-          showMenu={false}
+          onBack={handleBack}
+          showMenu={true}
+          onOpenMenu={() => setIsMenuOpen(true)}
           centerLabel="코스 수정"
         />
         <section className="flex flex-1 flex-col items-center justify-center px-8 text-center">
@@ -716,12 +792,20 @@ const CourseEditPage = ({ params, searchParams }: CourseEditPageProps) => {
   }
 
   return (
-    <CourseEditor
-      key={course.courseId}
-      course={course}
-      initialMode={mode === "manual" ? "manual" : "ai"}
-      fromHub={fromHub}
-    />
+    <>
+      <CourseEditor
+        key={course.courseId}
+        course={course}
+        initialMode={mode === "manual" ? "manual" : "ai"}
+        fromHub={fromHub}
+        onBack={handleBack}
+        onOpenMenu={() => setIsMenuOpen(true)}
+      />
+
+      <Sidebar open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+        {nickname ? <SidebarProfileMenu /> : <SidebarLoginForm />}
+      </Sidebar>
+    </>
   );
 };
 
