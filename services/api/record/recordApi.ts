@@ -2,7 +2,8 @@ import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import { api } from "@/services/lib/axios";
 import type {
   TeamVisitListResponse,
-  UploadVisitPhotoResponse,
+  SaveVisitRecordRequest,
+  SaveVisitRecordResponse,
 } from "@/types/record";
 
 export const getTeamVisits = async (
@@ -14,15 +15,16 @@ export const getTeamVisits = async (
   return res.data!;
 };
 
-/** 방문 장소 인증 사진을 업로드한다. */
-export const postVisitPhoto = async (
+/** 방문 기록(사진·메모)을 저장한다. 사진은 같은 키 files로 여러 장, memo는 선택. */
+export const postVisitRecord = async (
   visitId: number,
-  photo: File,
-): Promise<UploadVisitPhotoResponse> => {
+  { memo, photos }: SaveVisitRecordRequest,
+): Promise<SaveVisitRecordResponse> => {
   const formData = new FormData();
-  formData.append("file", photo);
-  const response = await api.postForm<UploadVisitPhotoResponse>(
-    API_ENDPOINTS.record.visitPhoto(visitId),
+  if (memo !== undefined) formData.append("memo", memo);
+  (photos ?? []).forEach((photo) => formData.append("files", photo));
+  const response = await api.postForm<SaveVisitRecordResponse>(
+    API_ENDPOINTS.record.visitRecord(visitId),
     formData,
   );
   return response.data!;

@@ -83,7 +83,7 @@ export const API_ENDPOINTS = {
       `/api/v1/visits?explorationId=${explorationId}`,
   },
   record: {
-    /** 방문 장소 인증 사진 업로드 */
-    visitPhoto: (visitId: number) => `/api/v1/visits/${visitId}/photos`,
+    /** 방문 기록 저장 (사진·메모) — 같은 키 files로 여러 장, 최대 3장 */
+    visitRecord: (visitId: number) => `/api/v1/visits/${visitId}/record`,
   },
 } as const;
