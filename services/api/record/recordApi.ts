@@ -21,10 +21,9 @@ export const postVisitPhoto = async (
 ): Promise<UploadVisitPhotoResponse> => {
   const formData = new FormData();
   formData.append("file", photo);
-  const response = await api.post<UploadVisitPhotoResponse>(
+  const response = await api.postForm<UploadVisitPhotoResponse>(
     API_ENDPOINTS.record.visitPhoto(visitId),
     formData,
-    { headers: { "Content-Type": "multipart/form-data" } },
   );
   return response.data!;
 };

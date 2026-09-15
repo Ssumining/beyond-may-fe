@@ -1,14 +1,19 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 
 import AppHeader from "@/components/layout/AppHeader";
 import ChevronRight from "@/components/ui/icons/ChevronRight";
 import useGetExplorationsQuery from "@/features/explore/hooks/useGetExplorationsQuery";
 import { formatRecordDate } from "@/features/record/mockRecords";
+import { useQueries } from "@tanstack/react-query";
+import { getTeamVisits } from "@/services/api/record/recordApi";
+import { QUERY_KEYS } from "@/services/constant/queryKey";
+import type { TeamVisit } from "@/types/record";
+import VisitRecordSheet from "@/features/record/components/VisitRecordSheet";
 
-type RecordTab = "ongoing" | "completed";
+type RecordTab = "ongoing" | "completed" | "visits";
 
 interface RecordPageProps {
   searchParams: Promise<{ state?: string; tab?: string }>;
@@ -17,6 +22,7 @@ interface RecordPageProps {
 const TABS: { id: RecordTab; label: string }[] = [
   { id: "ongoing", label: "진행 중" },
   { id: "completed", label: "완료" },
+  { id: "visits", label: "방문한 장소" },
 ];
 
 const RecordPage = ({ searchParams }: RecordPageProps) => {
@@ -41,7 +47,57 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
   const completedExplorations = isEmpty
     ? []
     : (completedData?.explorations ?? []);
+  
+  const explorationIds = [
+    ...ongoingExplorations,
+    ...completedExplorations,
+  ].map((exploration) => String(exploration.explorationId));
 
+  const visitQueries = useQueries({
+    queries: explorationIds.map((id) => ({
+      queryKey: QUERY_KEYS.RECORD.TEAM_VISITS(id),
+      queryFn: () => getTeamVisits(id),
+      enabled: !!id,
+    })),
+  });
+  const isVisitsLoading = visitQueries.some((query) => query.isLoading);
+  const isVisitsError = visitQueries.some((query) => query.isError);
+    const ongoingIdSet = new Set(
+    ongoingExplorations.map((exploration) => String(exploration.explorationId)),
+  );
+
+  // {visit, explorationId}로 모아 placeId 기준 중복 제거 (최근 방문 우선)
+  const visitedPlaces = isEmpty
+    ? []
+    : Array.from(
+        visitQueries
+          .flatMap((query, index) =>
+            (query.data?.visits ?? []).map((visit) => ({
+              visit,
+              explorationId: explorationIds[index],
+            })),
+          )
+          .sort(
+            (a, b) =>
+              new Date(b.visit.visitedAt).getTime() -
+              new Date(a.visit.visitedAt).getTime(),
+          )
+          .reduce((map, entry) => {
+            if (!map.has(entry.visit.place.placeId))
+              map.set(entry.visit.place.placeId, entry);
+            return map;
+          }, new Map<number, { visit: TeamVisit; explorationId: string }>())
+          .values(),
+      );
+
+  const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
+  const selectedEntry =
+    visitedPlaces.find((entry) => entry.visit.visitId === selectedVisitId) ??
+    null;
+  const selectedVisit = selectedEntry?.visit ?? null;
+  const canUploadSelected = selectedEntry
+    ? ongoingIdSet.has(selectedEntry.explorationId)
+    : false;
   const stateSuffix = isEmpty ? "&state=empty" : "";
 
   return (
@@ -223,6 +279,76 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
             )}
         </section>
       )}
+      {activeTab === "visits" && (
+        <section className="px-6 pt-6">
+          <SectionHeading title="방문한 장소" count={visitedPlaces.length} />
+          {isVisitsLoading && (
+            <p className="text-neutral-04 py-10 text-center text-[13px]" role="status">
+              방문한 장소를 불러오고 있어요…
+            </p>
+          )}
+          {!isVisitsLoading && isVisitsError && (
+            <p className="text-caution-02 py-10 text-center text-[13px]" role="alert">
+              방문한 장소를 불러오지 못했어요.
+            </p>
+          )}
+          {!isVisitsLoading && !isVisitsError && visitedPlaces.length === 0 && (
+            <EmptyRecordState
+              title="아직 방문한 장소가 없습니다"
+              description="장소에서 방문을 인증하면 여기에 모여요."
+              action="진행 중 코스 보기"
+              href="/record?tab=ongoing"
+            />
+          )}
+          {!isVisitsLoading && !isVisitsError && visitedPlaces.length > 0 && (
+            <ul className="mt-4 grid grid-cols-2 gap-3">
+              {visitedPlaces.map(({ visit }) => {
+                const image =
+                  visit.photos[0]?.imageUrl ?? visit.place.thumbnailUrl;
+                return (
+                  <li key={visit.visitId}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedVisitId(visit.visitId)}
+                      className="border-neutral-03 block w-full overflow-hidden rounded-[18px] border bg-white text-left"
+                    >
+                      <div className="bg-neutral-02 relative h-32 w-full overflow-hidden">
+                        {image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={image}
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-neutral-04 absolute inset-0 flex items-center justify-center text-[11px]">
+                            사진 없음
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <p className="text-neutral-07 truncate text-[14px] font-semibold">
+                          {visit.place.name}
+                        </p>
+                        <p className="text-neutral-04 mt-1 text-[11px]">
+                          {visit.place.category} ·{" "}
+                          {formatRecordDate(visit.visitedAt)}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
+      <VisitRecordSheet
+        visit={selectedVisit}
+        canUpload={canUploadSelected}
+        onClose={() => setSelectedVisitId(null)}
+      />
     </main>
   );
 };
