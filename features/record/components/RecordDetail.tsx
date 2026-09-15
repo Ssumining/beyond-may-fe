@@ -78,9 +78,11 @@ const RecordDetail = ({ record }: RecordDetailProps) => {
           <h1 className="relative mt-3 text-[36px] leading-[1.1] font-bold tracking-[-0.05em]">
             {record.title}
           </h1>
-          <p className="relative mt-3 max-w-[300px] text-[14px] leading-[1.6] text-white/85">
-            {record.description}
-          </p>
+          {record.description && (
+            <p className="relative mt-3 max-w-[300px] text-[14px] leading-[1.6] text-white/85">
+              {record.description}
+            </p>
+          )}
           <time className="relative mt-5 text-[13px] font-medium text-white/80">
             {formatRecordDate(record.completedAt)}
           </time>
@@ -89,7 +91,7 @@ const RecordDetail = ({ record }: RecordDetailProps) => {
 
       <section
         aria-label="여행 요약"
-        className="border-neutral-03 grid grid-cols-3 border-b py-6 text-center"
+        className="border-neutral-03 grid grid-cols-2 border-b py-6 text-center"
       >
         <div>
           <strong className="block text-[22px] font-bold">
@@ -99,15 +101,7 @@ const RecordDetail = ({ record }: RecordDetailProps) => {
             방문 장소
           </span>
         </div>
-        <div className="border-neutral-03 border-x">
-          <strong className="block text-[22px] font-bold">
-            {(record.distanceMeters / 1000).toFixed(1)}km
-          </strong>
-          <span className="text-neutral-04 mt-1 block text-[11px]">
-            걸은 거리
-          </span>
-        </div>
-        <div>
+        <div className="border-neutral-03 border-l">
           <strong className="block text-[22px] font-bold">
             {formatElapsedTime(record.elapsedMinutes)}
           </strong>
@@ -232,9 +226,9 @@ const RecordDetail = ({ record }: RecordDetailProps) => {
                 </div>
                 <div className="border-x border-white/30">
                   <strong className="block text-[18px]">
-                    {(record.distanceMeters / 1000).toFixed(1)}km
+                    {formatElapsedTime(record.elapsedMinutes)}
                   </strong>
-                  <span className="text-[9px] text-white/70">거리</span>
+                  <span className="text-[9px] text-white/70">시간</span>
                 </div>
                 <div>
                   <strong className="block text-[18px]">
