@@ -318,7 +318,10 @@ export default function PlacesPage() {
       .filter((placeId) => !liked.has(placeId));
 
     replaceBatchReactions(
-      { recommendationId, body: { likedPlaceIds, dislikedPlaceIds } },
+      {
+        batchNumber: batch.batchNumber,
+        body: { likedPlaceIds, dislikedPlaceIds },
+      },
       {
         onSuccess: (response) => {
           setLikedPlaces((prev) => [

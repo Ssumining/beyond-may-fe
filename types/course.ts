@@ -3,14 +3,14 @@
 export type CourseStatus = "DRAFT" | "CONFIRMED";
 
 /** 여행 기간 유형. collection 확인값(2종)만 확정.
- *  TODO(백엔드): 2박3일·그이상 코드값 확정 시 추가.
+ *  TODO: 2박3일·그이상 코드값 확정 시 추가. (백엔드)
  *  (release-design엔 TWO_NIGHTS_THREE_DAYS·CUSTOM 표기가 있었으나 collection 미확인이라 보류) */
 export type TravelSchedule = "DAY_TRIP" | "ONE_NIGHT_TWO_DAYS";
 
 /** 여행 기간 선택 화면(장소 선택 전, 2.1.0) 전용 4종 옵션.
  *  TravelSchedule은 collection 확인값 2종만 확정된 코스 응답용이고,
  *  이 화면은 백엔드 확정 전에도 4종 버튼을 보여줘야 해서 별도로 둔다.
- *  TODO(백엔드): TravelSchedule에 나머지 2종 코드값 확정되면 통합 검토. */
+ *  TODO: TravelSchedule에 나머지 2종 코드값 확정되면 통합 검토. (백엔드) */
 export type DurationType =
   | "DAY_TRIP"
   | "ONE_NIGHT_TWO_DAYS"
@@ -61,7 +61,7 @@ export interface CourseResponse {
   places: CoursePlace[];
   /** CONFIRMED일 때만 존재. 확정 직후 세션 상태에만 의존하면 새로고침·재방문 시
    *  유실되어 탐험 시작이 막히므로, 조회 응답에도 포함해 그 값을 우선 쓴다.
-   *  TODO(백엔드): 실제 응답 필드명·존재 여부 확인 필요 — collection 미확인. */
+   *  TODO: 실제 응답 필드명·존재 여부 확인 필요 — collection 미확인. (백엔드) */
   explorationId: number | null;
 }
 
@@ -103,7 +103,6 @@ export interface CourseChatRecommendation {
   placeId: number;
   name: string;
   category: string;
-  travelMbtiType: TravelMbtiType;
   address: string;
   latitude: number;
   longitude: number;

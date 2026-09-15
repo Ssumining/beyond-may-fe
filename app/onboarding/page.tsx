@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import type { PreferenceQuestion } from "@/types/preference";
 
 import { useGetPreferenceQuestionsQuery } from "@/features/onboarding/hooks/useGetPreferenceQuestionsQuery";
 import { useQuiz } from "@/features/onboarding/hooks/useQuiz";
+import { computePreference } from "@/features/onboarding/utils/computePreference";
+import useSessionStore from "@/stores/sessionStore";
 import AppHeader from "@/components/layout/AppHeader";
 import QuizIntro from "@/features/onboarding/components/QuizIntro";
 import QuizProgressBar from "@/features/onboarding/components/QuizProgressBar";
@@ -15,11 +18,26 @@ import Button from "@/components/ui/Button";
  * 성향 검사 온보딩 페이지 (기능명세 1.1.2 / 1.2.1).
  *
  * 흐름:
+ * 0. 백엔드가 전체 문항을 내려주면 그중 SERVED_QUESTION_COUNT(7)개를 랜덤 선별해 진행한다.
  * 1. 질문 로딩 중 → 로딩(인트로) 화면만 노출
  * 2. 질문 도착 → 질문 스크롤 컨테이너로 전환 (로딩 화면은 DOM에서 제거) → 로딩으로 되돌아갈 수 없음
  * 3. 질문끼리는 scroll-snap으로 진행.
  *    답변 시 다음 섹션 자동 스크롤, 위로 스크롤하면 이전 답 수정 가능.
  */
+
+const SERVED_QUESTION_COUNT = 7;
+
+const pickRandomQuestions = (
+  all: PreferenceQuestion[],
+  count: number,
+): PreferenceQuestion[] => {
+  const shuffled = [...all];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
+};
 
 const OnboardingPage = () => {
   const router = useRouter();
@@ -27,16 +45,22 @@ const OnboardingPage = () => {
   const { data, isLoading, isError, refetch } =
     useGetPreferenceQuestionsQuery();
 
-  const questions = data?.questions ?? [];
+  const questions = useMemo(
+    () => pickRandomQuestions(data?.questions ?? [], SERVED_QUESTION_COUNT),
+    [data?.questions],
+  );
   const isReady = !isLoading && !isError && questions.length > 0;
 
   const {
+    answers,
     visibleQuestions,
     progress,
     isCompleted,
     getSelectedOption,
     selectAnswer,
   } = useQuiz({ questions });
+
+  const setLocalPreference = useSessionStore((state) => state.setLocalPreference);
 
   /** 각 문항 섹션 DOM 참조 → 답변 후 다음 섹션으로 스크롤 */
   const sectionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -61,17 +85,18 @@ const OnboardingPage = () => {
     });
   };
 
-  // 마지막 문항까지 응답 완료되면 결과 로딩(계산 대기) 화면으로 이동.
-  // 약간의 지연을 두어 마지막 선택의 dimmed 전환이 보인 뒤 넘어가게 한다.
   useEffect(() => {
     if (!isCompleted) return;
+
+    // 클라에서 성향 점수 계산 → 세션 보관. 결과 화면/닉네임 등록에서 재사용.
+    setLocalPreference(computePreference(questions, answers));
 
     const timer = setTimeout(() => {
       router.push("/onboarding/result");
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [isCompleted, router]);
+  }, [isCompleted, questions, answers, setLocalPreference, router]);
 
   // 로딩/에러 상태: 질문 준비 전에는 인트로(로딩) 화면만 출력.
   if (!isReady) {
@@ -117,6 +142,7 @@ const OnboardingPage = () => {
         >
           <QuizQuestion
             question={question}
+            order={index + 1}
             selectedOptionId={getSelectedOption(question.questionId)}
             hasPrevious={index > 0}
             onSelect={(optionId) => handleSelect(question.questionId, optionId)}

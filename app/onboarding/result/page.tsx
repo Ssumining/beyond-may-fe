@@ -11,7 +11,13 @@ import Modal from "@/components/ui/Modal";
 import Share from "@/components/ui/icons/Share";
 import Undo from "@/components/ui/icons/Undo";
 import { useCaptureImage } from "@/hooks/useCaptureImage";
-import { useGetPreferenceResultQuery } from "@/features/onboarding/hooks/useGetPreferenceResultQuery";
+import useGetPlaceRecommendationsQuery from "@/features/places/hooks/useGetPlaceRecommendationsQuery";
+import useGetMyPreferenceQuery from "@/features/onboarding/hooks/useGetMyPreferenceQuery";
+import { PREFERENCE_META } from "@/features/onboarding/constants/preferenceMeta";
+import type {
+  PreferenceResultResponse,
+  MyPreferenceResponse,
+} from "@/types/preference";
 import useSessionStore from "@/stores/sessionStore";
 import ResultTypeCard from "@/features/onboarding/components/ResultTypeCard";
 import NicknameRegisterSection from "@/features/onboarding/components/NicknameRegisterSection";
@@ -26,8 +32,6 @@ import ShareCollageCard from "@/features/onboarding/components/ShareCollageCard"
  * 결과 도착 시 유형 카드 + 추천 장소 목록으로 자동 전환.
  *
  * 결과 화면 본문은 흰 배경·검정 텍스트로 고정 (유형별 그라디언트는 공유 카드에서만).
- *
- * TODO: userId는 세션/로그인에서 얻어야 하나 현재 미확정 → 임시값 사용. (#13 세션)
  */
 
 /** 공유 이미지 버전: 화면 그대로(기록형) / 우표 엽서(스토리형, 원본 피그마 목업 기준) */
@@ -37,6 +41,17 @@ const SHARE_VERSIONS = [
 ] as const;
 type ShareVersionId = (typeof SHARE_VERSIONS)[number]["id"];
 
+const buildPercentages = (p: MyPreferenceResponse) => {
+  const total =
+    p.thinkerScore + p.foodieScore + p.artistScore + p.remembererScore || 1;
+  return {
+    THINKER: Math.round((p.thinkerScore / total) * 100),
+    FOODIE: Math.round((p.foodieScore / total) * 100),
+    ARTIST: Math.round((p.artistScore / total) * 100),
+    REMEMBERER: Math.round((p.remembererScore / total) * 100),
+  };
+};
+
 const ResultPage = () => {
   const router = useRouter();
   // 진입 시점 세션 상태를 스냅샷으로 고정 — 등록 도중 setSession으로 isLoggedIn이
@@ -44,9 +59,7 @@ const ResultPage = () => {
   const [hadSessionOnEnter] = useState(
     () => useSessionStore.getState().isLoggedIn,
   );
-  // TODO: 실제 userId를 세션에서 가져오도록 교체. (#13)
-  const TEMP_USER_ID = 1;
-
+  const localPreference = useSessionStore((state) => state.localPreference);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isLeaveOpen, setIsLeaveOpen] = useState(false);
   const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
@@ -62,8 +75,46 @@ const ResultPage = () => {
     share,
   } = useCaptureImage<HTMLDivElement>();
 
-  const { data, isLoading, isError, refetch } =
-    useGetPreferenceResultQuery(TEMP_USER_ID);
+  const {
+    data: fetchedPreference,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetMyPreferenceQuery(hadSessionOnEnter);
+
+  // 로그인 사용자는 서버 조회값, 비로그인은 설문 직후 계산한 값 사용
+  const myPreference = hadSessionOnEnter ? fetchedPreference : localPreference;
+
+  // 추천 장소 조회는 인증 필요 → 로그인 사용자만. 비로그인은 등록 후 /places에서 확인.
+  const { data: recommendedPlacesRaw = [] } = useGetPlaceRecommendationsQuery(
+    hadSessionOnEnter ? (myPreference?.preferenceType ?? null) : null,
+  );
+
+  useEffect(() => {
+    if (!hadSessionOnEnter && !localPreference) {
+      router.replace("/onboarding");
+    }
+  }, [hadSessionOnEnter, localPreference, router]);
+
+  const data: PreferenceResultResponse | undefined = myPreference
+    ? {
+        type: myPreference.preferenceType,
+        mbtiName: PREFERENCE_META[myPreference.preferenceType].mbtiName,
+        mbtiTag: PREFERENCE_META[myPreference.preferenceType].mbtiTag,
+        mbtiImg: "",
+        mbtiDescription:
+          PREFERENCE_META[myPreference.preferenceType].mbtiDescription,
+        percentages: buildPercentages(myPreference),
+        recommendedPlaces: recommendedPlacesRaw.map((place) => ({
+          placeId: place.placeId,
+          placeImg: place.thumbnailUrl ?? "",
+          placeIntro: place.description ?? "",
+          placeName: place.name,
+          address: place.address ?? "",
+          category: place.category,
+        })),
+      }
+    : undefined;
 
   useEffect(() => {
     if (!isLoading) return;
@@ -189,6 +240,11 @@ const ResultPage = () => {
 
       <ResultTypeCard result={data} />
 
+      <RecommendedPlaceList
+        mbtiName={data.mbtiName}
+        places={data.recommendedPlaces.slice(0, 2)}
+      />
+
       {!hadSessionOnEnter ? (
         <NicknameRegisterSection />
       ) : (
@@ -203,11 +259,6 @@ const ResultPage = () => {
           </Button>
         </section>
       )}
-
-      <RecommendedPlaceList
-        mbtiName={data.mbtiName}
-        places={data.recommendedPlaces.slice(0, 2)}
-      />
 
       <section className="border-neutral-03 mt-10 border-t px-6 pt-8">
         <p className="text-neutral-04 text-[13px] font-medium">결과 보관하기</p>

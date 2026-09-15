@@ -76,16 +76,17 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   useGeolocation({ enabled: !isSimulationEnabled });
   const coordinates = useGeolocationStore((state) => state.coordinates);
   const isAccurate = useGeolocationStore((state) => state.isAccurate);
-  const [stompErrorMessage, setStompErrorMessage] = useState<string | null>(null);
+    const [stompErrorMessage, setStompErrorMessage] = useState<string | null>(null);
+  const { data: explorationStatus } = useGetExplorationStatusQuery(explorationIdStr);
 
-  // STOMP 연결 (구독: visits·locations·events)
+  // STOMP 연결 (구독: visits·locations·events) — 진행 중(ONGOING) 탐험일 때만 연결
   const { sendLocation } = useExplorationSocket({
     explorationId: explorationId ?? 0,
     token:
       typeof window !== "undefined"
         ? (localStorage.getItem("accessToken") ?? undefined)
         : undefined,
-    enabled: explorationId !== null,
+    enabled: explorationId !== null && explorationStatus?.status === "ONGOING",
     onVisit: () => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
@@ -102,10 +103,11 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     },
   });
 
-  const { data: explorationStatus } = useGetExplorationStatusQuery(explorationIdStr);
+  const lastSentLocationRef = useRef<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
-  const lastSentLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
- 
   // 내 위치를 팀에 발행 (GPS 좌표 변경 시, 10m 이상 이동했을 때만)
   useEffect(() => {
     if (!coordinates || explorationId === null) return;
@@ -186,8 +188,9 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     if (!useLocationSimulationStore.getState().isRunning) return;
 
     const orderedPlaces = [...course.places].sort(
-      (a, b) => a.visitOrder - b.visitOrder,
+      (a, b) => a.dayNumber - b.dayNumber || a.visitOrder - b.visitOrder,
     );
+    
     if (index >= orderedPlaces.length) {
       autoTourIndexRef.current = 0; // 끝까지 돌았으면 다음엔 처음부터
       setTourRunning(false);

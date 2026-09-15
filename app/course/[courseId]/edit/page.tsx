@@ -97,8 +97,8 @@ const CourseEditor = ({
   const [notice, setNotice] = useState<string | null>(null);
   const [isAddingPlace, setIsAddingPlace] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-
-  const { data: recommendations = [] } = useGetPlaceRecommendationsQuery();
+  const preferenceType = useSessionStore((state) => state.preferenceType);
+  const { data: recommendations = [] } = useGetPlaceRecommendationsQuery(preferenceType);
   const minimumPlaceCount = getMinimumSelectionCount(course.travelSchedule);
 
   const availablePlaces = recommendations.filter(

@@ -14,11 +14,11 @@ export const getPlaceDetail = async (
   return res.data!;
 };
 
-export const getPlaceRecommendations = async (): Promise<
-  PlaceRecommendationResponse[]
-> => {
-  const res = await api.get<PlaceRecommendationResponse[]>(
-    API_ENDPOINTS.place.recommendations,
+export const getPlaceRecommendations = async (
+  type: string,
+): Promise<PlaceRecommendationResponse[]> => {
+  const res = await api.get<{ places: PlaceRecommendationResponse[] }>(
+    API_ENDPOINTS.place.recommendations(type),
   );
-  return res.data ?? [];
+  return res.data?.places ?? [];
 };

@@ -315,7 +315,6 @@ export const courseHandlers = [
                 placeId: EXTRA_MOCK_PLACE.placeId,
                 name: EXTRA_MOCK_PLACE.name,
                 category: EXTRA_MOCK_PLACE.category,
-                travelMbtiType: EXTRA_MOCK_PLACE.travelMbtiType,
                 address: EXTRA_MOCK_PLACE.address,
                 latitude: EXTRA_MOCK_PLACE.latitude,
                 longitude: EXTRA_MOCK_PLACE.longitude,

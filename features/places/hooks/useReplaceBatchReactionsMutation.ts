@@ -7,7 +7,7 @@ import type {
 } from "@/types/recommendation";
 
 interface ReplaceBatchReactionsVariables {
-  recommendationId: number;
+  batchNumber: number;
   body: ReplaceBatchReactionsRequest;
 }
 
@@ -21,8 +21,8 @@ const useReplaceBatchReactionsMutation = () =>
     Error,
     ReplaceBatchReactionsVariables
   >({
-    mutationFn: ({ recommendationId, body }) =>
-      postBatchReactions(recommendationId, body),
+    mutationFn: ({ batchNumber, body }) =>
+      postBatchReactions(batchNumber, body),
   });
 
 export default useReplaceBatchReactionsMutation;

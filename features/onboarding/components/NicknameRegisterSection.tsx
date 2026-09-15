@@ -6,6 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import useSessionStore from "@/stores/sessionStore";
 import Button from "@/components/ui/Button";
 import { usePostSignupMutation } from "@/features/onboarding/hooks/usePostSignupMutation";
 import IdentificationCodeModal from "@/features/onboarding/components/IdentificationCodeModal";
@@ -36,10 +37,22 @@ const NicknameRegisterSection = () => {
   const nickname = useWatch({ control, name: "nickname" });
   const { mutate, data, isPending, isSuccess, isError } =
     usePostSignupMutation();
+  const localPreference = useSessionStore((state) => state.localPreference);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const onSubmit = (values: NicknameFormValues) => {
-    mutate(values, { onSuccess: () => setIsModalOpen(true) });
+    mutate(
+      {
+        nickname: values.nickname,
+        ...(localPreference && {
+          thinkerScore: localPreference.thinkerScore,
+          foodieScore: localPreference.foodieScore,
+          artistScore: localPreference.artistScore,
+          remembererScore: localPreference.remembererScore,
+        }),
+      },
+      { onSuccess: () => setIsModalOpen(true) },
+    );
   };
 
   const handleModalClose = () => {

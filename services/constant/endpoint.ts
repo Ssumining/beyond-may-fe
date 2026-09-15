@@ -6,8 +6,8 @@ export const API_ENDPOINTS = {
   },
   place: {
     detail: (placeId: number) => `/api/v1/places/${placeId}`,
-    recommendations: "/api/v1/places/recommendations",
-    search: "/api/v1/places/search",
+    recommendations: (type: string) =>
+      `/api/v1/places/recommendations?type=${type}`,
   },
   recommendation: {
     /** 현재 추천 세트 조회 — 회차별 진행 상태 포함 */
@@ -15,8 +15,8 @@ export const API_ENDPOINTS = {
     /** 추천 세트 생성 — 같은 일정으로 이미 있으면 그 결과를 반환 */
     create: "/api/v1/recommendations/sets",
     /** 현재 회차 반응 일괄 교체 */
-    reactions: (recommendationId: number) =>
-      `/api/v1/recommendations/${recommendationId}/reactions`,
+    reactions: (batchNumber: number) =>
+      `/api/v1/recommendations/${batchNumber}/reactions`,
   },
   course: {
     list: "/api/v1/courses",
@@ -33,18 +33,13 @@ export const API_ENDPOINTS = {
     /** 챗봇이 추천한 장소 1곳을 즉시 추가(+ 전체 재배치) */
     addPlace: (courseId: string, placeId: number) =>
       `/api/v1/courses/${courseId}/places/${placeId}`,
+        /** 코스별 탐험 ID 조회 */
+    exploration: (courseId: string) =>
+      `/api/v1/courses/${courseId}/exploration`,
   },
   preference: {
     /** 성향 검사 질문 목록 조회 (기능명세 1.1.2 / 1.2.1) */
-    questions: "/api/preference-test/questions",
-    /**
-     * 성향 검사 결과 제출 (1.2.2)
-     * TODO: userId 경로 파라미터 확정 필요. (backend)
-     *   명세서: POST /api/users/{userId}/preference-test
-     */
-    submit: (userId: number) => `/api/users/${userId}/preference-test`,
-    /** 나의 성향(결과) 조회 (1.2.2) — 유형·태그·추천 장소 포함하는 무거운 조회 */
-    result: (userId: number) => `/api/users/${userId}/preference`,
+    questions: "/api/v1/preference-tests/questions",
     /** 나의 성향 조회 — 유형·유형별 점수만 담은 가벼운 조회. 토큰 주인 기준, 파라미터 없음 */
     me: "/api/v1/users/me/preference",
   },
@@ -80,12 +75,14 @@ export const API_ENDPOINTS = {
     /** 탐험 이탈 (6.4.1) */
     leave: (explorationId: string) =>
       `/api/v1/explorations/${explorationId}/leave`,
+    /** 탐험 조기 완료 (OWNER) */
+    complete: (explorationId: string) =>
+      `/api/v1/explorations/${explorationId}/complete`,
   },
   record: {
-    // TODO(백엔드 확인): 경로·페이지네이션 여부 미확정. (backend)
-    /** 내 방문 장소 목록 조회 (장소×사용자 단위, 여행 기록 화면) */
+    /** 팀 방문 기록 조회 (여행 기록 화면) */
     visits: "/api/v1/records/visits",
     /** 방문 장소 인증 사진 업로드 */
-    visitPhoto: (visitId: number) => `/api/v1/records/visits/${visitId}/photo`,
+    visitPhoto: (visitId: number) => `/api/v1/visits/${visitId}/photos`,
   },
 } as const;

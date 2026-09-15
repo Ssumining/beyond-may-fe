@@ -3,8 +3,6 @@ import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import type {
   MyPreferenceResponse,
   PreferenceQuestionsResponse,
-  PreferenceSubmitRequest,
-  PreferenceResultResponse,
 } from "@/types/preference";
 
 /**
@@ -19,33 +17,6 @@ export const getPreferenceQuestions =
     );
     return res.data!;
   };
-
-/**
- * 성향 검사 응답 배열을 서버에 제출한다. 결과(유형) 계산은 백엔드가 수행.
- *
- * TODO: userId 확정 후 파라미터/응답 타입 재확인. (backend)
- */
-
-export const postPreferenceResult = async (
-  userId: number,
-  body: PreferenceSubmitRequest,
-): Promise<void> => {
-  await api.post<void>(API_ENDPOINTS.preference.submit(userId), body);
-};
-
-/**
- * 나의 성향 검사 결과(유형 + 추천 장소)를 조회.
- *
- * TODO: userId 획득 경로 확정 필요 (닉네임 등록 전이라 userId 미확정 가능성). (backend)
- */
-export const getPreferenceResult = async (
-  userId: number,
-): Promise<PreferenceResultResponse> => {
-  const res = await api.get<PreferenceResultResponse>(
-    API_ENDPOINTS.preference.result(userId),
-  );
-  return res.data!;
-};
 
 /**
  * 나의 성향 조회 — 로그인 사용자 본인의 유형·유형별 점수만 가볍게 조회한다.
