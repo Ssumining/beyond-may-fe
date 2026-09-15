@@ -103,7 +103,6 @@ export interface CourseChatRecommendation {
   placeId: number;
   name: string;
   category: string;
-  travelMbtiType: TravelMbtiType;
   address: string;
   latitude: number;
   longitude: number;
