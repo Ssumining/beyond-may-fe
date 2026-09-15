@@ -104,16 +104,13 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   const { data: explorationStatus } = useGetExplorationStatusQuery(explorationIdStr);
 
-  const lastSentLocationRef = useRef<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-
+  const lastSentLocationRef = useRef<{ latitude: number; longitude: number } | null>(null);
+ 
   // 내 위치를 팀에 발행 (GPS 좌표 변경 시, 10m 이상 이동했을 때만)
   useEffect(() => {
     if (!coordinates || explorationId === null) return;
     if (explorationStatus?.currentParticipant.locationSharingEnabled === false) return;
-
+ 
     const hasMovedEnough =
       !lastSentLocationRef.current ||
       getDistanceInMeters(lastSentLocationRef.current, coordinates) >= 10;

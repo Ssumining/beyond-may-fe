@@ -23,6 +23,10 @@ const MOCK_STATUS: ExplorationStatusResponse = {
     status: "ACTIVE",
     locationSharingEnabled: false,
   },
+  permissions: {
+    canStart: false,
+    canCompleteEarly: false,
+  },
 };
 
 export const explorationStatusHandlers = [
@@ -45,6 +49,10 @@ export const explorationStatusHandlers = [
               currentParticipant: {
                 ...MOCK_STATUS.currentParticipant,
                 role: "OWNER",
+              },
+              permissions: {
+                canStart: true,
+                canCompleteEarly: false,
               },
             }
           : MOCK_STATUS,
