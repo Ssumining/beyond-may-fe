@@ -5,6 +5,7 @@ import { use } from "react";
 import RecordDetail from "@/features/record/components/RecordDetail";
 import useGetExplorationsQuery from "@/features/explore/hooks/useGetExplorationsQuery";
 import useGetTeamVisitsQuery from "@/features/record/hooks/useGetTeamVisitsQuery";
+import useGetExplorationVisitedPlacesQuery from "@/features/explore/hooks/useGetExplorationVisitedPlacesQuery";
 import type { TravelRecord } from "@/features/record/mockRecords";
 
 interface RecordDetailPageProps {
@@ -14,6 +15,7 @@ interface RecordDetailPageProps {
 /** 여행 기록 상세 (완료된 탐험). recordId = explorationId. */
 const RecordDetailPage = ({ params }: RecordDetailPageProps) => {
   const { recordId } = use(params);
+  const { data: visitedData } = useGetExplorationVisitedPlacesQuery(recordId);
 
   const { data: completedData, isLoading: isSummaryLoading } =
     useGetExplorationsQuery("COMPLETED");
@@ -75,7 +77,10 @@ const RecordDetailPage = ({ params }: RecordDetailPageProps) => {
     })),
   };
 
-  return <RecordDetail record={record} />;
+  return <RecordDetail
+      record={record}
+      visitedPlaces={visitedData?.visitedPlaces ?? []}
+    />;
 };
 
 export default RecordDetailPage;

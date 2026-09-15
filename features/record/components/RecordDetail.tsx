@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import KakaoMap from "@/components/map/Map";
+import type { MapMarker } from "@/types/map";
+import type { VisitedPlace } from "@/types/exploration";
 
 import AppHeader from "@/components/layout/AppHeader";
 import ShareSheet from "@/components/share-sheet/ShareSheet";
@@ -19,9 +22,10 @@ const SHARE_VERSIONS = [{ id: "journey", label: "여행 기록" }];
 
 interface RecordDetailProps {
   record: TravelRecord;
+  visitedPlaces?: VisitedPlace[];
 }
 
-const RecordDetail = ({ record }: RecordDetailProps) => {
+const RecordDetail = ({ record, visitedPlaces = [] }: RecordDetailProps) => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [hasCaptureError, setHasCaptureError] = useState(false);
   const {
@@ -31,6 +35,16 @@ const RecordDetail = ({ record }: RecordDetailProps) => {
     share,
   } = useCaptureImage<HTMLDivElement>();
   const fileName = `beyond-may-record-${record.recordId}`;
+
+  const mapMarkers: MapMarker[] = visitedPlaces.map((place, index) => ({
+    id: String(place.placeId),
+    position: { lat: place.latitude, lng: place.longitude },
+    visited: true,
+    label: place.name,
+    order: index + 1,
+    category: place.travelMbtiType,
+  }));
+  const mapCenter = mapMarkers[0]?.position ?? { lat: 35.1469, lng: 126.9142 };
 
   const handleDownload = async (): Promise<void> => {
     try {
@@ -151,6 +165,21 @@ const RecordDetail = ({ record }: RecordDetailProps) => {
           ))}
         </ol>
       </section>
+
+      {mapMarkers.length > 0 && (
+        <section className="px-6 pt-10" aria-labelledby="lit-map-title">
+          <p className="text-primary-08 text-[12px] font-semibold">MAP</p>
+          <h2
+            id="lit-map-title"
+            className="mt-1 text-[22px] font-bold tracking-[-0.03em]"
+          >
+            밝힌 지도
+          </h2>
+          <div className="border-neutral-03 bg-neutral-07 relative mt-4 h-[52dvh] min-h-80 overflow-hidden rounded-[24px] border">
+            <KakaoMap center={mapCenter} markers={mapMarkers} route={[]} glow />
+          </div>
+        </section>
+      )}
 
       <section
         className="bg-neutral-02/70 mx-6 mt-10 rounded-[24px] p-5"
