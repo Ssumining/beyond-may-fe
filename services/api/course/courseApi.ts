@@ -1,3 +1,4 @@
+import axios from "axios";
 import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import { api } from "@/services/lib/axios";
 import type {
@@ -30,6 +31,23 @@ export const getCourseDraft = async (
     API_ENDPOINTS.course.draft(courseId),
   );
   return response.data!;
+};
+
+/**
+ * 상태를 모르는 진입점(추천 코스 지도)에서 코스 조회.
+ * 초안으로 먼저 조회하고, 초안이 아니면(404) 확정 코스로 조회.
+ */
+export const getCourseForView = async (
+  courseId: string,
+): Promise<CourseResponse> => {
+  try {
+    return await getCourseDraft(courseId);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return await getCourseDetail(courseId);
+    }
+    throw error;
+  }
 };
 
 /** 로그인 사용자의 초안·진행·완료 코스를 조회한다. */
