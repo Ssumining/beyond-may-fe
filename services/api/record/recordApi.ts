@@ -20,7 +20,7 @@ export const postVisitPhoto = async (
   photo: File,
 ): Promise<UploadVisitPhotoResponse> => {
   const formData = new FormData();
-  formData.append("photo", photo);
+  formData.append("file", photo);
   const response = await api.post<UploadVisitPhotoResponse>(
     API_ENDPOINTS.record.visitPhoto(visitId),
     formData,
