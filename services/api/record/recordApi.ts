@@ -1,9 +1,19 @@
 import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import { api } from "@/services/lib/axios";
 import type {
+  TeamVisitListResponse,
   UploadVisitPhotoResponse,
   VisitedPlaceRecordListResponse,
 } from "@/types/record";
+
+export const getTeamVisits = async (
+  explorationId: string,
+): Promise<TeamVisitListResponse> => {
+  const res = await api.get<TeamVisitListResponse>(
+    API_ENDPOINTS.exploration.teamVisits(explorationId),
+  );
+  return res.data!;
+};
 
 /** 내 방문 장소 목록을 조회한다 (여행 기록 화면, 장소×사용자 단위). */
 export const getVisitedPlaces =

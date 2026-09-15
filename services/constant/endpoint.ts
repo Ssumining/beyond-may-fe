@@ -78,6 +78,9 @@ export const API_ENDPOINTS = {
     /** 탐험 조기 완료 (OWNER) */
     complete: (explorationId: string) =>
       `/api/v1/explorations/${explorationId}/complete`,
+    /** 팀 방문 기록 조회 (5.2.1) — 회차별 */
+    teamVisits: (explorationId: string) =>
+      `/api/v1/visits?explorationId=${explorationId}`,
   },
   record: {
     /** 팀 방문 기록 조회 (여행 기록 화면) */
