@@ -36,11 +36,11 @@ export const postRecommendationSet = async (
 };
 
 export const postBatchReactions = async (
-  recommendationId: number,
+  batchNumber: number,
   body: ReplaceBatchReactionsRequest,
 ): Promise<ReplaceBatchReactionsResponse> => {
   const res = await api.post<ReplaceBatchReactionsResponse>(
-    API_ENDPOINTS.recommendation.reactions(recommendationId),
+    API_ENDPOINTS.recommendation.reactions(batchNumber),
     body,
   );
   return res.data!;

@@ -16,8 +16,8 @@ export const API_ENDPOINTS = {
     /** 추천 세트 생성 — 같은 일정으로 이미 있으면 그 결과를 반환 */
     create: "/api/v1/recommendations/sets",
     /** 현재 회차 반응 일괄 교체 */
-    reactions: (recommendationId: number) =>
-      `/api/v1/recommendations/${recommendationId}/reactions`,
+    reactions: (batchNumber: number) =>
+      `/api/v1/recommendations/${batchNumber}/reactions`,
   },
   course: {
     list: "/api/v1/courses",
