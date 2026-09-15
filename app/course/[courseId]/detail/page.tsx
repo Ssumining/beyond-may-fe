@@ -10,28 +10,34 @@ import CourseTimelineView from "@/features/course/components/CourseTimelineView"
 import useConfirmCourseMutation from "@/features/course/hooks/useConfirmCourseMutation";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 
+// 사이드바 연동을 위한 Import
+import Sidebar from "@/components/layout/sidebar/Sidebar";
+import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
+import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
+import useSessionStore from "@/stores/sessionStore";
+
 interface CourseDetailPageProps {
   params: Promise<{ courseId: string }>;
   searchParams: Promise<{ from?: string }>;
 }
 
-/**
- * 코스 타임라인(시간대별 동선) 화면 (기능명세 3.1.2).
- * 지도 화면의 "코스 상세" 진입점. courseId로 조회해 타임라인을 렌더한다.
- */
 const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
   const { courseId } = use(params);
   const { from } = use(searchParams);
   const router = useRouter();
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const fromHub = from === "hub";
-  const mapHref = `/course/${courseId}${fromHub ? "?from=hub" : ""}`;
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // 사이드바 오픈 상태
+  const nickname = useSessionStore((state) => state.nickname); // 로그인 여부 판단
+
   const {
     data: course,
     isLoading,
     isError,
     refetch,
   } = useGetCourseDetailQuery(courseId);
+
   const {
     mutate: confirmCourse,
     isPending: isConfirming,
@@ -44,10 +50,17 @@ const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
     });
   };
 
+  // 피그마 의도: 무조건 뒤로가기
+  const handleBack = () => router.back();
+
   if (isLoading) {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] flex-col">
-        <AppHeader backHref={mapHref} showMenu={false} />
+        <AppHeader
+          onBack={handleBack}
+          showMenu={true}
+          onOpenMenu={() => setIsMenuOpen(true)}
+        />
         <div className="space-y-5 px-6 pt-8" role="status">
           {[0, 1, 2, 3].map((item) => (
             <div key={item} className="flex animate-pulse items-center gap-4">
@@ -66,7 +79,11 @@ const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
   if (isError || !course) {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] flex-col">
-        <AppHeader backHref={mapHref} showMenu={false} />
+        <AppHeader
+          onBack={handleBack}
+          showMenu={true}
+          onOpenMenu={() => setIsMenuOpen(true)}
+        />
         <section className="flex flex-1 flex-col items-center justify-center px-8 text-center">
           <h1 className="text-neutral-07 text-[20px] font-semibold">
             코스 일정을 불러오지 못했어요
@@ -84,33 +101,27 @@ const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
     );
   }
 
-  const canEdit = course.status === "DRAFT";
-
   return (
     <>
       <CourseTimelineView
         course={course}
-        backHref={mapHref}
-        onUseCourse={canEdit ? () => setIsConfirmOpen(true) : undefined}
+        onBack={handleBack}
+        onOpenMenu={() => setIsMenuOpen(true)}
+        onUseCourse={() => setIsConfirmOpen(true)}
         isUsingCourse={isConfirming}
         hasUseCourseError={hasConfirmError}
-        onEditWithAi={
-          canEdit
-            ? () =>
-                router.push(
-                  `/course/${courseId}/edit?mode=ai${fromHub ? "&from=hub" : ""}`,
-                )
-            : undefined
+        onEditWithAi={() =>
+          router.push(
+            `/course/${courseId}/edit?mode=ai${fromHub ? "&from=hub" : ""}`,
+          )
         }
-        onEditManually={
-          canEdit
-            ? () =>
-                router.push(
-                  `/course/${courseId}/edit?mode=manual${fromHub ? "&from=hub" : ""}`,
-                )
-            : undefined
+        onEditManually={() =>
+          router.push(
+            `/course/${courseId}/edit?mode=manual${fromHub ? "&from=hub" : ""}`,
+          )
         }
       />
+
       <Modal open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)}>
         <h2 className="text-neutral-07 text-[20px] font-semibold">
           이 코스를 확정할까요?
@@ -137,6 +148,11 @@ const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
           </Button>
         </div>
       </Modal>
+
+      {/* 동료분이 만든 햄버거 메뉴(사이드바) 완벽 연동 */}
+      <Sidebar open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+        {nickname ? <SidebarProfileMenu /> : <SidebarLoginForm />}
+      </Sidebar>
     </>
   );
 };

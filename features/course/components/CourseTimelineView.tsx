@@ -3,16 +3,14 @@
 import { useState } from "react";
 
 import AppHeader from "@/components/layout/AppHeader";
-import Button from "@/components/ui/Button";
 import CourseTimeline from "@/features/course/components/CourseTimeline";
+import Sparkle from "@/components/ui/icons/Sparkle";
 import type {
   CourseResponse,
   CoursePlace,
   TravelSchedule,
 } from "@/types/course";
 
-/** 여행 기간 enum → 한글 표기. collection 확인값(2종)만 확정.
- *  TODO(백엔드): 2박3일·그이상 코드값 확정 시 추가 (release-design엔 TWO_NIGHTS_THREE_DAYS·CUSTOM 표기 있었음) */
 const TRAVEL_SCHEDULE_LABELS: Record<TravelSchedule, string> = {
   DAY_TRIP: "당일치기",
   ONE_NIGHT_TWO_DAYS: "1박 2일",
@@ -20,7 +18,8 @@ const TRAVEL_SCHEDULE_LABELS: Record<TravelSchedule, string> = {
 
 interface CourseTimelineViewProps {
   course: CourseResponse;
-  backHref?: string;
+  onBack?: () => void;
+  onOpenMenu?: () => void;
   onUseCourse?: () => void;
   isUsingCourse?: boolean;
   hasUseCourseError?: boolean;
@@ -28,14 +27,10 @@ interface CourseTimelineViewProps {
   onEditManually?: () => void;
 }
 
-/**
- * 코스 타임라인 화면 (기능명세 3.1.2).
- * "코스 상세" 진입 시 장소를 순서 목록으로 보여주고,
- * 하단에 코스 요약과 액션(이 코스 사용 / AI로 다듬기 / 직접 수정)을 제공한다.
- */
 const CourseTimelineView = ({
   course,
-  backHref = `/course/${course.courseId}`,
+  onBack,
+  onOpenMenu,
   onUseCourse,
   isUsingCourse = false,
   hasUseCourseError = false,
@@ -55,23 +50,18 @@ const CourseTimelineView = ({
 
   const handlePlaceClick = (place: CoursePlace) => {
     setActivePlaceId(place.placeId);
-    // TODO: 지도 연동 화면에서는 여기서 panTo({lat:place.latitude,lng:place.longitude}) 트리거
   };
 
   return (
-    <main className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] flex-col">
-      <AppHeader backHref={backHref} showMenu={false} centerLabel="코스 일정" />
+    <main className="relative mx-auto flex h-dvh w-full max-w-[430px] flex-col bg-[#FDFFFA]">
+      <AppHeader
+        onBack={onBack}
+        showMenu={true}
+        onOpenMenu={onOpenMenu}
+        centerLabel={title}
+      />
 
-      <div className="flex-1 overflow-y-auto pt-4">
-        <section className="px-6 pb-5">
-          <p className="text-primary-08 text-[12px] font-semibold tracking-[0.12em]">
-            ROUTE PLAN
-          </p>
-          <h1 className="text-neutral-07 mt-2 text-[28px] leading-[1.3] font-bold">
-            {title}
-          </h1>
-          <p className="text-neutral-04 mt-2 text-[13px]">{meta}</p>
-        </section>
+      <div className="flex-1 overflow-y-auto pt-[18px]">
         <CourseTimeline
           places={places}
           activePlaceId={activePlaceId}
@@ -79,68 +69,62 @@ const CourseTimelineView = ({
         />
       </div>
 
-      {(onUseCourse || onEditWithAi || onEditManually) && (
-        <div className="border-neutral-03 border-t bg-white px-6 pt-5 pb-[max(24px,env(safe-area-inset-bottom))]">
-          {onUseCourse && (
-            <Button
-              variant="solid"
-              size="lg"
-              onClick={onUseCourse}
-              isLoading={isUsingCourse}
-              className="w-full"
-            >
-              {isUsingCourse ? "코스 확정 중" : "이 코스 사용"}
-            </Button>
-          )}
+      {/* 3.1.2 하단 패널: 단일 메인 버튼 + 하단 텍스트 버튼 2개 */}
+      <div className="border-t border-[#DEDEDE] bg-[#FDFFFA] px-[25px] pt-[26px] pb-[max(20px,env(safe-area-inset-bottom))]">
+        <p className="font-['JetBrains_Mono'] text-[10px] font-normal tracking-[1px] text-[#77797F] uppercase">
+          추천 코스
+        </p>
+        <h1 className="mt-[7px] text-[19.2px] leading-[24px] font-semibold text-[#141414]">
+          {title}
+        </h1>
+        <p className="mt-[5px] text-[11.6px] leading-[14px] text-[#BFC3C1]">
+          {meta}
+        </p>
 
-          {hasUseCourseError && (
-            <p
-              className="text-caution-02 mt-3 text-center text-[12px]"
-              role="alert"
-            >
-              코스를 확정하지 못했어요. 다시 시도해 주세요.
-            </p>
-          )}
+        {onUseCourse && (
+          <button
+            type="button"
+            onClick={onUseCourse}
+            disabled={isUsingCourse}
+            className="mt-[29px] flex h-[50px] w-full items-center justify-center rounded-[29px] bg-[#141414] font-['Gothic_A1'] text-[14px] font-[800] tracking-[1px] text-[#FDFFFA] shadow-[0px_4px_4px_rgba(0,0,0,0.25)]"
+          >
+            {isUsingCourse ? "코스 확정 중" : "이 코스 사용"}
+          </button>
+        )}
 
-          {(onEditWithAi || onEditManually) && (
-            <div className="mt-3 flex items-center justify-center gap-6 text-[13px] font-medium">
-              {onEditWithAi && (
-                <button
-                  type="button"
-                  onClick={onEditWithAi}
-                  className="text-neutral-07 focus-visible:outline-primary-03 flex min-h-11 items-center gap-1 rounded-full px-2"
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden
-                  >
-                    <path
-                      d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  AI로 다듬기
-                </button>
-              )}
-              {onEditManually && (
-                <button
-                  type="button"
-                  onClick={onEditManually}
-                  className="text-neutral-04 focus-visible:outline-primary-03 min-h-11 rounded-full px-2"
-                >
-                  직접 수정
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+        {hasUseCourseError && (
+          <p
+            className="text-caution-02 mt-3 text-center text-[12px]"
+            role="alert"
+          >
+            코스를 확정하지 못했어요. 다시 시도해 주세요.
+          </p>
+        )}
+
+        {(onEditWithAi || onEditManually) && (
+          <div className="mt-[15px] flex items-center justify-center gap-[22px]">
+            {onEditWithAi && (
+              <button
+                type="button"
+                onClick={onEditWithAi}
+                className="focus-visible:outline-primary-03 flex items-center gap-[4px] rounded-full font-['Manrope'] text-[13.4px] font-semibold text-[#141414]"
+              >
+                <Sparkle className="h-[13px] w-[13px] text-[#141414]" />
+                AI로 다듬기
+              </button>
+            )}
+            {onEditManually && (
+              <button
+                type="button"
+                onClick={onEditManually}
+                className="focus-visible:outline-primary-03 rounded-full font-['Manrope'] text-[13.4px] font-semibold text-[#77797F]"
+              >
+                직접 수정
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </main>
   );
 };

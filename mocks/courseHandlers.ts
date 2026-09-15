@@ -327,9 +327,26 @@ export const courseHandlers = [
         );
       }
 
-      const proposedPlaces = [...course.places]
-        .reverse()
-        .map((place, index) => ({ ...place, visitOrder: index + 1 }));
+      // 순서 재배치 + 새 장소 1곳 추가(NEW 뱃지 확인용). 원본에 없던 placeId라 addedPlaceIds에 잡힘
+      const revised = [...course.places].reverse();
+      const insertAt = Math.min(2, revised.length); // 3번째 위치에 삽입
+      revised.splice(insertAt, 0, {
+        placeId: EXTRA_MOCK_PLACE.placeId,
+        name: EXTRA_MOCK_PLACE.name,
+        category: EXTRA_MOCK_PLACE.category,
+        travelMbtiType: EXTRA_MOCK_PLACE.travelMbtiType,
+        address: EXTRA_MOCK_PLACE.address,
+        latitude: EXTRA_MOCK_PLACE.latitude,
+        longitude: EXTRA_MOCK_PLACE.longitude,
+        dayNumber: 1,
+        visitOrder: 0,
+        estimatedStayMinutes: 60,
+        travelModeFromPrevious: "WALK",
+      });
+      const proposedPlaces = revised.map((place, index) => ({
+        ...place,
+        visitOrder: index + 1,
+      }));
 
       return HttpResponse.json(
         wrap({
