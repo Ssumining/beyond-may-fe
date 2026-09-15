@@ -13,6 +13,7 @@ import type {
   LocationSharingResponse,
   NearbyPlacesResponse,
   LeaveExplorationResponse,
+  CompleteExplorationResponse,
 } from "@/types/exploration";
 
 /** 탐험에 합류 (4.1.1). */
@@ -116,6 +117,15 @@ export const postLeaveExploration = async (
 ): Promise<LeaveExplorationResponse> => {
   const res = await api.post<LeaveExplorationResponse>(
     API_ENDPOINTS.exploration.leave(explorationId),
+  );
+  return res.data!;
+};
+
+export const postCompleteExploration = async (
+  explorationId: string,
+): Promise<CompleteExplorationResponse> => {
+  const res = await api.post<CompleteExplorationResponse>(
+    API_ENDPOINTS.exploration.complete(explorationId),
   );
   return res.data!;
 };

@@ -46,6 +46,7 @@ export const QUERY_KEYS = {
   },
   RECORD: {
     ALL: ["record"] as const,
-    VISITS: () => [...QUERY_KEYS.RECORD.ALL, "visits"] as const,
+    TEAM_VISITS: (explorationId: string) =>
+      [...QUERY_KEYS.RECORD.ALL, "team-visits", explorationId] as const,
   },
 } as const;

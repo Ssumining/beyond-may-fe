@@ -1,27 +1,49 @@
-/**
- * 방문 장소 기록 하나 — 장소×사용자(개인) 단위.
- * types/exploration.ts의 VisitedPlace(팀 공유, "밝힌 장소")와는 다른 개인 기록이다.
- */
-export interface VisitedPlaceRecord {
+/** 방문 사진 */
+export interface VisitPhoto {
+  visitPhotoId: number;
+  displayOrder: number;
+  imageUrl: string;
+  urlExpiresAt: string;
+}
+
+/** 방문 기록 저장 요청값 (multipart). memo 생략=기존 유지, ""=삭제. 사진은 files 키로 여러 장. */
+export interface SaveVisitRecordRequest {
+  memo?: string;
+  photos?: File[];
+}
+
+/** 방문 기록 저장 응답 — 이번 요청에서 추가한 사진만 반환 */
+export interface SaveVisitRecordResponse {
   visitId: number;
-  placeId: number;
-  name: string;
-  category: string;
-  tags: string[];
-  thumbnailUrl: string | null;
-  /** ISO 8601 문자열 */
+  memo: string | null;
+  photos: VisitPhoto[];
+}
+
+/** 팀 방문 기록 항목 하나 (GET /api/v1/visits?explorationId=) */
+export interface TeamVisit {
+  visitId: number;
+  participant: { participantId: number; displayName: string };
+  place: {
+    placeId: number;
+    name: string;
+    category: string;
+    travelMbtiType: string;
+    tags: string[];
+    address: string;
+    thumbnailUrl: string | null;
+  };
+  coursePlaceId: number | null;
+  isCoursePlace: boolean;
+    /** ISO 8601 */
   visitedAt: string;
-  /** 인증 사진. 아직 안 올렸으면 null */
-  photoUrl: string | null;
+  /** 방문 메모 (없으면 null) */
+  memo: string | null;
+  photos: VisitPhoto[];
 }
 
-/** 방문 장소 목록 응답 — 방문 시각 내림차순 정렬은 화면에서 처리 */
-export interface VisitedPlaceRecordListResponse {
-  visits: VisitedPlaceRecord[];
-}
-
-/** 방문 인증 사진 업로드 응답 */
-export interface UploadVisitPhotoResponse {
-  visitId: number;
-  photoUrl: string;
+/** 팀 방문 기록 목록 응답 */
+export interface TeamVisitListResponse {
+  explorationId: number;
+  visits: TeamVisit[];
+  totalCount: number;
 }

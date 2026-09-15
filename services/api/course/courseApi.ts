@@ -35,16 +35,17 @@ export const getCourseDraft = async (
 
 /**
  * 상태를 모르는 진입점(추천 코스 지도)에서 코스 조회.
- * 초안으로 먼저 조회하고, 초안이 아니면(404) 확정 코스로 조회.
+ * 확정 코스를 먼저 조회하고, 없으면(404) 초안 코스로 조회.
+ * (초안의 확정-코스 에러가 404가 아닐 수 있어 확정을 우선 시도)
  */
 export const getCourseForView = async (
   courseId: string,
 ): Promise<CourseResponse> => {
   try {
-    return await getCourseDraft(courseId);
+    return await getCourseDetail(courseId);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
-      return await getCourseDetail(courseId);
+      return await getCourseDraft(courseId);
     }
     throw error;
   }

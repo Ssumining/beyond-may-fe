@@ -38,13 +38,34 @@ export const explorationHandlers = [
     },
   ),
 
-  http.get(`${BASE_URL}/api/v1/explorations`, async () => {
+      http.get(`${BASE_URL}/api/v1/explorations`, async ({ request }) => {
     await delay(300);
 
+    const statusParam = new URL(request.url).searchParams.get("status");
+    const status: "ONGOING" | "COMPLETED" =
+      statusParam === "COMPLETED" ? "COMPLETED" : "ONGOING";
+
     const data: ExplorationListResponse = {
+      status,
       explorations: MOCK_HAS_ONGOING_COURSE
-        ? [{ explorationId: 1, courseId: 1, status: "ONGOING" }]
+        ? [
+            {
+              explorationId: 1,
+              courseId: 1,
+              courseTitle: "하루치 광주",
+              status,
+              representativeImageUrl: null,
+              participantCount: 4,
+              participantDisplayNames: ["여행자", "오월이", "빛고을", "숲길"],
+              completedCoursePlaceCount: 2,
+              totalCoursePlaceCount: 5,
+              startedAt: new Date().toISOString(),
+              completedAt:
+                status === "COMPLETED" ? new Date().toISOString() : null,
+            },
+          ]
         : [],
+      totalCount: MOCK_HAS_ONGOING_COURSE ? 1 : 0,
     };
 
     return HttpResponse.json({

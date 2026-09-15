@@ -129,17 +129,29 @@ export interface VisitedPlacesResponse {
 
 /* ---------------- 상태별 탐험 코스 목록 조회 (여행 기록) ---------------- */
 
-/** 탐험 코스 목록 항목 하나.
- * TODO(백엔드 확인): 응답 예시가 없어 최소 필드만 가정함 */
+/** 탐험 코스 목록 항목 하나 (GET /api/v1/explorations?status=). */
 export interface ExplorationSummary {
   explorationId: number;
   courseId: number;
+  courseTitle: string;
   status: ExplorationStatus;
+  /** 대표 이미지 (없으면 null 가능) */
+  representativeImageUrl: string | null;
+  participantCount: number;
+  participantDisplayNames: string[];
+  completedCoursePlaceCount: number;
+  totalCoursePlaceCount: number;
+  /** ISO 8601 */
+  startedAt: string;
+  /** ISO 8601, 진행 중이면 null */
+  completedAt: string | null;
 }
 
-/** 상태별 탐험 코스 목록 응답 (GET /api/v1/explorations?status={status}) */
+/** 상태별 탐험 목록 응답 (GET /api/v1/explorations?status={status}) */
 export interface ExplorationListResponse {
+  status: ExplorationStatus;
   explorations: ExplorationSummary[];
+  totalCount: number;
 }
 
 /* ---------------- 탐험 상태 조회 (4.2.2 / 4.3.2) ---------------- */
@@ -222,4 +234,19 @@ export interface LeaveExplorationResponse {
 /** 중복 참여 차단(EXPLORATION409) 에러 응답의 data */
 export interface DuplicateExplorationErrorData {
   activeExplorationId: number;
+}
+
+/** 탐험 조기 완료 응답 (POST /api/v1/explorations/{id}/complete) */
+export interface CompleteExplorationResponse {
+  explorationId: number;
+  courseId: number;
+  status: ExplorationStatus;
+  completionReason: string;
+  /** ISO 8601 */
+  completedAt: string;
+  courseProgress: {
+    completedCoursePlaceCount: number;
+    totalCoursePlaceCount: number;
+    completionRate: number;
+  };
 }

@@ -1,30 +1,31 @@
 import { API_ENDPOINTS } from "@/services/constant/endpoint";
 import { api } from "@/services/lib/axios";
 import type {
-  UploadVisitPhotoResponse,
-  VisitedPlaceRecordListResponse,
+  TeamVisitListResponse,
+  SaveVisitRecordRequest,
+  SaveVisitRecordResponse,
 } from "@/types/record";
 
-/** 내 방문 장소 목록을 조회한다 (여행 기록 화면, 장소×사용자 단위). */
-export const getVisitedPlaces =
-  async (): Promise<VisitedPlaceRecordListResponse> => {
-    const response = await api.get<VisitedPlaceRecordListResponse>(
-      API_ENDPOINTS.record.visits,
-    );
-    return response.data!;
-  };
+export const getTeamVisits = async (
+  explorationId: string,
+): Promise<TeamVisitListResponse> => {
+  const res = await api.get<TeamVisitListResponse>(
+    API_ENDPOINTS.exploration.teamVisits(explorationId),
+  );
+  return res.data!;
+};
 
-/** 방문 장소 인증 사진을 업로드한다. */
-export const postVisitPhoto = async (
+/** 방문 기록(사진·메모)을 저장한다. 사진은 같은 키 files로 여러 장, memo는 선택. */
+export const postVisitRecord = async (
   visitId: number,
-  photo: File,
-): Promise<UploadVisitPhotoResponse> => {
+  { memo, photos }: SaveVisitRecordRequest,
+): Promise<SaveVisitRecordResponse> => {
   const formData = new FormData();
-  formData.append("photo", photo);
-  const response = await api.post<UploadVisitPhotoResponse>(
-    API_ENDPOINTS.record.visitPhoto(visitId),
+  if (memo !== undefined) formData.append("memo", memo);
+  (photos ?? []).forEach((photo) => formData.append("files", photo));
+  const response = await api.postForm<SaveVisitRecordResponse>(
+    API_ENDPOINTS.record.visitRecord(visitId),
     formData,
-    { headers: { "Content-Type": "multipart/form-data" } },
   );
   return response.data!;
 };

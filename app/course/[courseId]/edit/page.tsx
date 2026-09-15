@@ -183,6 +183,10 @@ const CourseEditor = ({
     mutationFn: (placeId: number) =>
       postCourseAddPlace(String(course.courseId), placeId),
     onSuccess: (updatedCourse, placeId) => {
+      queryClient.setQueryData(
+        QUERY_KEYS.COURSE.DETAIL(String(course.courseId)),
+        updatedCourse,
+      );
       setPlaces(
         [...updatedCourse.places].sort((a, b) => a.visitOrder - b.visitOrder),
       );
