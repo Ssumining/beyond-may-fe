@@ -52,9 +52,10 @@ const CourseSummaryPanel = ({
       <p className="text-neutral-04 mt-2 text-[13px] leading-[1.5]">{meta}</p>
 
       <div className="mt-5 flex gap-3">
-        {onDetailClick && (
+        {/* DRAFT: 일정 보기 + 이 코스로 진행 */}
+        {onDetailClick && onConfirmClick && (
           <Button
-            variant={onConfirmClick ? "outline" : "solid"}
+            variant="outline"
             size="lg"
             onClick={onDetailClick}
             className="flex-1"
@@ -73,8 +74,15 @@ const CourseSummaryPanel = ({
             {isConfirming ? "코스 확정 중" : "이 코스로 진행"}
           </Button>
         )}
+
+        {/* CONFIRMED: 공유 링크 + 탐험 시작 (2개) */}
         {onShareClick && (
-          <Button size="lg" onClick={onShareClick} className="flex-1">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={onShareClick}
+            className="flex-1"
+          >
             공유 링크
           </Button>
         )}
@@ -90,14 +98,30 @@ const CourseSummaryPanel = ({
         )}
       </div>
 
-      {onRedesignClick && (
-        <button
-          type="button"
-          onClick={onRedesignClick}
-          className="text-neutral-04 focus-visible:outline-primary-03 mt-3 min-h-10 w-full rounded-full text-[12px] underline underline-offset-4"
-        >
-          팀원이 합류하기 전 코스 다시 설계
-        </button>
+      {((onDetailClick && !onConfirmClick) || onRedesignClick) && (
+        <div className="mt-3 flex items-center justify-center gap-3 text-[12px]">
+          {onDetailClick && !onConfirmClick && (
+            <button
+              type="button"
+              onClick={onDetailClick}
+              className="text-neutral-04 focus-visible:outline-primary-03 underline underline-offset-4"
+            >
+              코스 일정 보기
+            </button>
+          )}
+          {onDetailClick && !onConfirmClick && onRedesignClick && (
+            <span className="text-neutral-03">·</span>
+          )}
+          {onRedesignClick && (
+            <button
+              type="button"
+              onClick={onRedesignClick}
+              className="text-neutral-04 focus-visible:outline-primary-03 underline underline-offset-4"
+            >
+              코스 다시 설계
+            </button>
+          )}
+        </div>
       )}
 
       {hasConfirmError && (
