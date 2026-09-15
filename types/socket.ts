@@ -37,7 +37,10 @@ export interface VisitConfirmedData {
   };
   explorationStatus: string;
 }
-export type VisitConfirmedPayload = SocketEventEnvelope<"VISIT_CONFIRMED", VisitConfirmedData>;
+export type VisitConfirmedPayload = SocketEventEnvelope<
+  "VISIT_CONFIRMED",
+  VisitConfirmedData
+>;
 
 /* ---------------- 구독 수신 payload (/topic/.../locations) ---------------- */
 
@@ -49,7 +52,10 @@ export interface LocationUpdatedData {
   accuracyMeters: number;
   recordedAt: string;
 }
-export type MemberLocationPayload = SocketEventEnvelope<"LOCATION_UPDATED", LocationUpdatedData>;
+export type MemberLocationPayload = SocketEventEnvelope<
+  "LOCATION_UPDATED",
+  LocationUpdatedData
+>;
 
 /* ---------------- 구독 수신 payload (/topic/.../events) ---------------- */
 

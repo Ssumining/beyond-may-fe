@@ -46,7 +46,7 @@ const CourseTimelineItem = ({
       }}
       className={cn(
         "border-neutral-03/70 focus-visible:outline-primary-03 flex min-h-16 w-full items-center gap-4 border-t px-6 py-3.5 text-left transition-colors duration-300 last:border-b",
-        isActive && "bg-white",
+        isActive && "bg-neutral-02",
         isAdded && "bg-neutral-02/60",
       )}
     >
