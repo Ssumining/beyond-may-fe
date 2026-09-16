@@ -105,6 +105,11 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
           여행 기록
           <ChevronRight className="text-neutral-04 h-3 w-3" />
         </Link>
+
+        <Link href="/about" className={MENU_ITEM_CLASS}>
+          서비스 소개
+          <ChevronRight className="text-neutral-04 h-3 w-3" />
+        </Link>
       </div>
 
       <div className="flex-1" />
