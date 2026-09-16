@@ -4,6 +4,7 @@ import { cn } from "@/lib/cn";
 import type { PreferenceResultResponse } from "@/types/preference";
 import { getResultTheme } from "@/features/onboarding/utils/resultTheme";
 import StampPhoto from "@/features/onboarding/components/StampPhoto";
+import { toProxiedImage } from "@/lib/imageProxy";
 
 interface ShareCollageCardProps {
   result: PreferenceResultResponse;
@@ -27,7 +28,7 @@ const StampTile = ({
 }) => (
   <div className={cn("relative", className)}>
     <StampPhoto
-      src={place?.placeImg}
+      src={toProxiedImage(place?.placeImg)}
       alt={place?.placeName ?? ""}
       className={rotateClassName}
     />
