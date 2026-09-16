@@ -28,16 +28,11 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
   const { mutate: saveRecord, isPending: isSaving } =
     useSaveVisitRecordMutation();
 
-  const [memo, setMemo] = useState("");
-  const [isMemoReady, setIsMemoReady] = useState(false);
+  const [memoDraft, setMemoDraft] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
 
-  useEffect(() => {
-    if (visit && !isMemoReady) {
-      setMemo(visit.memo ?? "");
-      setIsMemoReady(true);
-    }
-  }, [visit, isMemoReady]);
+  // 초기값은 서버 memo, 사용자가 입력하면 draft 우선 (effect 동기화 제거)
+  const memo = memoDraft ?? visit?.memo ?? "";
 
   const previews = useMemo(
     () => files.map((file) => URL.createObjectURL(file)),
@@ -186,7 +181,7 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
         {/* 메모 */}
         <textarea
           value={memo}
-          onChange={(event) => setMemo(event.target.value.slice(0, MAX_MEMO))}
+          onChange={(event) => setMemoDraft(event.target.value.slice(0, MAX_MEMO))}
           maxLength={MAX_MEMO}
           placeholder="이곳에서의 기록을 남겨보세요"
           className="border-neutral-03 placeholder:text-neutral-04 text-neutral-07 mt-4 min-h-56 w-full resize-none rounded-[16px] border p-4 text-[14px] leading-[1.6] outline-none"

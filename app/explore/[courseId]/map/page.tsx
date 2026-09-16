@@ -34,7 +34,6 @@ import useSessionStore from "@/stores/sessionStore";
 import useLocationSimulationStore from "@/stores/locationSimulationStore";
 import useSimulatedLocation from "@/features/explore/hooks/useSimulatedLocation";
 import useCreateVisitMutation from "@/features/explore/hooks/useCreateVisitMutation";
-import type { CoursePlace } from "@/types/course";
 
 interface ExploreMapPageProps {
   params: Promise<{ courseId: string }>;
