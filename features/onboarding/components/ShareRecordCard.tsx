@@ -168,6 +168,9 @@ const ShareRecordCard = forwardRef<HTMLDivElement, ShareRecordCardProps>(
         >
           GWANGJU · BEYOND MAY
         </p>
+        <p className={cn(text60, "mt-1 text-center text-[9px]")}>
+          OMAENA © 2020. Gwangju Metropolitan City.
+        </p>
       </div>
     );
   },

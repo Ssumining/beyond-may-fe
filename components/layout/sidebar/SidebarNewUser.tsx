@@ -45,7 +45,7 @@ const SidebarNewUser = ({ onLoginClick }: SidebarNewUserProps) => {
       <button
         type="button"
         onClick={onLoginClick}
-        className="text-neutral-04 hover:text-neutral-06 mt-4 flex min-h-11 w-full items-center justify-center text-[13px]"
+        className="text-neutral-04 hover:text-neutral-06 mt-4 flex min-h-11 w-full items-center justify-start text-[13px]"
       >
         이미 계정이 있으신가요?
         <span className="text-neutral-07 ml-1 font-semibold">로그인</span>
@@ -56,7 +56,7 @@ const SidebarNewUser = ({ onLoginClick }: SidebarNewUserProps) => {
         aria-label="서비스 메뉴"
       >
         <Link
-          href="/"
+          href="/about"
           className="text-neutral-07 flex min-h-12 items-center text-[14px] font-medium"
         >
           서비스 소개
