@@ -139,7 +139,7 @@ const PlaceCardDeck = ({
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="relative h-[clamp(360px,56dvh,500px)] w-full max-w-[342px]">
+      <div className="relative h-[clamp(360px,56dvh,500px)] w-full max-w-[342px] overflow-hidden">
         <AnimatePresence>
           {showLikedToast && (
             <motion.div
