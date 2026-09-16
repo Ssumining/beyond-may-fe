@@ -14,8 +14,8 @@ import {
 
 import AppHeader from "@/components/layout/AppHeader";
 import Sidebar from "@/components/layout/sidebar/Sidebar";
-import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
 import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
+import SidebarGuest from "@/components/layout/sidebar/SidebarGuest";
 import GradientBackground from "@/components/ui/GradientBackground";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -267,7 +267,11 @@ const HomePage = ({ searchParams }: HomePageProps) => {
       </div>
 
       <Sidebar open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
-        {isLoggedIn ? <SidebarProfileMenu /> : <SidebarLoginForm />}
+        {isLoggedIn ? (
+          <SidebarProfileMenu />
+        ) : (
+          <SidebarGuest expired={hasExpiredSession} />
+        )}
       </Sidebar>
 
       <Modal

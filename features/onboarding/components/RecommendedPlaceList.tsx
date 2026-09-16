@@ -63,7 +63,7 @@ const RecommendedPlaceList = ({
               <h3 className="text-neutral-07 mt-1 text-[16px] font-semibold">
                 {place.placeName}
               </h3>
-              <p className="text-neutral-04 mt-2 text-[13px] leading-[1.5]">
+              <p className="text-neutral-04 mt-2 line-clamp-3 text-[13px] leading-[1.5]">
                 {place.placeIntro}
               </p>
             </div>
