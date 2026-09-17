@@ -7,8 +7,6 @@ import type {
 
 /**
  * 장소 상세·추천 목록 mock.
- *
- *  * TODO: GET /places/recommendations 응답 스펙(배열 여부·필드) 확정 전까지 가정치. (backend)
  */
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -256,7 +254,7 @@ export const placeHandlers = [
     return HttpResponse.json({
       message: "성공입니다.",
       code: "COMMON200",
-      data: MOCK_PLACE_RECOMMENDATIONS,
+      data: { places: MOCK_PLACE_RECOMMENDATIONS },
       success: true,
     });
   }),
