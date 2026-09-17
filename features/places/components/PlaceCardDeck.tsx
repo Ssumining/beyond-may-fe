@@ -239,31 +239,32 @@ const PlaceCardDeck = ({
                 className={cn(
                   "border-neutral-03 bg-neutral-02 focus-visible:outline-primary-03 rounded-card absolute inset-0 overflow-hidden border focus-visible:outline-2 focus-visible:outline-offset-2",
                   isTop
-                    ? "shadow-strong cursor-grab active:cursor-grabbing"
-                    : "shadow-soft pointer-events-none",
+                    ? "cursor-grab active:cursor-grabbing"
+                    : "pointer-events-none",
                 )}
               >
-                {place.thumbnailUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={place.thumbnailUrl}
-                    alt={place.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="bg-primary-04 relative flex h-full w-full items-center justify-center overflow-hidden">
-                    <span
-                      aria-hidden="true"
-                      className="border-primary-01/80 absolute -top-16 -right-16 h-64 w-64 rounded-full border-[48px]"
+                {isTop &&
+                  (place.thumbnailUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={place.thumbnailUrl}
+                      alt={place.name}
+                      className="h-full w-full object-cover"
                     />
-                    <div className="text-neutral-07 relative flex flex-col items-center gap-3">
-                      <ImageIcon className="h-8 w-8" />
-                      <span className="text-[13px] font-semibold">
-                        {place.name}
-                      </span>
+                  ) : (
+                    <div className="bg-primary-04 relative flex h-full w-full items-center justify-center overflow-hidden">
+                      <span
+                        aria-hidden="true"
+                        className="border-primary-01/80 absolute -top-16 -right-16 h-64 w-64 rounded-full border-[48px]"
+                      />
+                      <div className="text-neutral-07 relative flex flex-col items-center gap-3">
+                        <ImageIcon className="h-8 w-8" />
+                        <span className="text-[13px] font-semibold">
+                          {place.name}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ))}
 
                 {isTop && (
                   <>
