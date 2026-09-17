@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import GradientBackground from "@/components/ui/GradientBackground";
@@ -68,6 +68,9 @@ const ResultPage = () => {
   const [shareVersion, setShareVersion] = useState<ShareVersionId>("record");
   /** 이미지 생성 실패 시 다시 시도할 동작을 담아둔다. null이면 에러 모달 닫힘. */
   const [captureRetry, setCaptureRetry] = useState<(() => void) | null>(null);
+  // "나가기"로 결과를 포기하는 중임을 표시 — localPreference를 지우면 아래
+  // "데이터 없음" 가드가 같은 틱에 재렌더되며 /onboarding으로 잘못 리다이렉트하는 걸 막는다.
+  const isLeavingRef = useRef(false);
   const {
     ref: shareCardRef,
     isCapturing,
@@ -91,6 +94,7 @@ const ResultPage = () => {
   );
 
   useEffect(() => {
+    if (isLeavingRef.current) return;
     if (!hadSessionOnEnter && !localPreference) {
       router.replace("/onboarding");
     }
@@ -360,6 +364,7 @@ const ResultPage = () => {
             size="lg"
             className="w-full"
             onClick={() => {
+              isLeavingRef.current = true;
               clearPreferenceType();
               router.push("/");
             }}
