@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useRef, useState } from "react";
-
+import { stripHtmlBreaks } from "@/lib/formatText";
 import type { PlaceDetailResponse } from "@/types/place";
 import { cn } from "@/lib/cn";
 import useDialogFocus from "@/hooks/useDialogFocus";
@@ -123,9 +123,9 @@ const PlaceDetailSheet = ({
           <p className="text-neutral-04 mt-2 text-[13px] leading-[1.5]">
             {place.address}
           </p>
-          <p className="text-neutral-04 mt-1 text-[13px]">
+          <p className="text-neutral-04 mt-1 text-[13px] whitespace-pre-line">
             {place.businessHours
-              ? `운영시간 ${place.businessHours}`
+              ? `운영시간 ${stripHtmlBreaks(place.businessHours)}`
               : "운영시간 정보 없음"}
           </p>
 
@@ -142,8 +142,8 @@ const PlaceDetailSheet = ({
             </div>
           )}
 
-          <p className="text-neutral-07 mt-4 text-[15px] leading-[1.6]">
-            {place.description || "상세 설명 정보 없음"}
+          <p className="text-neutral-07 mt-4 text-[15px] leading-[1.6] whitespace-pre-line">
+            {stripHtmlBreaks(place.description) || "상세 설명 정보 없음"}
           </p>
         </div>
       </div>
