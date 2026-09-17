@@ -34,7 +34,6 @@ import useSessionStore from "@/stores/sessionStore";
 import useLocationSimulationStore from "@/stores/locationSimulationStore";
 import useSimulatedLocation from "@/features/explore/hooks/useSimulatedLocation";
 import useCreateVisitMutation from "@/features/explore/hooks/useCreateVisitMutation";
-import type { CoursePlace } from "@/types/course";
 
 interface ExploreMapPageProps {
   params: Promise<{ courseId: string }>;
@@ -76,7 +75,8 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   useGeolocation({ enabled: !isSimulationEnabled });
   const coordinates = useGeolocationStore((state) => state.coordinates);
   const isAccurate = useGeolocationStore((state) => state.isAccurate);
-    const [stompErrorMessage, setStompErrorMessage] = useState<string | null>(null);
+  const geoPermission = useGeolocationStore((state) => state.permission);
+  const [stompErrorMessage, setStompErrorMessage] = useState<string | null>(null);
   const { data: explorationStatus } = useGetExplorationStatusQuery(explorationIdStr);
 
   // STOMP 연결 (구독: visits·locations·events) — 진행 중(ONGOING) 탐험일 때만 연결
@@ -234,12 +234,22 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     });
   };
 
+  /** 광주 밖·위치 거부 심사/데모용: 실제 GPS 대신 코스를 자동 순회하며 방문 인증 */
+  const handleSimulateInGwangju = () => {
+    setSimulationEnabled(true); // 실제 GPS 추적 중단
+    setTourRunning(true);
+    runAutoTour(autoTourIndexRef.current);
+  };
+
   const participantCount = participants?.participantCount ?? 0;
   const isOngoing = explorationStatus?.status === "ONGOING";
   // 좌표 있고 + 광주 안일 때만 주변 더보기 가능
   const canUseNearby = coordinates != null && isInGwangju(coordinates);
   // 좌표는 있는데 광주 밖 → 안내 배너
   const isOutOfGwangju = coordinates != null && !isInGwangju(coordinates);
+    // 광주 밖이거나 위치 권한 거부 → 심사/데모용 위치 체험 진입 배너
+  const showSimulationBanner =
+    !isSimulationEnabled && (isOutOfGwangju || geoPermission === "denied");
   // 요청했고 + 성공했고 + 목록 비었으면 토스트
   const showEmptyToast =
     isNearbyRequested && isNearbySuccess && nearbyPlaces.length === 0;
@@ -276,28 +286,28 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         </button>
       )}
 
-      {/* 위치 체험 모드 — 심사·데모용, 실제 GPS 대신 코스를 따라 자동 이동 */}
-      <button
-        type="button"
-        onClick={() => {
-          if (isTourRunning) {
-            // 일시정지: 걷기·예약 타이머 취소. GPS는 계속 꺼둬서 점을 그 자리에 고정
-            if (autoTourTimerRef.current !== null) {
-              clearTimeout(autoTourTimerRef.current);
-              autoTourTimerRef.current = null;
+      {/* 위치 체험 제어 — 배너로 시작한 뒤 정지/재개 (시뮬레이션 중일 때만 노출) */}
+      {isSimulationEnabled && (
+        <button
+          type="button"
+          onClick={() => {
+            if (isTourRunning) {
+              if (autoTourTimerRef.current !== null) {
+                clearTimeout(autoTourTimerRef.current);
+                autoTourTimerRef.current = null;
+              }
+              stopWalk();
+              setTourRunning(false);
+            } else {
+              setTourRunning(true);
+              runAutoTour(autoTourIndexRef.current);
             }
-            stopWalk();
-            setTourRunning(false);
-          } else {
-            setSimulationEnabled(true);
-            setTourRunning(true);
-            runAutoTour(autoTourIndexRef.current);
-          }
-        }}
-        className="text-neutral-07 focus-visible:outline-primary-03 absolute bottom-34 left-4 z-30 min-h-11 rounded-full bg-white px-4 text-[13px] font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
-      >
-        {isTourRunning ? "위치 체험 정지" : "위치 체험 시작"}
-      </button>
+          }}
+          className="text-neutral-07 focus-visible:outline-primary-03 absolute bottom-34 left-4 z-30 min-h-11 rounded-full bg-white px-4 text-[13px] font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
+        >
+          {isTourRunning ? "위치 체험 정지" : "위치 체험 재개"}
+        </button>
+      )}
 
       <ExploreHeader
         center={
@@ -343,7 +353,9 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         <NearbyEmptyToast onClose={() => setIsNearbyRequested(false)} />
       )}
 
-      {isOutOfGwangju && <OutOfGwangjuBanner />}
+      {showSimulationBanner && (
+        <OutOfGwangjuBanner onGoToGwangju={handleSimulateInGwangju} />
+      )}
       {stompErrorMessage && (
         <Toast
           message={stompErrorMessage}

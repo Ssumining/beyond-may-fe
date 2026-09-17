@@ -12,7 +12,7 @@ const useCompleteExplorationMutation = () => {
   return useMutation({
     mutationFn: (explorationId: string) =>
       postCompleteExploration(explorationId),
-    onSuccess: (_data, explorationId) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.EXPLORATION.ALL,
       });
