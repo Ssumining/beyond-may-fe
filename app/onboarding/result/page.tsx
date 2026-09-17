@@ -85,9 +85,9 @@ const ResultPage = () => {
   // 로그인 사용자는 서버 조회값, 비로그인은 설문 직후 계산한 값 사용
   const myPreference = hadSessionOnEnter ? fetchedPreference : localPreference;
 
-  // 추천 장소 조회는 인증 필요 → 로그인 사용자만. 비로그인은 등록 후 /places에서 확인.
+  // 추천 장소 조회는 인증 불필요(성향 유형만으로 조회하는 공개 API) → 비로그인도 바로 조회.
   const { data: recommendedPlacesRaw = [] } = useGetPlaceRecommendationsQuery(
-    hadSessionOnEnter ? (myPreference?.preferenceType ?? null) : null,
+    myPreference?.preferenceType ?? null,
   );
 
   useEffect(() => {
