@@ -149,7 +149,7 @@ const SidebarLoginForm = () => {
         aria-label="서비스 메뉴"
       >
         <Link
-          href="/"
+          href="/about"
           className="text-neutral-07 flex min-h-12 items-center text-[14px] font-medium"
         >
           서비스 소개

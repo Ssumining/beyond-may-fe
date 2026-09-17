@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import AppHeader from "@/components/layout/AppHeader";
 import { cn } from "@/lib/cn";
 import { getResultTheme } from "@/features/onboarding/utils/resultTheme";
+import StampPhoto from "@/features/onboarding/components/StampPhoto";
 import type { PreferenceType } from "@/types/preference";
 
 const RESULTS: Record<
@@ -79,17 +80,28 @@ const SharedResultPage = async ({ params }: SharedResultPageProps) => {
             background: `linear-gradient(135deg, ${theme.gradientFrom}, ${theme.gradientTo})`,
           }}
         >
-          <p className={cn(text90, "text-[13px] font-medium")}>
-            광주 여행 성향
-          </p>
-          <h1
-            className={cn(
-              text,
-              "mt-3 text-[42px] font-bold tracking-[-0.04em]",
-            )}
-          >
-            {result.name}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className={cn(text90, "text-[13px] font-medium")}>
+                광주 여행 성향
+              </p>
+              <h1
+                className={cn(
+                  text,
+                  "mt-3 text-[42px] font-bold tracking-[-0.04em]",
+                )}
+              >
+                {result.name}
+              </h1>
+            </div>
+            <div className="relative aspect-3/4 w-[30%] shrink-0">
+              <StampPhoto
+                src={theme.image}
+                alt={result.name}
+                className="rotate-3"
+              />
+            </div>
+          </div>
           <div className="mt-5 flex flex-wrap gap-2">
             {result.tags.map((tag) => (
               <span
@@ -120,6 +132,9 @@ const SharedResultPage = async ({ params }: SharedResultPageProps) => {
         >
           성향 검사 시작
         </Link>
+        <p className="text-neutral-04 mt-6 text-center text-[11px]">
+          OMAENA © 2020. Gwangju Metropolitan City.
+        </p>
       </section>
     </main>
   );

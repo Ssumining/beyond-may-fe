@@ -1,3 +1,5 @@
+"use client";
+
 import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
