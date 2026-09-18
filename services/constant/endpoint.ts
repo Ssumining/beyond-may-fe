@@ -33,7 +33,7 @@ export const API_ENDPOINTS = {
     /** 챗봇이 추천한 장소 1곳을 즉시 추가(+ 전체 재배치) */
     addPlace: (courseId: string, placeId: number) =>
       `/api/v1/courses/${courseId}/places/${placeId}`,
-        /** 코스별 탐험 ID 조회 */
+    /** 코스별 탐험 ID 조회 */
     exploration: (courseId: string) =>
       `/api/v1/courses/${courseId}/exploration`,
   },
@@ -58,7 +58,7 @@ export const API_ENDPOINTS = {
     visitedPlaces: (explorationId: string) =>
       `/api/v1/visits/visited-places?explorationId=${explorationId}`,
     /** 상태별 탐험 코스 목록 조회 — 홈 화면 라우팅 가드의 코스 존재 여부 판단에 사용 */
-    list: (status: "ONGOING" | "COMPLETED") =>
+    list: (status: "BEFORE" | "ONGOING" | "COMPLETED") =>
       `/api/v1/explorations?status=${status}`,
     /** 탐험 상태 조회 (4.2.2 / 4.3.2) */
     status: (explorationId: string) => `/api/v1/explorations/${explorationId}`,

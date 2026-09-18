@@ -46,3 +46,5 @@ postman/
 
 # 로컬 전용 지도 테스트 페이지 (커밋 안 함)
 app/map-test/
+# 로컬 QA 증거 파일
+/docs/qa/evidence/

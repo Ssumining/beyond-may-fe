@@ -1,10 +1,11 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { postLogin } from "@/services/api/auth/authApi";
 import useSessionStore from "@/stores/sessionStore";
 import useAccountStore from "@/stores/accountStore";
 
 export const usePostLoginMutation = () => {
+  const queryClient = useQueryClient();
   const setSession = useSessionStore((state) => state.setSession);
   const markHasAccount = useAccountStore((state) => state.markHasAccount);
 
@@ -12,6 +13,7 @@ export const usePostLoginMutation = () => {
     mutationFn: postLogin,
     onSuccess: (data, variables) => {
       localStorage.setItem("accessToken", data.token);
+      queryClient.clear();
       setSession(data.nickname, variables.identificationCode);
       markHasAccount();
     },

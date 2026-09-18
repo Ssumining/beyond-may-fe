@@ -168,7 +168,21 @@ export const courseHandlers = [
   /** 로그인 사용자의 초안·진행·완료 코스를 조회한다. */
   http.get(`${BASE_URL}/api/v1/courses`, async () => {
     await delay(450);
-    return HttpResponse.json(wrap({ courses: [getMockCourse(1)] }));
+    const course = getMockCourse(1);
+    return HttpResponse.json(
+      wrap({
+        courses: [
+          {
+            courseId: course.courseId,
+            title: course.title,
+            status: course.status,
+            updatedAt: "2026-09-19T10:00:00+09:00",
+            explorationId: course.explorationId,
+            explorationStatus: course.explorationId ? "BEFORE" : null,
+          },
+        ],
+      }),
+    );
   }),
 
   /** 현재 추천 세트에 저장된 좋아요 장소로 초안 코스를 생성한다. 본문 없음. */
