@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 
 import { cn } from "@/lib/cn";
 import useDialogFocus from "@/hooks/useDialogFocus";
@@ -14,6 +14,9 @@ interface ShareVersion {
   id: string;
   label: string;
 }
+
+/** 미리보기 영역을 이 이상 드래그하면 옆 버전으로 전환 (px) */
+const SWIPE_THRESHOLD = 60;
 
 interface ShareSheetProps {
   open: boolean;
@@ -54,6 +57,26 @@ const ShareSheet = ({
   className,
 }: ShareSheetProps) => {
   const dialogRef = useDialogFocus<HTMLDivElement>(open, onClose);
+
+  const handlePreviewDragEnd = (
+    _event: PointerEvent | MouseEvent | TouchEvent,
+    info: PanInfo,
+  ) => {
+    if (versions.length < 2) return;
+    const currentIndex = versions.findIndex(
+      (version) => version.id === selectedVersionId,
+    );
+    if (
+      info.offset.x < -SWIPE_THRESHOLD &&
+      currentIndex < versions.length - 1
+    ) {
+      onSelectVersion(versions[currentIndex + 1].id);
+      return;
+    }
+    if (info.offset.x > SWIPE_THRESHOLD && currentIndex > 0) {
+      onSelectVersion(versions[currentIndex - 1].id);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -101,9 +124,24 @@ const ShareSheet = ({
               <div
                 role="tablist"
                 aria-label="공유 이미지 버전"
-                className="bg-neutral-02 mt-4 flex gap-1 rounded-full p-1"
+                className="bg-neutral-02 mt-4 grid gap-1 rounded-full p-1"
+                style={{
+                  gridTemplateColumns: `repeat(${versions.length}, 1fr)`,
+                }}
               >
-                {versions.map((version) => {
+                <motion.div
+                  aria-hidden="true"
+                  layout
+                  className="bg-neutral-01 row-start-1 rounded-full shadow-sm"
+                  style={{
+                    gridColumn:
+                      versions.findIndex(
+                        (version) => version.id === selectedVersionId,
+                      ) + 1,
+                  }}
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                />
+                {versions.map((version, index) => {
                   const isSelected = version.id === selectedVersionId;
                   return (
                     <button
@@ -112,11 +150,10 @@ const ShareSheet = ({
                       role="tab"
                       aria-selected={isSelected}
                       onClick={() => onSelectVersion(version.id)}
+                      style={{ gridColumn: index + 1 }}
                       className={cn(
-                        "focus-visible:outline-primary-03 min-h-11 flex-1 rounded-full px-3 py-2 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
-                        isSelected
-                          ? "bg-neutral-01 text-neutral-07 shadow-sm"
-                          : "text-neutral-04",
+                        "focus-visible:outline-primary-03 relative z-10 row-start-1 min-h-11 rounded-full px-3 py-2 text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2",
+                        isSelected ? "text-neutral-07" : "text-neutral-04",
                       )}
                     >
                       {version.label}
@@ -126,9 +163,19 @@ const ShareSheet = ({
               </div>
             )}
 
-            <div className="scrollbar-hide mt-4 max-h-[48dvh] overflow-y-auto rounded-[20px]">
+            <motion.div
+              key={selectedVersionId}
+              drag={versions.length > 1 ? "x" : false}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.4}
+              onDragEnd={handlePreviewDragEnd}
+              initial={{ opacity: 0.4 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.18 }}
+              className="scrollbar-hide mt-4 max-h-[48dvh] overflow-x-hidden overflow-y-auto rounded-[20px]"
+            >
               {children}
-            </div>
+            </motion.div>
 
             <div className="mt-5 flex gap-3">
               <Button

@@ -46,7 +46,7 @@ export const generateMetadata = async ({
   params,
 }: SharedResultPageProps): Promise<Metadata> => {
   const { type } = await params;
-  const result = RESULTS[type as PreferenceType];
+  const result = RESULTS[type.toUpperCase() as PreferenceType];
   if (!result) return {};
   const title = `나는 ${result.name} · 5월 너머의 광주`;
   return {
@@ -57,11 +57,12 @@ export const generateMetadata = async ({
 };
 
 const SharedResultPage = async ({ params }: SharedResultPageProps) => {
-  const { type } = await params;
-  const result = RESULTS[type as PreferenceType];
+  const { type: rawType } = await params;
+  const type = rawType.toUpperCase() as PreferenceType;
+  const result = RESULTS[type];
   if (!result) notFound();
 
-  const theme = getResultTheme(type as PreferenceType);
+  const theme = getResultTheme(type);
   // 예술러/미식러처럼 배경이 밝은 톤이면 글자를 어둡게(neutral-07), 아니면 밝게(neutral-01).
   const text = theme.isLight ? "text-neutral-07" : "text-neutral-01";
   const text90 = theme.isLight ? "text-neutral-07/90" : "text-neutral-01/90";
