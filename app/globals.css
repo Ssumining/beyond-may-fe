@@ -87,6 +87,7 @@
   --animate-location-pulse: location-pulse 1.8s ease-out infinite;
   --animate-card-sway: card-sway 1.4s ease-in-out infinite;
   --animate-card-pendulum: card-pendulum 2.6s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
 }
 
 @layer base {
@@ -174,6 +175,17 @@
   }
 }
 
+/* 스켈레톤 위를 가로지르는 하이라이트 스윕. background-position만 움직이므로
+   레이아웃/합성 비용 없이 GPU에서 부드럽게 돈다. (참고: yui540/css-animations) */
+@keyframes shimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
+}
+
 /* 접근성: OS에서 "동작 줄이기"를 켠 사용자는 모든 모션 정지 */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -207,6 +219,21 @@
       var(--color-neutral-01) 45%,
       var(--color-primary-04) 100%
     );
+}
+
+/* 스켈레톤 로딩 블록. neutral-02 바탕 위로 밝은 하이라이트가 스윽 지나가는
+   shimmer. 기존 animate-pulse(투명도 깜빡임)보다 실제 로딩감이 부드럽다. */
+@utility bg-skeleton-shimmer {
+  background-color: var(--color-neutral-02);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.7) 50%,
+    transparent 100%
+  );
+  background-size: 60% 100%;
+  background-repeat: no-repeat;
+  animation: var(--animate-shimmer);
 }
 
 /* 스크롤바 숨김 유틸 (스크롤 기능은 유지, 바만 비표시).

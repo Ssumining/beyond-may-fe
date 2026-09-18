@@ -7,6 +7,7 @@ import GradientBackground from "@/components/ui/GradientBackground";
 import AppHeader from "@/components/layout/AppHeader";
 import ShareSheet from "@/components/share-sheet/ShareSheet";
 import Button from "@/components/ui/Button";
+import LoadingRing from "@/components/ui/LoadingRing";
 import Modal from "@/components/ui/Modal";
 import Share from "@/components/ui/icons/Share";
 import Undo from "@/components/ui/icons/Undo";
@@ -171,11 +172,7 @@ const ResultPage = () => {
                   </>
                 )}
               </p>
-              <span
-                className="border-neutral-07/20 border-t-neutral-07 mt-2 block h-[42px] w-[42px] animate-spin rounded-full border-2"
-                role="status"
-                aria-label="여행 유형을 분석하는 중"
-              />
+              <LoadingRing label="여행 유형을 분석하는 중" className="mt-4" />
             </section>
             <p className="text-neutral-05 mt-28 text-center text-[14px]">
               뒤로 가지 말고 잠시만 기다려 주세요.

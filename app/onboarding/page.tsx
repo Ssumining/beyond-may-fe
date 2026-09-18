@@ -14,6 +14,7 @@ import QuizProgressBar from "@/features/onboarding/components/QuizProgressBar";
 import QuizQuestion from "@/features/onboarding/components/QuizQuestion";
 import useUpdateMyPreferenceMutation from "@/features/onboarding/hooks/useUpdateMyPreferenceMutation";
 import Button from "@/components/ui/Button";
+import LoadingRing from "@/components/ui/LoadingRing";
 
 /**
  * 성향 검사 온보딩 페이지 (기능명세 1.1.2 / 1.2.1).
@@ -61,7 +62,9 @@ const OnboardingPage = () => {
     selectAnswer,
   } = useQuiz({ questions });
 
-  const setLocalPreference = useSessionStore((state) => state.setLocalPreference);
+  const setLocalPreference = useSessionStore(
+    (state) => state.setLocalPreference,
+  );
 
   const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
   const { mutate: updateMyPreference } = useUpdateMyPreferenceMutation();
@@ -142,6 +145,22 @@ const OnboardingPage = () => {
         ) : (
           <QuizIntro isLoading />
         )}
+      </main>
+    );
+  }
+
+  // 마지막 문항 응답 완료 → 결과 화면으로 넘어가기 전 짧은 확인 화면.
+  // (없으면 마지막 질문 화면에 멈춰 있다가 결과로 훅 넘어가 버벅이는 느낌을 준다.)
+  if (isCompleted) {
+    return (
+      <main className="bg-screen-gradient mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col">
+        <AppHeader className="text-neutral-04" />
+        <section className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+          <p className="text-neutral-07 text-xl leading-relaxed font-medium">
+            답변을 확인하고 있어요
+          </p>
+          <LoadingRing label="답변을 확인하는 중" className="mt-4" />
+        </section>
       </main>
     );
   }

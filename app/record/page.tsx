@@ -46,11 +46,10 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
   const completedExplorations = isEmpty
     ? []
     : (completedData?.explorations ?? []);
-  
-  const explorationIds = [
-    ...ongoingExplorations,
-    ...completedExplorations,
-  ].map((exploration) => String(exploration.explorationId));
+
+  const explorationIds = [...ongoingExplorations, ...completedExplorations].map(
+    (exploration) => String(exploration.explorationId),
+  );
 
   const visitQueries = useQueries({
     queries: explorationIds.map((id) => ({
@@ -131,12 +130,24 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
             count={ongoingExplorations.length}
           />
           {isOngoingLoading && (
-            <p className="text-neutral-04 py-10 text-center text-[13px]" role="status">
-              여행을 불러오고 있어요…
-            </p>
+            <div
+              className="mt-4 space-y-4"
+              role="status"
+              aria-label="여행을 불러오고 있어요"
+            >
+              {[0, 1].map((key) => (
+                <div
+                  key={key}
+                  className="bg-skeleton-shimmer h-36 rounded-[24px]"
+                />
+              ))}
+            </div>
           )}
           {isOngoingError && (
-            <p className="text-caution-02 py-10 text-center text-[13px]" role="alert">
+            <p
+              className="text-caution-02 py-10 text-center text-[13px]"
+              role="alert"
+            >
               여행을 불러오지 못했어요.
             </p>
           )}
@@ -205,12 +216,24 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
             count={completedExplorations.length}
           />
           {isCompletedLoading && (
-            <p className="text-neutral-04 py-10 text-center text-[13px]" role="status">
-              여행을 불러오고 있어요…
-            </p>
+            <div
+              className="mt-4 space-y-4"
+              role="status"
+              aria-label="여행을 불러오고 있어요"
+            >
+              {[0, 1].map((key) => (
+                <div
+                  key={key}
+                  className="bg-skeleton-shimmer h-44 rounded-[24px]"
+                />
+              ))}
+            </div>
           )}
           {isCompletedError && (
-            <p className="text-caution-02 py-10 text-center text-[13px]" role="alert">
+            <p
+              className="text-caution-02 py-10 text-center text-[13px]"
+              role="alert"
+            >
               여행을 불러오지 못했어요.
             </p>
           )}
@@ -271,12 +294,24 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
         <section className="px-6 pt-6">
           <SectionHeading title="방문한 장소" count={visitedPlaces.length} />
           {isVisitsLoading && (
-            <p className="text-neutral-04 py-10 text-center text-[13px]" role="status">
-              방문한 장소를 불러오고 있어요…
-            </p>
+            <div
+              className="mt-4 grid grid-cols-2 gap-3"
+              role="status"
+              aria-label="방문한 장소를 불러오고 있어요"
+            >
+              {[0, 1, 2, 3].map((key) => (
+                <div
+                  key={key}
+                  className="bg-skeleton-shimmer aspect-square rounded-[20px]"
+                />
+              ))}
+            </div>
           )}
           {!isVisitsLoading && isVisitsError && (
-            <p className="text-caution-02 py-10 text-center text-[13px]" role="alert">
+            <p
+              className="text-caution-02 py-10 text-center text-[13px]"
+              role="alert"
+            >
               방문한 장소를 불러오지 못했어요.
             </p>
           )}
@@ -360,7 +395,9 @@ const EmptyRecordState = ({
       光州
     </div>
     <h2 className="text-neutral-07 mt-6 text-[20px] font-bold">{title}</h2>
-    <p className="text-neutral-04 mt-2 text-[13px] leading-[1.6]">{description}</p>
+    <p className="text-neutral-04 mt-2 text-[13px] leading-[1.6]">
+      {description}
+    </p>
     <Link
       href={href}
       className="bg-neutral-07 text-neutral-01 mt-6 flex min-h-12 w-full items-center justify-center rounded-full px-5 text-[14px] font-semibold"

@@ -1,3 +1,5 @@
+import { motion } from "framer-motion";
+
 import type { RecommendedPlace } from "@/types/preference";
 
 interface RecommendedPlaceListProps {
@@ -10,7 +12,7 @@ interface RecommendedPlaceListProps {
  * 결과 화면 추천 장소 목록 (기능명세 1.2.2).
  * "OOO를 위한 광주" 제목 + 장소 카드(사진 + 이름 + 한 줄 설명) 5개 이상.
  *
- * placeImg URL 이미지 없으면 회색 placeholder 표시. 
+ * placeImg URL 이미지 없으면 회색 placeholder 표시.
  */
 
 const RecommendedPlaceList = ({
@@ -31,8 +33,12 @@ const RecommendedPlaceList = ({
 
       <ul className="mt-5 flex flex-col gap-4">
         {places.map((place) => (
-          <li
+          <motion.li
             key={place.placeId}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="border-neutral-03 overflow-hidden rounded-[20px] border bg-white"
           >
             {/* 장소 사진 (URL 없으면 회색 placeholder) */}
@@ -67,7 +73,7 @@ const RecommendedPlaceList = ({
                 {place.placeIntro}
               </p>
             </div>
-          </li>
+          </motion.li>
         ))}
       </ul>
     </section>
