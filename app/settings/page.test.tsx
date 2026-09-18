@@ -21,6 +21,9 @@ import type {
   LocationSharingResponse,
 } from "@/types/exploration";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ back: vi.fn(), replace: vi.fn() }),
+}));
 vi.mock("@/features/onboarding/hooks/useGetMyPreferenceQuery", () => ({
   default: () => ({ data: undefined }),
 }));

@@ -1,0 +1,50 @@
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import AppHeader from "./AppHeader";
+
+const router = vi.hoisted(() => ({ back: vi.fn(), replace: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+});
+
+it("뒤로가기 버튼은 홈으로 이동하지 않고 이전 방문 화면으로 돌아간다", () => {
+  vi.spyOn(window.history, "length", "get").mockReturnValue(2);
+  render(<AppHeader showBack showMenu={false} />);
+  fireEvent.click(screen.getByRole("button", { name: "이전 화면으로 이동" }));
+  expect(router.back).toHaveBeenCalledOnce();
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(screen.queryByRole("link", { name: "홈으로 이동" })).toBeNull();
+});
+
+it("직접 진입해 이전 기록이 없으면 자동 탐험 이동 없이 홈으로 간다", () => {
+  vi.spyOn(window.history, "length", "get").mockReturnValue(1);
+  render(<AppHeader showBack />);
+  fireEvent.click(screen.getByRole("button", { name: "이전 화면으로 이동" }));
+  expect(router.replace).toHaveBeenCalledWith("/?home=1");
+  expect(router.back).not.toHaveBeenCalled();
+});
+
+it("이탈 확인 콜백이 있으면 자동 뒤로가기보다 먼저 실행한다", () => {
+  const onBack = vi.fn();
+  render(<AppHeader showBack onBack={onBack} />);
+  fireEvent.click(screen.getByRole("button", { name: "이전 화면으로 이동" }));
+  expect(onBack).toHaveBeenCalledOnce();
+  expect(router.back).not.toHaveBeenCalled();
+  expect(router.replace).not.toHaveBeenCalled();
+});
+
+it("명시한 상위 경로와 기존 홈 링크는 유지한다", () => {
+  const { rerender } = render(<AppHeader backHref="/record?tab=completed" />);
+  expect(
+    screen.getByRole("link", { name: "이전 화면으로 이동" }),
+  ).toHaveAttribute("href", "/record?tab=completed");
+  rerender(<AppHeader />);
+  expect(screen.getByRole("link", { name: "홈으로 이동" })).toHaveAttribute(
+    "href",
+    "/?home=1",
+  );
+});

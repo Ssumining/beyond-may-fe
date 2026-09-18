@@ -14,7 +14,7 @@ const SettingsPage = () => {
   return (
     <main className="bg-neutral-01 mx-auto min-h-dvh w-full max-w-[430px] pb-[max(40px,env(safe-area-inset-bottom))]">
       <AppHeader
-        backHref="/"
+        showBack
         showMenu={false}
         centerLabel={
           <span role="heading" aria-level={1}>

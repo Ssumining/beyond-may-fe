@@ -94,7 +94,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
 
   return (
     <main className="bg-neutral-01 mx-auto min-h-dvh w-full max-w-[430px] pb-[max(40px,env(safe-area-inset-bottom))]">
-      <AppHeader showMenu={false} centerLabel="여행 기록" />
+      <AppHeader showBack showMenu={false} centerLabel="여행 기록" />
 
       <section className="px-6 pt-6 pb-5">
         <p className="text-primary-08 text-[12px] font-semibold tracking-[0.1em]">
