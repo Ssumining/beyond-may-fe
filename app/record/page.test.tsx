@@ -57,6 +57,25 @@ it("사이드바 여행 기록은 진행 중 탭으로 연결된다", () => {
   );
 });
 
+it("사이드바는 기존 개인 메뉴와 별도 설정을 표시한다", () => {
+  useSessionStore.getState().setSession("테스트", 1);
+  render(<SidebarProfileMenu />);
+  expect(screen.getByRole("link", { name: "설정" })).toHaveAttribute(
+    "href",
+    "/settings",
+  );
+  expect(
+    screen.queryByRole("button", { name: "식별코드 보기" }),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "내 성향 결과" })).toHaveAttribute(
+    "href",
+    "/onboarding/result",
+  );
+  expect(
+    screen.queryByRole("link", { name: "사용자 정보" }),
+  ).not.toBeInTheDocument();
+});
+
 it.each([
   { loggedIn: true, hasOngoing: true },
   { loggedIn: true, hasOngoing: false },

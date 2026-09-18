@@ -87,7 +87,7 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
       </div>
 
       <div className="mt-6 flex flex-col">
-        {identificationCode && (
+        {identificationCode !== null && (
           <SidebarCodeAccordion code={String(identificationCode)} />
         )}
 
@@ -108,6 +108,11 @@ const SidebarProfileMenu = ({ mbtiName }: SidebarProfileMenuProps) => {
 
         <Link href="/about" className={MENU_ITEM_CLASS}>
           서비스 소개
+          <ChevronRight className="text-neutral-04 h-3 w-3" />
+        </Link>
+
+        <Link href="/settings" className={MENU_ITEM_CLASS}>
+          설정
           <ChevronRight className="text-neutral-04 h-3 w-3" />
         </Link>
       </div>

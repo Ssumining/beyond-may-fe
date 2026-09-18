@@ -52,7 +52,6 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   const [isTeamOpen, setIsTeamOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLocationSharingOpen, setIsLocationSharingOpen] = useState(true);
   const [isNearbyRequested, setIsNearbyRequested] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
   const queryClient = useQueryClient();
@@ -334,12 +333,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         />
       )}
 
-      {isLocationSharingOpen && (
-        <LocationSharingModal
-          explorationId={explorationIdStr}
-          onClose={() => setIsLocationSharingOpen(false)}
-        />
-      )}
+      <LocationSharingModal explorationId={explorationIdStr} />
 
       {isNearbyRequested && isNearbySuccess && nearbyPlaces.length > 0 && (
         <NearbyPlacesSheet
