@@ -5,7 +5,6 @@ import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import Toast from "@/components/ui/Toast";
 import useSessionStore from "@/stores/sessionStore";
-import useGeolocationStore from "@/stores/geolocationStore";
 import useGetExplorationsQuery from "@/features/explore/hooks/useGetExplorationsQuery";
 import useGetExplorationStatusQuery from "@/features/explore/hooks/useGetExplorationStatusQuery";
 import useUpdateLocationSharingMutation from "@/features/explore/hooks/useUpdateLocationSharingMutation";
@@ -44,8 +43,6 @@ const SettingsPage = () => {
 
 const LocationSettings = () => {
   const [message, setMessage] = useState<string | null>(null);
-  const isLocationEnabled = useGeolocationStore((state) => state.isEnabled);
-  const setLocationEnabled = useGeolocationStore((state) => state.setEnabled);
   const {
     data: list,
     isPending: isListPending,
@@ -82,14 +79,7 @@ const LocationSettings = () => {
                 : null;
 
   return (
-    <section aria-label="위치 및 공유 설정" className="px-6 pt-4">
-      <SettingToggle
-        label="GPS 위치 사용"
-        description="내 위치 확인과 장소 방문 인증에 사용해요."
-        checked={isLocationEnabled}
-        onNotice={setMessage}
-        onChange={() => setLocationEnabled(!isLocationEnabled)}
-      />
+    <section aria-label="팀원 위치 공유 설정" className="px-6 pt-4">
       <SettingToggle
         label="팀과 내 위치 공유"
         description="함께 탐험하는 팀원에게 내 위치를 공유해요."

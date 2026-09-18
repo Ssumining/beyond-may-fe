@@ -11,7 +11,6 @@ import useConfirmCourseMutation from "@/features/course/hooks/useConfirmCourseMu
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import useStartExplorationMutation from "@/features/explore/hooks/useStartExplorationMutation";
 import useSessionStore from "@/stores/sessionStore";
-import useGeolocationStore from "@/stores/geolocationStore";
 
 interface CoursePageProps {
   params: Promise<{ courseId: string }>;
@@ -96,7 +95,7 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
         onError: () => setHasStartError(true),
       });
 
-    if (requestLocation && useGeolocationStore.getState().isEnabled && navigator.geolocation) {
+    if (requestLocation && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(goToExplore, goToExplore, {
         enableHighAccuracy: true,
         timeout: 8000,

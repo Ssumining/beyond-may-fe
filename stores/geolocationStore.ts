@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 /** 위치 권한 상태 */
 export type GeolocationPermission = "prompt" | "granted" | "denied";
@@ -13,9 +12,6 @@ export interface Coordinates {
 }
 
 interface GeolocationState {
-  /** 이 브라우저에서 앱의 실제 GPS 사용 허용 여부. 브라우저 권한과는 별개다. */
-  isEnabled: boolean;
-  setEnabled: (enabled: boolean) => void;
   /** 현재 좌표. 아직 취득 전이면 null */
   coordinates: Coordinates | null;
   /** 위치 권한 상태 */
@@ -39,29 +35,14 @@ const initialState = {
   error: null,
 };
 
-const useGeolocationStore = create<GeolocationState>()(
-  persist(
-    (set) => ({
-      ...initialState,
-      isEnabled: true,
-      setEnabled: (isEnabled) =>
-        set(
-          isEnabled
-            ? { isEnabled }
-            : { isEnabled, coordinates: null, isAccurate: false, error: null },
-        ),
+const useGeolocationStore = create<GeolocationState>((set) => ({
+  ...initialState,
 
-      setCoordinates: (coordinates) => set({ coordinates }),
-      setPermission: (permission) => set({ permission }),
-      setAccurate: (isAccurate) => set({ isAccurate }),
-      setError: (error) => set({ error }),
-      reset: () => set(initialState),
-    }),
-    {
-      name: "location-settings",
-      partialize: (state) => ({ isEnabled: state.isEnabled }),
-    },
-  ),
-);
+  setCoordinates: (coordinates) => set({ coordinates }),
+  setPermission: (permission) => set({ permission }),
+  setAccurate: (isAccurate) => set({ isAccurate }),
+  setError: (error) => set({ error }),
+  reset: () => set(initialState),
+}));
 
 export default useGeolocationStore;

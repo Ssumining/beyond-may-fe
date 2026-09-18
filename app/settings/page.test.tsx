@@ -14,7 +14,6 @@ import {
   patchLocationSharing,
 } from "@/services/api/exploration/explorationApi";
 import useSessionStore from "@/stores/sessionStore";
-import useGeolocationStore from "@/stores/geolocationStore";
 import useLocationSharingPromptStore from "@/stores/locationSharingPromptStore";
 import type {
   ExplorationStatusResponse,
@@ -68,7 +67,6 @@ const status: ExplorationStatusResponse = {
 };
 beforeEach(() => {
   vi.resetAllMocks();
-  useGeolocationStore.setState({ isEnabled: true });
   useLocationSharingPromptStore.setState({ dismissed: {} });
   useSessionStore.getState().setSession("테스트", 1234);
   useSessionStore.getState().setExplorationId(999);
@@ -227,21 +225,13 @@ it("공유 끄기 저장 중 페이지를 떠나도 성공한 선택을 기억�
   );
 });
 
-it("GPS 설정은 탐험 없이도 변경할 수 있고 브라우저에 선택을 보관한다", async () => {
-  vi.mocked(getExplorations).mockResolvedValue({
-    status: "ONGOING",
-    explorations: [],
-    totalCount: 0,
-  });
+it("설정에는 팀원 공유만 제공하고 GPS 사용 토글은 제공하지 않는다", () => {
   renderPage();
-  const toggle = screen.getByRole("switch", { name: "GPS 위치 사용" });
-  fireEvent.click(toggle);
-  expect(toggle).not.toBeChecked();
-  expect(useGeolocationStore.getState().isEnabled).toBe(false);
-  expect(JSON.parse(localStorage.getItem("location-settings")!).state).toEqual({
-    isEnabled: false,
-  });
-  fireEvent.click(toggle);
-  expect(toggle).toBeChecked();
-  expect(patchLocationSharing).not.toHaveBeenCalled();
+  expect(
+    screen.queryByRole("switch", { name: "GPS 위치 사용" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getAllByRole("switch")).toHaveLength(1);
+  expect(
+    screen.getByRole("switch", { name: "팀과 내 위치 공유" }),
+  ).toBeInTheDocument();
 });
