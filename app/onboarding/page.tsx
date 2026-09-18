@@ -12,6 +12,7 @@ import AppHeader from "@/components/layout/AppHeader";
 import QuizIntro from "@/features/onboarding/components/QuizIntro";
 import QuizProgressBar from "@/features/onboarding/components/QuizProgressBar";
 import QuizQuestion from "@/features/onboarding/components/QuizQuestion";
+import useUpdateMyPreferenceMutation from "@/features/onboarding/hooks/useUpdateMyPreferenceMutation";
 import Button from "@/components/ui/Button";
 import LoadingRing from "@/components/ui/LoadingRing";
 
@@ -65,6 +66,9 @@ const OnboardingPage = () => {
     (state) => state.setLocalPreference,
   );
 
+  const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
+  const { mutate: updateMyPreference } = useUpdateMyPreferenceMutation();
+
   /** 각 문항 섹션 DOM 참조 → 답변 후 다음 섹션으로 스크롤 */
   const sectionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -91,15 +95,33 @@ const OnboardingPage = () => {
   useEffect(() => {
     if (!isCompleted) return;
 
-    // 클라에서 성향 점수 계산 → 세션 보관. 결과 화면/닉네임 등록에서 재사용.
-    setLocalPreference(computePreference(questions, answers));
+    const computed = computePreference(questions, answers);
+    setLocalPreference(computed);
+
+    // 로그인 사용자는 서버 성향도 갱신 (재검사 반영)
+    if (isLoggedIn) {
+      updateMyPreference({
+        thinkerScore: computed.thinkerScore,
+        foodieScore: computed.foodieScore,
+        artistScore: computed.artistScore,
+        remembererScore: computed.remembererScore,
+      });
+    }
 
     const timer = setTimeout(() => {
       router.push("/onboarding/result");
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [isCompleted, questions, answers, setLocalPreference, router]);
+  }, [
+    isCompleted,
+    questions,
+    answers,
+    setLocalPreference,
+    isLoggedIn,
+    updateMyPreference,
+    router,
+  ]);
 
   // 로딩/에러 상태: 질문 준비 전에는 인트로(로딩) 화면만 출력.
   if (!isReady) {
