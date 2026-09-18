@@ -152,7 +152,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   if (isPending) {
     return (
-      <div className="flex h-dvh items-center justify-center">
+      <div className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] items-center justify-center">
         <p className="text-neutral-04 text-sm">코스를 불러오고 있어요…</p>
       </div>
     );
@@ -160,7 +160,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   if (isError || !course) {
     return (
-      <div className="flex h-dvh items-center justify-center">
+      <div className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] items-center justify-center">
         <p className="text-neutral-04 text-sm">코스를 불러오지 못했어요.</p>
       </div>
     );
@@ -168,7 +168,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   if (explorationId === null) {
     return (
-      <div className="flex h-dvh items-center justify-center">
+      <div className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] items-center justify-center">
         <p className="text-neutral-04 text-sm">
           탐험 정보를 찾을 수 없어요. 다시 합류해 주세요.
         </p>
@@ -254,7 +254,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     isNearbyRequested && isNearbySuccess && nearbyPlaces.length === 0;
 
   return (
-    <div className="relative h-dvh w-full">
+    <div className="relative mx-auto h-dvh w-full max-w-[430px]">
       <VisitMap
         places={course.places}
         center={myLocation ?? center}
