@@ -48,3 +48,6 @@ postman/
 app/map-test/
 # 로컬 QA 증거 파일
 /docs/qa/evidence/
+
+# 로컬 전용 운영 QA 실행 스크립트
+/docs/qa/runProductionApiQa.mjs
