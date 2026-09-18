@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "@/lib/queryClient";
+import PageTransition from "@/components/layout/PageTransition";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const isMockingDisabled = process.env.NEXT_PUBLIC_API_MOCKING === "off";
@@ -29,7 +30,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <PageTransition>{children}</PageTransition>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
