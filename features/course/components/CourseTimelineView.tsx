@@ -18,6 +18,7 @@ const TRAVEL_SCHEDULE_LABELS: Record<TravelSchedule, string> = {
 
 interface CourseTimelineViewProps {
   course: CourseResponse;
+  addedPlaceIds?: number[];
   onBack?: () => void;
   onOpenMenu?: () => void;
   onUseCourse?: () => void;
@@ -29,6 +30,7 @@ interface CourseTimelineViewProps {
 
 const CourseTimelineView = ({
   course,
+  addedPlaceIds,
   onBack,
   onOpenMenu,
   onUseCourse,
@@ -38,7 +40,9 @@ const CourseTimelineView = ({
   onEditManually,
 }: CourseTimelineViewProps) => {
   const { title, travelSchedule, places } = course;
-  const sortedPlaces = [...places].sort((a, b) => a.visitOrder - b.visitOrder);
+  const sortedPlaces = [...places].sort(
+    (a, b) => a.dayNumber - b.dayNumber || a.visitOrder - b.visitOrder,
+  );
   const firstPlaceName = sortedPlaces[0]?.name ?? "";
   const [activePlaceId, setActivePlaceId] = useState<number | undefined>(
     sortedPlaces[0]?.placeId,
@@ -65,6 +69,7 @@ const CourseTimelineView = ({
         <CourseTimeline
           places={places}
           activePlaceId={activePlaceId}
+          addedPlaceIds={addedPlaceIds}
           onPlaceClick={handlePlaceClick}
         />
       </div>

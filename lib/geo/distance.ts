@@ -65,3 +65,16 @@ export const formatRemainingDistance = (meters: number): string => {
 /** 거리(m)를 도보 시간으로 환산 (보행 80m/분 기준). */
 export const formatWalkingTime = (meters: number): string =>
   `도보 ${Math.max(1, Math.round(meters / 80))}분`;
+
+/** 도보 경로 요약: 실측 소요시간(초)+거리(m) → "도보 12분 · 850m" (Tmap 응답용) */
+export const formatWalkRouteSummary = (
+  totalTimeSeconds: number,
+  totalDistanceMeters: number,
+): string => {
+  const minutes = Math.max(1, Math.round(totalTimeSeconds / 60));
+  const distance =
+    totalDistanceMeters >= 1000
+      ? `${(totalDistanceMeters / 1000).toFixed(1)}km`
+      : `${Math.round(totalDistanceMeters)}m`;
+  return `도보 ${minutes}분 · ${distance}`;
+};

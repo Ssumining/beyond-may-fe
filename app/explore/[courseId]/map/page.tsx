@@ -1,19 +1,28 @@
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import { useGetNearbyPlacesQuery } from "@/hooks/queries/useGetNearbyPlacesQuery";
 import { getCourseMapData } from "@/features/course/utils/courseMapAdapter";
 import { toLatLng } from "@/features/explore/utils/toLatLng";
 import { isInGwangju } from "@/lib/geo/gwangju";
-import { getDistanceInMeters } from "@/lib/geo/distance";
+import {
+  getDistanceInMeters,
+  formatWalkRouteSummary,
+} from "@/lib/geo/distance";
+import { getRemainingRoute } from "@/lib/geo/trimRoute";
 
 import useExplorationSocket from "@/features/explore/hooks/useExplorationSocket";
 import Toast from "@/components/ui/Toast";
 import { getStompErrorMessage } from "@/features/explore/utils/stompErrorMessages";
-import VisitMap from "@/features/explore/components/VisitMap";
+import VisitMap, {
+  type VisitMapHandle,
+} from "@/features/explore/components/VisitMap";
 import ExploreHeader from "@/features/explore/components/ExploreHeader";
+import ExploreBottomSheet from "@/features/explore/components/ExploreBottomSheet";
+import WalkRouteButton from "@/features/explore/components/WalkRouteButton";
+import MyLocationButton from "@/components/map/MyLocationButton";
 import TeamBadge from "@/features/explore/components/TeamBadge";
 import TeamParticipantsSheet from "@/features/explore/components/TeamParticipantsSheet";
 import NearbyPlacesSheet from "@/features/explore/components/NearbyPlacesSheet";
@@ -29,11 +38,13 @@ import useGeolocation from "@/features/explore/hooks/useGeolocation";
 import useGetExplorationVisitedPlacesQuery from "@/features/explore/hooks/useGetExplorationVisitedPlacesQuery";
 import useGetParticipantsQuery from "@/features/explore/hooks/useGetParticipantsQuery";
 import useGetExplorationStatusQuery from "@/features/explore/hooks/useGetExplorationStatusQuery";
+import useGetWalkRouteMutation from "@/features/explore/hooks/useGetWalkRouteMutation";
 import useGeolocationStore from "@/stores/geolocationStore";
 import useSessionStore from "@/stores/sessionStore";
 import useLocationSimulationStore from "@/stores/locationSimulationStore";
 import useSimulatedLocation from "@/features/explore/hooks/useSimulatedLocation";
 import useCreateVisitMutation from "@/features/explore/hooks/useCreateVisitMutation";
+import type { LatLng } from "@/types/map";
 
 interface ExploreMapPageProps {
   params: Promise<{ courseId: string }>;
@@ -41,8 +52,7 @@ interface ExploreMapPageProps {
 
 /**
  * 팀 탐험 지도 화면 (4.3.1).
- * 코스 핀 + 방문 인증 + 현재 위치 + 헤더 + 팀원 목록 + 위치 공유.
- * (후속: STOMP 실시간, 주변 장소)
+ * 코스 핀 + 방문 인증 + 현재 위치 + 하단 시트(다음 목적지·진행률) + 도보 길찾기.
  */
 const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const { courseId } = use(params);
@@ -55,6 +65,8 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const [isNearbyRequested, setIsNearbyRequested] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+
+  const visitMapRef = useRef<VisitMapHandle>(null);
 
   const isSimulationEnabled = useLocationSimulationStore(
     (state) => state.isEnabled,
@@ -70,6 +82,11 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const { mutate: verifyVisit } = useCreateVisitMutation();
   const autoTourTimerRef = useRef<number | null>(null);
   const autoTourIndexRef = useRef(0);
+
+  // 도보 길찾기 — 켜진 전체 경로 path 보관 (걸어온 만큼 trim은 렌더 시 계산)
+  const [walkRoutePath, setWalkRoutePath] = useState<LatLng[] | null>(null);
+  const [walkRouteSummary, setWalkRouteSummary] = useState<string | null>(null);
+  const walkRouteMutation = useGetWalkRouteMutation();
 
   useGeolocation({ enabled: !isSimulationEnabled });
   const coordinates = useGeolocationStore((state) => state.coordinates);
@@ -110,7 +127,6 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     longitude: number;
   } | null>(null);
 
-  // 내 위치를 팀에 발행 (GPS 좌표 변경 시, 10m 이상 이동했을 때만)
   useEffect(() => {
     if (!coordinates || explorationId === null) return;
     if (explorationStatus?.currentParticipant.locationSharingEnabled === false)
@@ -159,6 +175,24 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     });
   const nearbyPlaces = nearbyData?.places ?? [];
 
+  const initialVisitedPlaceIds = useMemo(
+    () => visitedData?.visitedPlaces.map((place) => place.placeId) ?? [],
+    [visitedData],
+  );
+
+  // 다음 목적지 = visitOrder 최소인 미방문 장소 (없으면 null = 완주)
+  const nextPlace = useMemo(() => {
+    if (!course) return null;
+    const ordered = [...course.places].sort(
+      (a, b) => a.dayNumber - b.dayNumber || a.visitOrder - b.visitOrder,
+    );
+    return (
+      ordered.find(
+        (place) => !initialVisitedPlaceIds.includes(place.placeId),
+      ) ?? null
+    );
+  }, [course, initialVisitedPlaceIds]);
+
   if (isPending) {
     return (
       <div className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] items-center justify-center">
@@ -188,26 +222,63 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const { center } = getCourseMapData(course.places);
   const myLocation =
     coordinates && isAccurate ? toLatLng(coordinates) : undefined;
-  const initialVisitedPlaceIds =
-    visitedData?.visitedPlaces.map((place) => place.placeId) ?? [];
 
-  // 위치 체험 모드: 버튼 한 번으로 코스 순서대로 자동 이동하며 방문 인증
+  // 걸어온 만큼 지운 남은 경로 (켜진 경로 + 현재 위치 있을 때만 trim)
+  const displayRoute =
+    walkRoutePath && myLocation
+      ? getRemainingRoute(walkRoutePath, myLocation)
+      : (walkRoutePath ?? undefined);
+
+  const clearWalkRoute = (): void => {
+    setWalkRoutePath(null);
+    setWalkRouteSummary(null);
+  };
+
+  // 도보 길찾기 토글
+  const handleWalkRoute = (): void => {
+    if (walkRoutePath) {
+      clearWalkRoute();
+      return;
+    }
+    if (!myLocation || !nextPlace) return;
+
+    walkRouteMutation.mutate(
+      {
+        start: myLocation,
+        end: { lat: nextPlace.latitude, lng: nextPlace.longitude },
+        startName: "현재 위치",
+        endName: nextPlace.name,
+      },
+      {
+        onSuccess: (route) => {
+          setWalkRoutePath(route.path);
+          setWalkRouteSummary(
+            formatWalkRouteSummary(route.totalTime, route.totalDistance),
+          );
+        },
+        onError: () => {
+          // Tmap 403 등 실패 시 조용히 무시 (경로만 안 뜸)
+        },
+      },
+    );
+  };
+
   const runAutoTour = (index: number) => {
     if (!useLocationSimulationStore.getState().isRunning) return;
 
-    const orderedPlaces = [...course.places].sort(
+    const tourPlaces = [...course.places].sort(
       (a, b) => a.dayNumber - b.dayNumber || a.visitOrder - b.visitOrder,
     );
 
-    if (index >= orderedPlaces.length) {
-      autoTourIndexRef.current = 0; // 끝까지 돌았으면 다음엔 처음부터
+    if (index >= tourPlaces.length) {
+      autoTourIndexRef.current = 0;
       setTourRunning(false);
       useGeolocationStore.getState().reset();
       return;
     }
 
-    autoTourIndexRef.current = index; // 중단·재개용 현재 위치 기억
-    const place = orderedPlaces[index];
+    autoTourIndexRef.current = index;
+    const place = tourPlaces[index];
     const goNext = () => {
       autoTourTimerRef.current = window.setTimeout(
         () => runAutoTour(index + 1),
@@ -234,6 +305,8 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
             queryClient.invalidateQueries({
               queryKey: QUERY_KEYS.EXPLORATION.VISITED_PLACES(explorationIdStr),
             });
+            // 목적지 방문 인증 = 그 구간 끝 → 도보 길찾기 자동 끔 (a안)
+            clearWalkRoute();
             goNext();
           },
           onError: goNext,
@@ -242,80 +315,51 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     });
   };
 
-  /** 광주 밖·위치 거부 심사/데모용: 실제 GPS 대신 코스를 자동 순회하며 방문 인증 */
   const handleSimulateInGwangju = () => {
-    setSimulationEnabled(true); // 실제 GPS 추적 중단
+    setSimulationEnabled(true);
     setTourRunning(true);
     runAutoTour(autoTourIndexRef.current);
   };
 
+  const handleToggleTour = () => {
+    if (isTourRunning) {
+      if (autoTourTimerRef.current !== null) {
+        clearTimeout(autoTourTimerRef.current);
+        autoTourTimerRef.current = null;
+      }
+      stopWalk();
+      setTourRunning(false);
+    } else {
+      setTourRunning(true);
+      runAutoTour(autoTourIndexRef.current);
+    }
+  };
+
   const participantCount = participants?.participantCount ?? 0;
   const isOngoing = explorationStatus?.status === "ONGOING";
-  // 좌표 있고 + 광주 안일 때만 주변 더보기 가능
   const canUseNearby = coordinates != null && isInGwangju(coordinates);
-  // 좌표는 있는데 광주 밖 → 안내 배너
   const isOutOfGwangju = coordinates != null && !isInGwangju(coordinates);
   // 광주 밖이거나 위치 권한 거부 → 심사/데모용 위치 체험 진입 배너
   const showSimulationBanner =
     !isSimulationEnabled && (isOutOfGwangju || geoPermission === "denied");
-  // 요청했고 + 성공했고 + 목록 비었으면 토스트
   const showEmptyToast =
     isNearbyRequested && isNearbySuccess && nearbyPlaces.length === 0;
+
+  // 도보 길찾기 비활성: 좌표 없음 / 다음 목적지 없음(완주) / 광주 밖
+  const walkRouteDisabled = !myLocation || !nextPlace || isOutOfGwangju;
 
   return (
     <div className="relative mx-auto h-dvh w-full max-w-[430px]">
       <VisitMap
+        ref={visitMapRef}
         places={course.places}
         center={myLocation ?? center}
         myLocation={myLocation}
         visitedPlaceIds={initialVisitedPlaceIds}
+        currentPlaceId={nextPlace?.placeId ?? null}
+        route={displayRoute}
         onMarkerClick={setSelectedPlaceId}
       />
-
-      {/* 코스 보기 → 코스 상세 타임라인(4.3.4) */}
-      <button
-        type="button"
-        onClick={() => router.push(`/explore/${courseId}/course`)}
-        className="text-neutral-07 focus-visible:outline-primary-03 absolute bottom-6 left-4 z-30 min-h-11 rounded-full bg-white px-4 text-[13px] font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
-      >
-        코스 보기
-      </button>
-
-      {/* 주변 더보기 — 광주 안일 때만 (밖이면 배너로 대체) */}
-      {canUseNearby && (
-        <button
-          type="button"
-          onClick={() => {
-            setIsNearbyRequested(true);
-          }}
-          className="text-neutral-07 focus-visible:outline-primary-03 absolute bottom-20 left-4 z-30 min-h-11 rounded-full bg-white px-4 text-[13px] font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
-        >
-          주변 더보기
-        </button>
-      )}
-
-      {/* 위치 체험 제어 — 배너로 시작한 뒤 정지/재개 (시뮬레이션 중일 때만 노출) */}
-      {isSimulationEnabled && (
-        <button
-          type="button"
-          onClick={() => {
-            if (isTourRunning) {
-              if (autoTourTimerRef.current !== null) {
-                clearTimeout(autoTourTimerRef.current);
-                autoTourTimerRef.current = null;
-              }
-              stopWalk();
-              setTourRunning(false);
-            } else {
-              setTourRunning(true);
-              runAutoTour(autoTourIndexRef.current);
-            }
-          }}
-          className="text-neutral-07 focus-visible:outline-primary-03 absolute bottom-34 left-4 z-30 min-h-11 rounded-full bg-white px-4 text-[13px] font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.14)]"
-        >
-          {isTourRunning ? "위치 체험 정지" : "위치 체험 재개"}
-        </button>
-      )}
 
       <ExploreHeader
         center={
@@ -325,6 +369,37 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
           />
         }
         onOpenMenu={() => setIsMenuOpen(true)}
+      />
+
+      {/* 하단 시트 — 지도 버튼(내 위치·도보 길찾기)을 시트 위에 얹어 전달 */}
+      <ExploreBottomSheet
+        mapActions={
+          <>
+            {myLocation ? (
+              <MyLocationButton
+                onClick={() => visitMapRef.current?.panToMyLocation()}
+              />
+            ) : (
+              <span />
+            )}
+            <WalkRouteButton
+              isActive={walkRoutePath !== null}
+              isLoading={walkRouteMutation.isPending}
+              disabled={walkRouteDisabled}
+              summary={walkRouteSummary ?? undefined}
+              onClick={handleWalkRoute}
+            />
+          </>
+        }
+        nextPlaceName={nextPlace?.name ?? null}
+        visitedCount={initialVisitedPlaceIds.length}
+        totalCount={course.places.length}
+        isSimulationEnabled={isSimulationEnabled}
+        isTourRunning={isTourRunning}
+        canUseNearby={canUseNearby}
+        onToggleTour={handleToggleTour}
+        onNearby={() => setIsNearbyRequested(true)}
+        onOpenCourse={() => router.push(`/explore/${courseId}/course`)}
       />
 
       <Sidebar open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>

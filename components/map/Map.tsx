@@ -271,7 +271,7 @@ const KakaoMap = ({
           strokeWeight={ROUTE_STROKE_WEIGHT}
           strokeColor={ROUTE_STROKE_COLOR}
           strokeOpacity={0.9}
-          strokeStyle="solid"
+          strokeStyle="shortdash"
           zIndex={Z_INDEX_ROUTE}
         />
       )}

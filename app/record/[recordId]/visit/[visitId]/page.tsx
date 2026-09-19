@@ -58,7 +58,9 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
   if (!visit) {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] items-center justify-center px-8 text-center">
-        <p className="text-neutral-04 text-[14px]">방문 기록을 찾을 수 없어요.</p>
+        <p className="text-neutral-04 text-[14px]">
+          방문 기록을 찾을 수 없어요.
+        </p>
       </main>
     );
   }
@@ -185,7 +187,9 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
         {/* 메모 */}
         <textarea
           value={memo}
-          onChange={(event) => setMemoDraft(event.target.value.slice(0, MAX_MEMO))}
+          onChange={(event) =>
+            setMemoDraft(event.target.value.slice(0, MAX_MEMO))
+          }
           maxLength={MAX_MEMO}
           placeholder="이곳에서의 기록을 남겨보세요"
           className="border-neutral-03 placeholder:text-neutral-04 text-neutral-07 mt-4 min-h-56 w-full resize-none rounded-[16px] border p-4 text-[14px] leading-[1.6] outline-none"
