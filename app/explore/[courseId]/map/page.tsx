@@ -75,8 +75,11 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const coordinates = useGeolocationStore((state) => state.coordinates);
   const isAccurate = useGeolocationStore((state) => state.isAccurate);
   const geoPermission = useGeolocationStore((state) => state.permission);
-  const [stompErrorMessage, setStompErrorMessage] = useState<string | null>(null);
-  const { data: explorationStatus } = useGetExplorationStatusQuery(explorationIdStr);
+  const [stompErrorMessage, setStompErrorMessage] = useState<string | null>(
+    null,
+  );
+  const { data: explorationStatus } =
+    useGetExplorationStatusQuery(explorationIdStr);
 
   // STOMP 연결 (구독: visits·locations·events) — 진행 중(ONGOING) 탐험일 때만 연결
   const { sendLocation } = useExplorationSocket({
@@ -110,8 +113,9 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   // 내 위치를 팀에 발행 (GPS 좌표 변경 시, 10m 이상 이동했을 때만)
   useEffect(() => {
     if (!coordinates || explorationId === null) return;
-    if (explorationStatus?.currentParticipant.locationSharingEnabled === false) return;
- 
+    if (explorationStatus?.currentParticipant.locationSharingEnabled === false)
+      return;
+
     const hasMovedEnough =
       !lastSentLocationRef.current ||
       getDistanceInMeters(lastSentLocationRef.current, coordinates) >= 10;
@@ -127,7 +131,12 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
       accuracyMeters: coordinates.accuracy,
       recordedAt: new Date().toISOString(),
     });
-  }, [coordinates, explorationId, sendLocation, explorationStatus?.currentParticipant.locationSharingEnabled]);
+  }, [
+    coordinates,
+    explorationId,
+    sendLocation,
+    explorationStatus?.currentParticipant.locationSharingEnabled,
+  ]);
 
   const {
     data: course,
@@ -189,7 +198,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
     const orderedPlaces = [...course.places].sort(
       (a, b) => a.dayNumber - b.dayNumber || a.visitOrder - b.visitOrder,
     );
-    
+
     if (index >= orderedPlaces.length) {
       autoTourIndexRef.current = 0; // 끝까지 돌았으면 다음엔 처음부터
       setTourRunning(false);
@@ -246,7 +255,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const canUseNearby = coordinates != null && isInGwangju(coordinates);
   // 좌표는 있는데 광주 밖 → 안내 배너
   const isOutOfGwangju = coordinates != null && !isInGwangju(coordinates);
-    // 광주 밖이거나 위치 권한 거부 → 심사/데모용 위치 체험 진입 배너
+  // 광주 밖이거나 위치 권한 거부 → 심사/데모용 위치 체험 진입 배너
   const showSimulationBanner =
     !isSimulationEnabled && (isOutOfGwangju || geoPermission === "denied");
   // 요청했고 + 성공했고 + 목록 비었으면 토스트
