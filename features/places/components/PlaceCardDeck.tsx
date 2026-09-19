@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, type PanInfo } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useTransform,
+  type PanInfo,
+} from "framer-motion";
 
 import { cn } from "@/lib/cn";
 import CircleIconButton from "@/components/ui/CircleIconButton";
@@ -43,6 +49,141 @@ const SWIPE_DISTANCE_THRESHOLD = 120;
 /** 짧게 튕기듯 스와이프해도 확정되는 속도 기준 (px/s) */
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const EXIT_X = 500;
+
+interface DeckCardProps {
+  place: DeckPlace;
+  stackIndex: number;
+  isTop: boolean;
+  isExiting: boolean;
+  exitInfo: { direction: SwipeDirection; velocityX: number };
+  visibleCount: number;
+  onPointerDown: () => void;
+  onDrag: (
+    event: PointerEvent | MouseEvent | TouchEvent,
+    info: PanInfo,
+  ) => void;
+  onDragEnd: (
+    event: PointerEvent | MouseEvent | TouchEvent,
+    info: PanInfo,
+  ) => void;
+  onTap: () => void;
+  onSelectTopPlace: (placeId: number) => void;
+  onAnimationComplete: () => void;
+}
+
+/**
+ * 카드 한 장. x 좌표(드래그 중인 위치)에서 기울기를 실시간으로 파생시켜,
+ * 손끝을 그대로 따라가는 느낌을 준다.
+ * 카드마다 독립된 motion value가 필요해 배열 map 밖의 컴포넌트로 분리했다.
+ */
+const DeckCard = ({
+  place,
+  stackIndex,
+  isTop,
+  isExiting,
+  exitInfo,
+  visibleCount,
+  onPointerDown,
+  onDrag,
+  onDragEnd,
+  onTap,
+  onSelectTopPlace,
+  onAnimationComplete,
+}: DeckCardProps) => {
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-EXIT_X, EXIT_X], [-24, 24]);
+
+  return (
+    <motion.div
+      drag={isTop ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={1}
+      style={{
+        x,
+        rotate,
+        zIndex: isExiting ? MAX_VISIBLE_CARDS + 1 : visibleCount - stackIndex,
+      }}
+      onPointerDown={isTop ? onPointerDown : undefined}
+      onDrag={isTop ? onDrag : undefined}
+      onDragEnd={isTop ? onDragEnd : undefined}
+      onTap={isTop ? onTap : undefined}
+      onKeyDown={
+        isTop
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelectTopPlace(place.placeId);
+              }
+            }
+          : undefined
+      }
+      role={isTop ? "button" : undefined}
+      tabIndex={isTop ? 0 : -1}
+      aria-label={isTop ? `${place.name} 상세 보기` : undefined}
+      aria-hidden={!isTop}
+      onAnimationComplete={onAnimationComplete}
+      initial={false}
+      animate={{ y: stackIndex * 8, scale: 1 - stackIndex * 0.04, opacity: 1 }}
+      exit={{
+        x: exitInfo.direction === "like" ? EXIT_X : -EXIT_X,
+        opacity: 0,
+        transition: {
+          type: "spring",
+          stiffness: 180,
+          damping: 20,
+          mass: 0.6,
+          velocity: exitInfo.velocityX,
+        },
+      }}
+      transition={{ type: "spring", stiffness: 350, damping: 26 }}
+      className={cn(
+        "border-neutral-03 bg-neutral-02 focus-visible:outline-primary-03 rounded-card absolute inset-0 overflow-hidden border focus-visible:outline-2 focus-visible:outline-offset-2",
+        isTop
+          ? "shadow-strong cursor-grab active:cursor-grabbing"
+          : "shadow-soft pointer-events-none",
+      )}
+    >
+      {place.thumbnailUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={place.thumbnailUrl}
+          alt={place.name}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="bg-primary-04 relative flex h-full w-full items-center justify-center overflow-hidden">
+          <span
+            aria-hidden="true"
+            className="border-primary-01/80 absolute -top-16 -right-16 h-64 w-64 rounded-full border-[48px]"
+          />
+          <div className="text-neutral-07 relative flex flex-col items-center gap-3">
+            <ImageIcon className="h-8 w-8" />
+            <span className="text-[13px] font-semibold">{place.name}</span>
+          </div>
+        </div>
+      )}
+
+      {isTop && (
+        <>
+          <span className="text-neutral-07 absolute top-5 left-5 rounded-full bg-white px-3.5 py-1.5 text-[13px] font-medium">
+            {place.category}
+          </span>
+
+          <div className="from-neutral-07/90 via-neutral-07/55 absolute inset-x-0 bottom-0 bg-linear-to-t to-transparent px-6 pt-24 pb-6">
+            <h3 className="text-[20px] font-semibold text-white">
+              {place.name}
+            </h3>
+            {place.tags[0] && (
+              <p className="mt-1 text-[13px] text-white/80">
+                #{place.tags[0]} · 나의 여행 성향 추천
+              </p>
+            )}
+          </div>
+        </>
+      )}
+    </motion.div>
+  );
+};
 
 /**
  * 장소 선택 카드덱 (기능명세 2.1.1~2.1.3).
@@ -139,7 +280,7 @@ const PlaceCardDeck = ({
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="relative h-[clamp(360px,56dvh,500px)] w-full max-w-[342px] overflow-hidden">
+      <div className="relative h-[clamp(360px,56dvh,500px)] w-full max-w-[342px]">
         <AnimatePresence>
           {showLikedToast && (
             <motion.div
@@ -170,35 +311,21 @@ const PlaceCardDeck = ({
             };
 
             return (
-              <motion.div
+              <DeckCard
                 key={place.placeId}
-                drag={isTop ? "x" : false}
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={1}
-                onPointerDown={
-                  isTop
-                    ? () => {
-                        didDrag.current = false;
-                      }
-                    : undefined
-                }
-                onDrag={isTop ? handleDrag : undefined}
-                onDragEnd={isTop ? handleDragEnd : undefined}
-                onTap={isTop ? () => handleTap(place.placeId) : undefined}
-                onKeyDown={
-                  isTop
-                    ? (event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          onSelectTopPlace(place.placeId);
-                        }
-                      }
-                    : undefined
-                }
-                role={isTop ? "button" : undefined}
-                tabIndex={isTop ? 0 : -1}
-                aria-label={isTop ? `${place.name} 상세 보기` : undefined}
-                aria-hidden={!isTop}
+                place={place}
+                stackIndex={stackIndex}
+                isTop={isTop}
+                isExiting={isExiting}
+                exitInfo={exitInfo}
+                visibleCount={visiblePlaces.length}
+                onPointerDown={() => {
+                  didDrag.current = false;
+                }}
+                onDrag={handleDrag}
+                onDragEnd={handleDragEnd}
+                onTap={() => handleTap(place.placeId)}
+                onSelectTopPlace={onSelectTopPlace}
                 onAnimationComplete={() => {
                   setExitDirections((prev) => {
                     if (!prev.has(place.placeId)) return prev;
@@ -207,83 +334,7 @@ const PlaceCardDeck = ({
                     return next;
                   });
                 }}
-                initial={false}
-                animate={{
-                  x: 0,
-                  y: stackIndex * 8,
-                  scale: 1 - stackIndex * 0.04,
-                  rotate: 0,
-                  opacity: 1,
-                }}
-                exit={{
-                  x: exitInfo.direction === "like" ? EXIT_X : -EXIT_X,
-                  rotate: exitInfo.direction === "like" ? 24 : -24,
-                  opacity: 0,
-                  transition: {
-                    type: "spring",
-                    stiffness: 180,
-                    damping: 20,
-                    mass: 0.6,
-                    velocity: exitInfo.velocityX,
-                  },
-                }}
-                transition={{ type: "spring", stiffness: 350, damping: 26 }}
-                style={{
-                  // 나가는 카드는 새로 올라온 카드와 z-index가 같아지면(둘 다
-                  // stackIndex 0 기준으로 계산되므로) DOM에 나중에 나온 새 카드가
-                  // 위로 그려져 날아가는 카드를 가려버린다 — 항상 맨 위로 고정한다.
-                  zIndex: isExiting
-                    ? MAX_VISIBLE_CARDS + 1
-                    : visiblePlaces.length - stackIndex,
-                }}
-                className={cn(
-                  "border-neutral-03 bg-neutral-02 focus-visible:outline-primary-03 rounded-card absolute inset-0 overflow-hidden border focus-visible:outline-2 focus-visible:outline-offset-2",
-                  isTop
-                    ? "shadow-strong cursor-grab active:cursor-grabbing"
-                    : "shadow-soft pointer-events-none",
-                )}
-              >
-                {place.thumbnailUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={place.thumbnailUrl}
-                    alt={place.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="bg-primary-04 relative flex h-full w-full items-center justify-center overflow-hidden">
-                    <span
-                      aria-hidden="true"
-                      className="border-primary-01/80 absolute -top-16 -right-16 h-64 w-64 rounded-full border-[48px]"
-                    />
-                    <div className="text-neutral-07 relative flex flex-col items-center gap-3">
-                      <ImageIcon className="h-8 w-8" />
-                      <span className="text-[13px] font-semibold">
-                        {place.name}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {isTop && (
-                  <>
-                    <span className="text-neutral-07 absolute top-5 left-5 rounded-full bg-white px-3.5 py-1.5 text-[13px] font-medium">
-                      {place.category}
-                    </span>
-
-                    <div className="from-neutral-07/90 via-neutral-07/55 absolute inset-x-0 bottom-0 bg-linear-to-t to-transparent px-6 pt-24 pb-6">
-                      <h3 className="text-[20px] font-semibold text-white">
-                        {place.name}
-                      </h3>
-                      {place.tags[0] && (
-                        <p className="mt-1 text-[13px] text-white/80">
-                          #{place.tags[0]} · 나의 여행 성향 추천
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-              </motion.div>
+              />
             );
           })}
         </AnimatePresence>

@@ -27,3 +27,21 @@ export const getMyPreference = async (): Promise<MyPreferenceResponse> => {
   const res = await api.get<MyPreferenceResponse>(API_ENDPOINTS.preference.me);
   return res.data!;
 };
+
+interface UpdatePreferenceRequest {
+  thinkerScore: number;
+  foodieScore: number;
+  artistScore: number;
+  remembererScore: number;
+}
+
+/** 성향 재검사 결과 저장 (로그인 사용자). */
+export const putMyPreference = async (
+  body: UpdatePreferenceRequest,
+): Promise<MyPreferenceResponse> => {
+  const res = await api.put<MyPreferenceResponse>(
+    API_ENDPOINTS.preference.me, // ← 경로/메서드 백엔드 확인 후 맞추기
+    body,
+  );
+  return res.data!;
+};

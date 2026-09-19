@@ -1,4 +1,5 @@
 import GradientBackground from "@/components/ui/GradientBackground";
+import LoadingRing from "@/components/ui/LoadingRing";
 
 interface QuizIntroProps {
   /** 질문 로딩 중 여부. 로딩이 끝나면 페이지가 질문 화면으로 자동 전환. */
@@ -22,13 +23,7 @@ const QuizIntro = ({ isLoading }: QuizIntroProps) => {
         당신의 여행 유형을 알아보아요.
       </p>
 
-      {isLoading && (
-        <span
-          className="border-neutral-07/20 border-t-neutral-07 mt-2 block h-[42px] w-[42px] animate-spin rounded-full border-2"
-          role="status"
-          aria-label="질문을 불러오는 중"
-        />
-      )}
+      {isLoading && <LoadingRing label="질문을 불러오는 중" className="mt-4" />}
     </section>
   );
 };

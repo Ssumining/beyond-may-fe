@@ -62,7 +62,9 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   const [isTeamOpen, setIsTeamOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLocationSharingOpen, setIsLocationSharingOpen] = useState(true);
+  // "나중에"/공유 완료로 이번 화면 방문에서 명시적으로 닫았는지 여부.
+  const [isLocationSharingDismissed, setIsLocationSharingDismissed] =
+    useState(false);
   const [isNearbyRequested, setIsNearbyRequested] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
   const queryClient = useQueryClient();
@@ -98,6 +100,13 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   );
   const { data: explorationStatus } =
     useGetExplorationStatusQuery(explorationIdStr);
+
+  // 위치 공유 안내 모달 노출 여부: 상태 조회가 끝났고, 아직 공유 중이 아니며,
+  // 이번 화면 방문에서 명시적으로 닫지 않았을 때만 보여준다.
+  const showLocationSharingModal =
+    !isLocationSharingDismissed &&
+    explorationStatus !== undefined &&
+    !explorationStatus.currentParticipant.locationSharingEnabled;
 
   const { sendLocation } = useExplorationSocket({
     explorationId: explorationId ?? 0,
@@ -336,6 +345,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const isOngoing = explorationStatus?.status === "ONGOING";
   const canUseNearby = coordinates != null && isInGwangju(coordinates);
   const isOutOfGwangju = coordinates != null && !isInGwangju(coordinates);
+  // 광주 밖이거나 위치 권한 거부 → 심사/데모용 위치 체험 진입 배너
   const showSimulationBanner =
     !isSimulationEnabled && (isOutOfGwangju || geoPermission === "denied");
   const showEmptyToast =
@@ -412,10 +422,10 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         />
       )}
 
-      {isLocationSharingOpen && (
+      {showLocationSharingModal && (
         <LocationSharingModal
           explorationId={explorationIdStr}
-          onClose={() => setIsLocationSharingOpen(false)}
+          onClose={() => setIsLocationSharingDismissed(true)}
         />
       )}
 
