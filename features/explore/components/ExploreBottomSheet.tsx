@@ -41,7 +41,7 @@ const ExploreBottomSheet = ({
     <div className="absolute inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px]">
       {/* 지도 버튼 — 시트 바로 위 가장자리에 얹힘 (좌: 내 위치 / 우: 도보 길찾기) */}
       {mapActions && (
-        <div className="pointer-events-none flex items-end justify-between px-4 pb-3">
+        <div className="pointer-events-none flex items-end justify-between px-4 pb-3 [&>*]:pointer-events-auto">
           {mapActions}
         </div>
       )}
@@ -80,10 +80,10 @@ const ExploreBottomSheet = ({
           <button
             type="button"
             onClick={onNearby}
-            disabled={!canUseNearby}
+            disabled={!canUseNearby || isTourRunning}
             className={cn(
               "min-h-12 flex-1 rounded-full text-[14px] font-semibold",
-              canUseNearby
+              canUseNearby && !isTourRunning
                 ? "bg-neutral-07 text-neutral-01"
                 : "bg-neutral-02 text-neutral-04 cursor-not-allowed",
             )}

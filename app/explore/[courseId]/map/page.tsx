@@ -265,6 +265,9 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
             formatWalkRouteSummary(route.totalTime, route.totalDistance),
           );
         },
+        onError: () => {
+          // Tmap 403 등 실패 시 조용히 무시 (경로만 안 뜸)
+        },
       },
     );
   };
@@ -362,6 +365,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         center={myLocation ?? center}
         myLocation={myLocation}
         visitedPlaceIds={initialVisitedPlaceIds}
+        currentPlaceId={nextPlace?.placeId ?? null}
         route={displayRoute}
         onMarkerClick={setSelectedPlaceId}
       />
