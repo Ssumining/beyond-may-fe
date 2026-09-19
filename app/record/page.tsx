@@ -115,6 +115,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
           <Link
             key={id}
             href={`/record?tab=${id}${stateSuffix}`}
+            replace
             aria-current={activeTab === id ? "page" : undefined}
             className={`relative flex min-h-13 shrink-0 items-center px-3 text-[13px] font-semibold ${
               activeTab === id ? "text-neutral-07" : "text-neutral-04"
@@ -335,6 +336,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
               description="장소에서 방문을 인증하면 여기에 모여요."
               action="진행 중 코스 보기"
               href="/record?tab=ongoing"
+              replace
             />
           )}
           {!isVisitsLoading && !isVisitsError && visitedPlaces.length > 0 && (
@@ -397,6 +399,7 @@ interface EmptyRecordStateProps {
   action: string;
   href: string;
   onAction?: () => void;
+  replace?: boolean;
 }
 
 const EmptyRecordState = ({
@@ -405,6 +408,7 @@ const EmptyRecordState = ({
   action,
   href,
   onAction,
+  replace,
 }: EmptyRecordStateProps) => (
   <div className="flex flex-col items-center py-20 text-center">
     <div className="border-primary-08 bg-primary-04 text-primary-08 flex h-16 w-14 -rotate-3 items-center justify-center border-4 border-dashed text-[16px] font-bold">
@@ -416,6 +420,7 @@ const EmptyRecordState = ({
     </p>
     <Link
       href={href}
+      replace={replace}
       onClick={onAction}
       className="bg-neutral-07 text-neutral-01 mt-6 flex min-h-12 w-full items-center justify-center rounded-full px-5 text-[14px] font-semibold"
     >

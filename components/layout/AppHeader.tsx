@@ -25,7 +25,7 @@ interface AppHeaderProps {
   showHome?: boolean;
   /** 방문 기록의 이전 화면으로 이동한다. 기록이 없으면 홈으로 이동한다. */
   showBack?: boolean;
-  /** 선형 여정의 명시적 상위 경로. 지정하면 Home 대신 Back을 표시한다. */
+  /** 명시적 상위 경로. showBack과 함께 쓰면 이전 기록이 없을 때의 복귀 경로다. */
   backHref?: string;
   /** 저장되지 않은 작업 확인처럼 이동 전에 처리가 필요할 때 사용한다. */
   onBack?: () => void;
@@ -69,7 +69,7 @@ const AppHeader = ({
   const router = useRouter();
   const handleBack = () => {
     if (window.history.length > 1) router.back();
-    else router.replace("/?home=1");
+    else router.replace(backHref ?? "/?home=1");
   };
 
   return (

@@ -37,6 +37,14 @@ it("이탈 확인 콜백이 있으면 자동 뒤로가기보다 먼저 실행한
   expect(router.replace).not.toHaveBeenCalled();
 });
 
+it("완료 기록 상세에 직접 진입하면 지정한 완료 목록으로 이력을 교체한다", () => {
+  vi.spyOn(window.history, "length", "get").mockReturnValue(1);
+  render(<AppHeader showBack backHref="/record?tab=completed" />);
+  fireEvent.click(screen.getByRole("button", { name: "이전 화면으로 이동" }));
+  expect(router.replace).toHaveBeenCalledWith("/record?tab=completed");
+  expect(router.back).not.toHaveBeenCalled();
+});
+
 it("명시한 상위 경로와 기존 홈 링크는 유지한다", () => {
   const { rerender } = render(<AppHeader backHref="/record?tab=completed" />);
   expect(
