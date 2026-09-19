@@ -335,13 +335,16 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
       <LocationSharingModal explorationId={explorationIdStr} />
 
-      {isNearbyRequested && isNearbySuccess && nearbyPlaces.length > 0 && (
-        <NearbyPlacesSheet
-          places={nearbyPlaces}
-          onSelectPlace={(placeId) => setSelectedPlaceId(placeId)}
-          onClose={() => setIsNearbyRequested(false)}
-        />
-      )}
+      {selectedPlaceId === null &&
+        isNearbyRequested &&
+        isNearbySuccess &&
+        nearbyPlaces.length > 0 && (
+          <NearbyPlacesSheet
+            places={nearbyPlaces}
+            onSelectPlace={(placeId) => setSelectedPlaceId(placeId)}
+            onClose={() => setIsNearbyRequested(false)}
+          />
+        )}
 
       {showEmptyToast && (
         <NearbyEmptyToast onClose={() => setIsNearbyRequested(false)} />

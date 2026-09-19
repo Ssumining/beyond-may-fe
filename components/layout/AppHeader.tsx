@@ -84,7 +84,7 @@ const AppHeader = ({
           type="button"
           onClick={onBack ?? handleBack}
           aria-label="이전 화면으로 이동"
-          className="focus-visible:outline-primary-03 flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="focus-visible:outline-primary-03 -ml-2 flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -92,7 +92,7 @@ const AppHeader = ({
         <Link
           href={backHref}
           aria-label="이전 화면으로 이동"
-          className="focus-visible:outline-primary-03 flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="focus-visible:outline-primary-03 -ml-2 flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <ChevronLeft className="h-5 w-5" />
         </Link>

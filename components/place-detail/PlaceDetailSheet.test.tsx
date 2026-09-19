@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
 import PlaceDetailSheet from "./PlaceDetailSheet";
 import type { PlaceDetailResponse } from "@/types/place";
 
@@ -37,4 +37,13 @@ it("설명과 운영시간의 br 태그를 줄바꿈으로 표시한다", () => 
   expect(screen.getByText(/운영시간 평일/).textContent).toBe(
     "운영시간 평일 09:00\n주말 10:00",
   );
+});
+
+it("상단 닫기 버튼으로 장소 상세를 닫는다", () => {
+  const onClose = vi.fn();
+  render(
+    <PlaceDetailSheet place={createPlace("장소 설명")} onClose={onClose} />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "장소 상세 닫기" }));
+  expect(onClose).toHaveBeenCalledOnce();
 });
