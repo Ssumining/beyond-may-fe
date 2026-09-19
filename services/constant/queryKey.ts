@@ -1,4 +1,5 @@
 export const QUERY_KEYS = {
+  HOME: { RESUME: () => ["home", "resume"] as const },
   PREFERENCE: {
     ALL: ["preference"] as const,
     QUESTIONS: () => [...QUERY_KEYS.PREFERENCE.ALL, "questions"] as const,
@@ -29,7 +30,7 @@ export const QUERY_KEYS = {
     ALL: ["exploration"] as const,
     PARTICIPANTS: (explorationId: string) =>
       [...QUERY_KEYS.EXPLORATION.ALL, "participants", explorationId] as const,
-    LIST: (status: "ONGOING" | "COMPLETED") =>
+    LIST: (status: "BEFORE" | "ONGOING" | "COMPLETED") =>
       [...QUERY_KEYS.EXPLORATION.ALL, "list", status] as const,
     STATUS: (explorationId: string) =>
       [...QUERY_KEYS.EXPLORATION.ALL, "status", explorationId] as const,

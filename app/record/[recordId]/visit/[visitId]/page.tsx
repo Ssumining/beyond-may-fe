@@ -20,6 +20,10 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
   const { recordId, visitId } = use(params);
   const router = useRouter();
   const backTo = "/record?tab=visits";
+  const handleBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.replace(backTo);
+  };
 
   const { data, isLoading } = useGetTeamVisitsQuery(recordId);
   const visit =
@@ -54,7 +58,9 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
   if (!visit) {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] items-center justify-center px-8 text-center">
-        <p className="text-neutral-04 text-[14px]">방문 기록을 찾을 수 없어요.</p>
+        <p className="text-neutral-04 text-[14px]">
+          방문 기록을 찾을 수 없어요.
+        </p>
       </main>
     );
   }
@@ -79,13 +85,13 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
   const handleSave = () => {
     saveRecord(
       { visitId: visit.visitId, memo, photos: files },
-      { onSuccess: () => router.push(backTo) },
+      { onSuccess: handleBack },
     );
   };
 
   return (
     <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] flex-col pb-[max(24px,env(safe-area-inset-bottom))]">
-      <AppHeader backHref={backTo} showMenu={false} centerLabel="방문 기록" />
+      <AppHeader onBack={handleBack} showMenu={false} centerLabel="방문 기록" />
 
       <div className="flex flex-1 flex-col px-6 pt-4">
         {/* 장소 + 상태 */}
@@ -181,7 +187,9 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
         {/* 메모 */}
         <textarea
           value={memo}
-          onChange={(event) => setMemoDraft(event.target.value.slice(0, MAX_MEMO))}
+          onChange={(event) =>
+            setMemoDraft(event.target.value.slice(0, MAX_MEMO))
+          }
           maxLength={MAX_MEMO}
           placeholder="이곳에서의 기록을 남겨보세요"
           className="border-neutral-03 placeholder:text-neutral-04 text-neutral-07 mt-4 min-h-56 w-full resize-none rounded-[16px] border p-4 text-[14px] leading-[1.6] outline-none"
@@ -190,7 +198,7 @@ const VisitRecordPage = ({ params }: VisitRecordPageProps) => {
         {/* 건너뛰기 */}
         <button
           type="button"
-          onClick={() => router.push(backTo)}
+          onClick={handleBack}
           className="text-neutral-04 hover:text-neutral-06 mt-4 min-h-11 text-center text-[13px]"
         >
           건너뛰기

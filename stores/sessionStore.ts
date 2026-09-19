@@ -35,7 +35,12 @@ const useSessionStore = create<SessionState>()(
       localPreference: null,
       explorationId: null,
       setSession: (nickname, identificationCode) =>
-        set({ nickname, identificationCode, isLoggedIn: true }),
+        set({
+          nickname,
+          identificationCode,
+          isLoggedIn: true,
+          explorationId: null,
+        }),
       setPreferenceType: (preferenceType) => set({ preferenceType }),
       setLocalPreference: (localPreference) => set({ localPreference }),
       clearPreferenceType: () =>

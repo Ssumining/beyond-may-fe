@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import AppHeader from "@/components/layout/AppHeader";
 import Button from "@/components/ui/Button";
@@ -11,6 +12,9 @@ import useConfirmCourseMutation from "@/features/course/hooks/useConfirmCourseMu
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 import useStartExplorationMutation from "@/features/explore/hooks/useStartExplorationMutation";
 import useSessionStore from "@/stores/sessionStore";
+import { getCourses } from "@/services/api/course/courseApi";
+import { getExplorationStatus } from "@/services/api/exploration/explorationApi";
+import { QUERY_KEYS } from "@/services/constant/queryKey";
 
 interface CoursePageProps {
   params: Promise<{ courseId: string }>;
@@ -43,8 +47,42 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
     isError: hasConfirmError,
   } = useConfirmCourseMutation();
 
-  const { mutate: startExploration } = useStartExplorationMutation();
-  const explorationId = useSessionStore((state) => state.explorationId);
+  const { mutate: startExploration, isPending: isStarting } =
+    useStartExplorationMutation();
+  const setExplorationId = useSessionStore((state) => state.setExplorationId);
+  const queryClient = useQueryClient();
+  const isConfirmed = course?.status === "CONFIRMED";
+  // 상세 응답에는 탐험 ID가 없으므로 선택한 코스의 목록 항목에서 찾는다.
+  const coursesQuery = useQuery({
+    queryKey: QUERY_KEYS.COURSE.LIST(),
+    queryFn: getCourses,
+    enabled: isConfirmed,
+    staleTime: 0,
+  });
+  const targetExplorationId = coursesQuery.data?.courses.find(
+    (item) => String(item.courseId) === courseId,
+  )?.explorationId;
+  const explorationIdStr =
+    targetExplorationId == null ? "" : String(targetExplorationId);
+  const statusQuery = useQuery({
+    queryKey: QUERY_KEYS.EXPLORATION.STATUS(explorationIdStr),
+    queryFn: () => getExplorationStatus(explorationIdStr),
+    enabled: isConfirmed && explorationIdStr.length > 0,
+    staleTime: 0,
+  });
+  const exploration = statusQuery.data;
+  const isExplorationLoading =
+    isConfirmed &&
+    (coursesQuery.isPending ||
+      coursesQuery.isFetching ||
+      (explorationIdStr.length > 0 &&
+        (statusQuery.isPending || statusQuery.isFetching)));
+  const hasExplorationError =
+    isConfirmed &&
+    (coursesQuery.isError ||
+      statusQuery.isError ||
+      !targetExplorationId ||
+      (exploration && String(exploration.courseId) !== courseId));
 
   const handleConfirmCourse = () => {
     confirmCourse(courseId, {
@@ -80,10 +118,11 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
   };
 
   const handleStart = (requestLocation: boolean): void => {
-    // 코스 조회 응답의 explorationId를 우선 쓴다 — 확정 직후 세션에 저장된 값은
-    // 새로고침·재방문 시 유실될 수 있어 폴백으로만 둔다.
-    const targetExplorationId = course?.explorationId ?? explorationId;
-    if (targetExplorationId === null) {
+    if (
+      !targetExplorationId ||
+      exploration?.status !== "BEFORE" ||
+      !exploration.permissions.canStart
+    ) {
       setHasStartError(true);
       return;
     }
@@ -91,7 +130,16 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
 
     const goToExplore = () =>
       startExploration(String(targetExplorationId), {
-        onSuccess: () => router.push(`/explore/${courseId}?stage=ongoing`),
+        onSuccess: (data) => {
+          setExplorationId(data.explorationId);
+          void queryClient.invalidateQueries({
+            queryKey: QUERY_KEYS.EXPLORATION.ALL,
+          });
+          void queryClient.invalidateQueries({
+            queryKey: QUERY_KEYS.COURSE.LIST(),
+          });
+          router.push(`/explore/${courseId}/map`);
+        },
         onError: () => setHasStartError(true),
       });
 
@@ -105,7 +153,7 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
     goToExplore();
   };
 
-  if (isLoading) {
+  if (isLoading || isExplorationLoading) {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] flex-col">
         <AppHeader
@@ -124,7 +172,7 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
     );
   }
 
-  if (isError || !course) {
+  if (isError || !course || hasExplorationError) {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] flex-col">
         <AppHeader
@@ -142,7 +190,11 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
             variant="solid"
             size="lg"
             className="mt-5 w-full"
-            onClick={() => refetch()}
+            onClick={() => {
+              void refetch();
+              if (isConfirmed) void coursesQuery.refetch();
+              if (explorationIdStr) void statusQuery.refetch();
+            }}
           >
             코스 다시 불러오기
           </Button>
@@ -151,7 +203,8 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
     );
   }
 
-  const isConfirmed = course.status === "CONFIRMED";
+  const isOngoing = exploration?.status === "ONGOING";
+  const isCompleted = exploration?.status === "COMPLETED";
 
   return (
     <>
@@ -165,9 +218,29 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
           course.status === "DRAFT" ? () => setIsConfirmOpen(true) : undefined
         }
         onShareClick={isConfirmed ? () => setIsShareOpen(true) : undefined}
+        startLabel={
+          isOngoing
+            ? "탐험 계속하기"
+            : isCompleted
+              ? "여행 기록 보기"
+              : "탐험 시작"
+        }
         onStartClick={
           isConfirmed
             ? () => {
+                if (isCompleted) {
+                  router.push("/record?tab=completed");
+                  return;
+                }
+                if (exploration?.currentParticipant.status === "LEFT") {
+                  router.push(`/explore/${courseId}`);
+                  return;
+                }
+                if (isOngoing && targetExplorationId) {
+                  setExplorationId(targetExplorationId);
+                  router.push(`/explore/${courseId}/map`);
+                  return;
+                }
                 setHasStartError(false);
                 setIsStartOpen(true);
               }
@@ -278,6 +351,7 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
             size="lg"
             className="w-full"
             onClick={() => handleStart(true)}
+            disabled={isStarting}
           >
             위치 켜고 탐험 시작
           </Button>
@@ -285,6 +359,7 @@ const CoursePage = ({ params, searchParams }: CoursePageProps) => {
             size="lg"
             className="w-full"
             onClick={() => handleStart(false)}
+            disabled={isStarting}
           >
             권한 없이 코스 미리보기
           </Button>

@@ -7,10 +7,8 @@ import AppHeader from "@/components/layout/AppHeader";
 import Button from "@/components/ui/Button";
 import { getCourses } from "@/services/api/course/courseApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
-import type { CourseResponse, CourseStatus } from "@/types/course";
+import type { CourseSummary, CourseStatus } from "@/types/course";
 
-// TODO(#56 여파): 여행 중·완료 상태는 exploration 소관(수민)이라 코스 응답엔 없음.
-// exploration status API 연동 전까지는 DRAFT/CONFIRMED 2종만 구분한다.
 const STATUS_LABELS: Record<CourseStatus, string> = {
   DRAFT: "초안",
   CONFIRMED: "출발 전",
@@ -21,7 +19,7 @@ const STATUS_CLASSES: Record<CourseStatus, string> = {
   CONFIRMED: "bg-primary-01 text-neutral-07",
 };
 
-const getCourseAction = (course: CourseResponse) => ({
+const getCourseAction = (course: CourseSummary) => ({
   href: `/course/${course.courseId}?from=hub`,
   label: "코스 확인",
 });
@@ -116,15 +114,16 @@ const CoursePage = () => {
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_CLASSES[course.status]}`}
                     >
-                      {STATUS_LABELS[course.status]}
+                      {course.explorationStatus === "ONGOING"
+                        ? "탐험 중"
+                        : course.explorationStatus === "COMPLETED"
+                          ? "완료"
+                          : STATUS_LABELS[course.status]}
                     </span>
                     <h2 className="text-neutral-07 mt-3 truncate text-[20px] font-bold">
                       {course.title}
                     </h2>
                   </div>
-                  <span className="text-neutral-04 shrink-0 text-[12px]">
-                    {course.places.length}곳
-                  </span>
                 </div>
 
                 {/* TODO(#56 여파): 예상 소요시간·거리·방문 진행률은 코스 응답 summary가

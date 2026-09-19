@@ -1,13 +1,13 @@
 "use client";
 
 import useUpdateLocationSharingMutation from "@/features/explore/hooks/useUpdateLocationSharingMutation";
+import useGetExplorationStatusQuery from "@/features/explore/hooks/useGetExplorationStatusQuery";
+import useLocationSharingPromptStore from "@/stores/locationSharingPromptStore";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 
 interface LocationSharingModalProps {
   explorationId: string;
-  /** 선택 완료 시 (공유 여부 관계없이 모달 닫기) */
-  onClose: () => void;
 }
 
 /**
@@ -15,15 +15,37 @@ interface LocationSharingModalProps {
  * 탐험 지도 최초 진입 시 표시. 기본값은 비공유,
  * "공유하기" 선택 시에만 PATCH로 위치 공유 on.
  */
-const LocationSharingModal = ({
-  explorationId,
-  onClose,
-}: LocationSharingModalProps) => {
+const LocationSharingModal = ({ explorationId }: LocationSharingModalProps) => {
+  const {
+    data: exploration,
+    isFetching,
+    isError: isStatusError,
+  } = useGetExplorationStatusQuery(explorationId);
   const { mutate, isPending, isError } =
     useUpdateLocationSharingMutation(explorationId);
+  const dismissed = useLocationSharingPromptStore((state) => state.dismissed);
+  const dismiss = useLocationSharingPromptStore((state) => state.dismiss);
+
+  if (
+    !exploration ||
+    isFetching ||
+    isStatusError ||
+    exploration.status !== "ONGOING" ||
+    exploration.currentParticipant.status !== "ACTIVE" ||
+    exploration.currentParticipant.locationSharingEnabled ||
+    dismissed[
+      `${explorationId}:${exploration.currentParticipant.participantId}`
+    ]
+  )
+    return null;
+
+  const onClose = (): void => {
+    if (!isPending)
+      dismiss(explorationId, exploration.currentParticipant.participantId);
+  };
 
   const handleShare = (): void => {
-    mutate({ enabled: true }, { onSuccess: onClose });
+    mutate({ enabled: true });
   };
 
   return (
@@ -36,7 +58,8 @@ const LocationSharingModal = ({
       </h2>
       <p className="text-neutral-04 mt-3 text-left text-[13px] leading-[1.55]">
         공유하면 팀원 지도에 내 위치가 표시돼요. 방문 인증에 필요한 기기 위치
-        권한과는 별도로 선택할 수 있어요.
+        권한과는 별도로 선택할 수 있어요. 나중에도 사이드바의 설정에서 변경할 수
+        있어요.
       </p>
 
       {isError && (

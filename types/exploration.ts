@@ -142,7 +142,7 @@ export interface ExplorationSummary {
   completedCoursePlaceCount: number;
   totalCoursePlaceCount: number;
   /** ISO 8601 */
-  startedAt: string;
+  startedAt: string | null;
   /** ISO 8601, 진행 중이면 null */
   completedAt: string | null;
 }

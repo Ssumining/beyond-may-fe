@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { patchLocationSharing } from "@/services/api/exploration/explorationApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
 import type { LocationSharingRequest } from "@/types/exploration";
+import useLocationSharingPromptStore from "@/stores/locationSharingPromptStore";
 
 /**
  * 내 위치 공유 설정 변경 (4.3.2).
@@ -13,13 +14,18 @@ const useUpdateLocationSharingMutation = (explorationId: string) => {
   return useMutation({
     mutationFn: (body: LocationSharingRequest) =>
       patchLocationSharing(explorationId, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.EXPLORATION.PARTICIPANTS(explorationId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.EXPLORATION.STATUS(explorationId),
-      });
+    onSuccess: (response) => {
+      useLocationSharingPromptStore
+        .getState()
+        .dismiss(String(response.explorationId), response.participantId);
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.EXPLORATION.PARTICIPANTS(explorationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.EXPLORATION.STATUS(explorationId),
+        }),
+      ]);
     },
   });
 };

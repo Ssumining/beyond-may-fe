@@ -39,10 +39,12 @@ const RecordDetailPage = ({ params }: RecordDetailPageProps) => {
     );
   }
 
-  if (!summary) {
+  if (!summary || !summary.startedAt) {
     return (
       <main className="bg-neutral-01 mx-auto flex min-h-dvh w-full max-w-[430px] items-center justify-center px-8 text-center">
-        <p className="text-neutral-04 text-[14px]">여행 기록을 찾을 수 없어요.</p>
+        <p className="text-neutral-04 text-[14px]">
+          여행 기록을 찾을 수 없어요.
+        </p>
       </main>
     );
   }
@@ -77,10 +79,12 @@ const RecordDetailPage = ({ params }: RecordDetailPageProps) => {
     })),
   };
 
-  return <RecordDetail
+  return (
+    <RecordDetail
       record={record}
       visitedPlaces={visitedData?.visitedPlaces ?? []}
-    />;
+    />
+  );
 };
 
 export default RecordDetailPage;

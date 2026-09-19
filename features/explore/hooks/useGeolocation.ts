@@ -21,9 +21,7 @@ const useGeolocation = ({
   const setError = useGeolocationStore((state) => state.setError);
 
   useEffect(() => {
-    if (!enabled) {
-      return;
-    }
+    if (!enabled) return;
 
     if (!("geolocation" in navigator)) {
       setError("이 브라우저에서는 위치 기능을 사용할 수 없습니다.");
@@ -32,8 +30,10 @@ const useGeolocation = ({
 
     setError(null);
 
+    let active = true;
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
+        if (!active) return;
         const { latitude, longitude, accuracy } = position.coords;
         setPermission("granted");
         setError(null);
@@ -41,6 +41,7 @@ const useGeolocation = ({
         setAccurate(accuracy <= GPS_ACCURACY_THRESHOLD_METERS);
       },
       (positionError) => {
+        if (!active) return;
         if (positionError.code === positionError.PERMISSION_DENIED) {
           setPermission("denied");
           setError("위치 권한이 거부되었습니다.");
@@ -56,6 +57,7 @@ const useGeolocation = ({
     );
 
     return () => {
+      active = false;
       navigator.geolocation.clearWatch(watchId);
     };
   }, [

@@ -1,11 +1,12 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { cn } from "@/lib/cn";
 import useDialogFocus from "@/hooks/useDialogFocus";
 import Close from "@/components/ui/icons/Close";
+import useSessionStore from "@/stores/sessionStore";
 
 interface SidebarProps {
   open: boolean;
@@ -16,11 +17,19 @@ interface SidebarProps {
 
 /**
  * 우측에서 슬라이드로 열리는 전역 메뉴 뼈대 (components/layout/sidebar).
- * 오버레이·닫기 버튼·슬라이드 애니메이션만 담당하고, 실제 내용(로그인 폼/프로필 메뉴 등)은
+ * 로그인 성공 시 메뉴를 닫아 다음 화면을 가리지 않는다. 실제 내용(로그인 폼/프로필 메뉴 등)은
  * children으로 받아 로그인 상태에 따라 호출부(app/page.tsx 등)가 갈아 끼운다.
  */
 const Sidebar = ({ open, onClose, children, className }: SidebarProps) => {
   const dialogRef = useDialogFocus<HTMLDivElement>(open, onClose);
+
+  useEffect(
+    () =>
+      useSessionStore.subscribe((state, previousState) => {
+        if (open && state.isLoggedIn && !previousState.isLoggedIn) onClose();
+      }),
+    [open, onClose],
+  );
 
   return (
     <AnimatePresence>

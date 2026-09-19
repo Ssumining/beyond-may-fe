@@ -62,9 +62,6 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   const [isTeamOpen, setIsTeamOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // "나중에"/공유 완료로 이번 화면 방문에서 명시적으로 닫았는지 여부.
-  const [isLocationSharingDismissed, setIsLocationSharingDismissed] =
-    useState(false);
   const [isNearbyRequested, setIsNearbyRequested] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
   const queryClient = useQueryClient();
@@ -101,13 +98,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const { data: explorationStatus } =
     useGetExplorationStatusQuery(explorationIdStr);
 
-  // 위치 공유 안내 모달 노출 여부: 상태 조회가 끝났고, 아직 공유 중이 아니며,
-  // 이번 화면 방문에서 명시적으로 닫지 않았을 때만 보여준다.
-  const showLocationSharingModal =
-    !isLocationSharingDismissed &&
-    explorationStatus !== undefined &&
-    !explorationStatus.currentParticipant.locationSharingEnabled;
-
+  // STOMP 연결 (구독: visits·locations·events) — 진행 중(ONGOING) 탐험일 때만 연결
   const { sendLocation } = useExplorationSocket({
     explorationId: explorationId ?? 0,
     token:
@@ -204,7 +195,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   if (isPending) {
     return (
-      <div className="flex h-dvh items-center justify-center">
+      <div className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] items-center justify-center">
         <p className="text-neutral-04 text-sm">코스를 불러오고 있어요…</p>
       </div>
     );
@@ -212,7 +203,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   if (isError || !course) {
     return (
-      <div className="flex h-dvh items-center justify-center">
+      <div className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] items-center justify-center">
         <p className="text-neutral-04 text-sm">코스를 불러오지 못했어요.</p>
       </div>
     );
@@ -220,7 +211,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
 
   if (explorationId === null) {
     return (
-      <div className="flex h-dvh items-center justify-center">
+      <div className="bg-neutral-01 mx-auto flex h-dvh w-full max-w-[430px] items-center justify-center">
         <p className="text-neutral-04 text-sm">
           탐험 정보를 찾을 수 없어요. 다시 합류해 주세요.
         </p>
@@ -358,7 +349,7 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
   const walkRouteDisabled = !myLocation || !nextPlace || isOutOfGwangju;
 
   return (
-    <div className="relative h-dvh w-full">
+    <div className="relative mx-auto h-dvh w-full max-w-[430px]">
       <VisitMap
         ref={visitMapRef}
         places={course.places}
@@ -426,20 +417,18 @@ const ExploreMapPage = ({ params }: ExploreMapPageProps) => {
         />
       )}
 
-      {showLocationSharingModal && (
-        <LocationSharingModal
-          explorationId={explorationIdStr}
-          onClose={() => setIsLocationSharingDismissed(true)}
-        />
-      )}
+      <LocationSharingModal explorationId={explorationIdStr} />
 
-      {isNearbyRequested && isNearbySuccess && nearbyPlaces.length > 0 && (
-        <NearbyPlacesSheet
-          places={nearbyPlaces}
-          onSelectPlace={(placeId) => setSelectedPlaceId(placeId)}
-          onClose={() => setIsNearbyRequested(false)}
-        />
-      )}
+      {selectedPlaceId === null &&
+        isNearbyRequested &&
+        isNearbySuccess &&
+        nearbyPlaces.length > 0 && (
+          <NearbyPlacesSheet
+            places={nearbyPlaces}
+            onSelectPlace={(placeId) => setSelectedPlaceId(placeId)}
+            onClose={() => setIsNearbyRequested(false)}
+          />
+        )}
 
       {showEmptyToast && (
         <NearbyEmptyToast onClose={() => setIsNearbyRequested(false)} />

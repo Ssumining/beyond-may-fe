@@ -3,7 +3,6 @@
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import {
   AnimatePresence,
   motion,
@@ -21,8 +20,7 @@ import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import ScrollIndicator from "@/components/ui/ScrollIndicator";
 import Share from "@/components/ui/icons/Share";
-import { getExplorations } from "@/services/api/exploration/explorationApi";
-import { QUERY_KEYS } from "@/services/constant/queryKey";
+import HomeResumeGuard from "@/features/onboarding/components/HomeResumeGuard";
 import useSessionStore from "@/stores/sessionStore";
 
 /** 세 시안을 보여준 뒤 한 번 더 스크롤하면 기존 온보딩으로 이동한다. */
@@ -48,55 +46,12 @@ const HomePage = ({ searchParams }: HomePageProps) => {
   const preferenceType = useSessionStore((state) => state.preferenceType);
   const router = useRouter();
 
-  /**
-   * 홈 화면 세션 라우팅 가드 (기능명세 1.1.1).
-   * 세션 없음 → 이 화면 유지 / 성향만 있고 세션 없음 → 닉네임 등록 /
-   * 세션 O + 진행 중 코스 없음 → 장소 선택 / 세션 O + 진행 중 코스 있음 → 팀 탐험.
-   *
-   * 코스 존재 여부는 진행 중(ONGOING)인 탐험이 있는지로 판단한다.
-   * TODO(백엔드 확인): 코스를 막 확정했지만 아직 탐험을 시작하지 않은 상태(BEFORE)는
-   *   이 조회로 안 잡힌다 — ONGOING/COMPLETED만 지원되는지 확인 필요.
-   */
-  const {
-    data: ongoingExplorations,
-    isLoading: isCheckingCourse,
-    isError: isCourseCheckError,
-  } = useQuery({
-    queryKey: QUERY_KEYS.EXPLORATION.LIST("ONGOING"),
-    queryFn: () => getExplorations("ONGOING"),
-    enabled: isLoggedIn,
-  });
-
   useEffect(() => {
-    if (hasGuardNavigated.current) return;
-
-    if (preferenceType && !isLoggedIn) {
+    if (preferenceType && !isLoggedIn && !hasGuardNavigated.current) {
       hasGuardNavigated.current = true;
       router.replace("/onboarding/result");
-      return;
     }
-
-    if (!isLoggedIn) return; // 세션 없음 → 이 화면 유지
-    if (isExplicitHomeVisit) return; // 홈 버튼으로 명시적 방문 → 자동 이동 skip
-    if (isCheckingCourse) return; // 조회 완료 후 분기
-
-    hasGuardNavigated.current = true;
-    // 조회 실패 시 안전하게 장소 선택으로 보낸다 (TODO: 백엔드 에러 정책 확인 필요)
-    const ongoingCourse = isCourseCheckError
-      ? undefined
-      : ongoingExplorations?.explorations[0];
-    router.replace(
-      ongoingCourse ? `/explore/${ongoingCourse.courseId}` : "/places",
-    );
-  }, [
-    preferenceType,
-    isLoggedIn,
-    isCheckingCourse,
-    isCourseCheckError,
-    ongoingExplorations,
-    router,
-    isExplicitHomeVisit,
-  ]);
+  }, [preferenceType, isLoggedIn, router]);
 
   const { scrollYProgress } = useScroll({ container: scrollRef });
   const visualProgress = useTransform(
@@ -155,6 +110,7 @@ const HomePage = ({ searchParams }: HomePageProps) => {
       ref={scrollRef}
       className="scrollbar-hide relative mx-auto h-dvh w-full max-w-[430px] snap-y snap-mandatory overflow-y-auto overscroll-y-contain"
     >
+      {isLoggedIn && !isExplicitHomeVisit && <HomeResumeGuard />}
       <div
         className="relative isolate"
         style={{ height: `${FRAME_COUNT}00dvh` }}

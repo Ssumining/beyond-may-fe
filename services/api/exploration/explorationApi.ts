@@ -68,7 +68,7 @@ export const getVisitedPlaces = async (
 /** 상태별 탐험 코스 목록을 조회 (여행 기록).
  *  홈 화면 라우팅 가드가 "코스 존재 여부"를 판단하는 데 사용한다. */
 export const getExplorations = async (
-  status: "ONGOING" | "COMPLETED",
+  status: "BEFORE" | "ONGOING" | "COMPLETED",
 ): Promise<ExplorationListResponse> => {
   const res = await api.get<ExplorationListResponse>(
     API_ENDPOINTS.exploration.list(status),
