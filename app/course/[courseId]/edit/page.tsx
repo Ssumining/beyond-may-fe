@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import AppHeader from "@/components/layout/AppHeader";
 import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 import CourseTimeline from "@/features/course/components/CourseTimeline";
 import useGetPlaceRecommendationsQuery from "@/features/places/hooks/useGetPlaceRecommendationsQuery";
 import { getMinimumSelectionCount } from "@/features/places/utils/travelSchedule";
@@ -91,6 +92,7 @@ const CourseEditor = ({
   >([]);
   const [remainingRevisions, setRemainingRevisions] = useState(2);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   // 수동 편집 관련 상태
   const [history, setHistory] = useState<CoursePlace[][]>([]);
@@ -98,7 +100,8 @@ const CourseEditor = ({
   const [isAddingPlace, setIsAddingPlace] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const preferenceType = useSessionStore((state) => state.preferenceType);
-  const { data: recommendations = [] } = useGetPlaceRecommendationsQuery(preferenceType);
+  const { data: recommendations = [] } =
+    useGetPlaceRecommendationsQuery(preferenceType);
   const minimumPlaceCount = getMinimumSelectionCount(course.travelSchedule);
 
   const availablePlaces = recommendations.filter(
@@ -187,11 +190,9 @@ const CourseEditor = ({
         QUERY_KEYS.COURSE.DETAIL(String(course.courseId)),
         updatedCourse,
       );
-      setPlaces(
-        [...updatedCourse.places].sort((a, b) => a.visitOrder - b.visitOrder),
-      );
-      setChatRecommendations((current) =>
-        current.filter((place) => place.placeId !== placeId),
+      // 추가한 장소를 NEW로 표시하며 코스 상세로 이동
+      router.push(
+        `/course/${course.courseId}/detail?added=${placeId}${fromHub ? "&from=hub" : ""}`,
       );
     },
   });
@@ -503,35 +504,6 @@ const CourseEditor = ({
             다시 시도
           </Button>
         </div>
-      ) : remainingRevisions <= 0 &&
-        !hasProposal &&
-        chatRecommendations.length === 0 ? (
-        // 수정 횟수 초과 (F)
-        <div className="flex flex-1 flex-col items-center justify-center gap-[14px] px-10">
-          <span className="border-neutral-03 text-neutral-04 rounded-full border px-[14px] py-[6px] text-[11px] font-medium">
-            2 / 2 사용
-          </span>
-          <p className="text-neutral-07 text-[18px] font-semibold">
-            수정 요청을 모두 사용했어요
-          </p>
-          <p className="text-neutral-05 -mt-2 text-center text-[13px] leading-[22px]">
-            이제 직접 수정으로 코스를
-            <br />
-            원하는 대로 다듬어보세요.
-          </p>
-          <Button
-            variant="solid"
-            size="lg"
-            className="mt-[18px] w-full"
-            onClick={() =>
-              router.push(
-                `/course/${course.courseId}/edit?mode=manual${fromHub ? "&from=hub" : ""}`,
-              )
-            }
-          >
-            직접 수정하기
-          </Button>
-        </div>
       ) : hasProposal ? (
         // 결과 화면 (E 목록 / D 지도)
         viewMode === "map" ? (
@@ -609,8 +581,14 @@ const CourseEditor = ({
               <button
                 type="button"
                 aria-label="수정 요청 보내기"
-                disabled={!instruction.trim() || remainingRevisions <= 0}
-                onClick={() => chatMutation.mutate()}
+                disabled={!instruction.trim()}
+                onClick={() => {
+                  if (remainingRevisions <= 0) {
+                    setShowLimitModal(true);
+                    return;
+                  }
+                  chatMutation.mutate();
+                }}
                 className="text-neutral-05 disabled:text-neutral-03 shrink-0"
               >
                 <ArrowRight className="h-5 w-5" />
@@ -728,6 +706,37 @@ const CourseEditor = ({
           )}
         </div>
       )}
+
+      <Modal open={showLimitModal} onClose={() => setShowLimitModal(false)}>
+        <h2 className="text-neutral-07 text-center text-[20px] font-semibold">
+          AI 수정을 모두 사용했어요
+        </h2>
+        <p className="text-neutral-04 mt-2 text-center text-[13px] leading-[1.55]">
+          AI 코스 수정은 2번까지 요청할 수 있어요.
+          <br />
+          코스를 확정하러 가거나 직접 수정으로 다듬어보세요.
+        </p>
+        <div className="mt-6 flex gap-2.5">
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                `/course/${course.courseId}/edit?mode=manual${fromHub ? "&from=hub" : ""}`,
+              )
+            }
+            className="border-neutral-03 text-neutral-07 min-h-12 flex-1 rounded-full border bg-white text-[14px] font-semibold"
+          >
+            직접 수정
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push(detailHref)}
+            className="bg-neutral-07 text-neutral-01 min-h-12 flex-1 rounded-full text-[14px] font-semibold"
+          >
+            코스 상세 보기
+          </button>
+        </div>
+      </Modal>
     </main>
   );
 };
