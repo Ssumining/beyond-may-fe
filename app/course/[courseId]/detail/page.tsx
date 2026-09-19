@@ -10,7 +10,6 @@ import CourseTimelineView from "@/features/course/components/CourseTimelineView"
 import useConfirmCourseMutation from "@/features/course/hooks/useConfirmCourseMutation";
 import { useGetCourseDetailQuery } from "@/hooks/queries/useGetCourseDetailQuery";
 
-// 사이드바 연동을 위한 Import
 import Sidebar from "@/components/layout/sidebar/Sidebar";
 import SidebarProfileMenu from "@/components/layout/sidebar/SidebarProfileMenu";
 import SidebarLoginForm from "@/components/layout/sidebar/SidebarLoginForm";
@@ -18,18 +17,18 @@ import useSessionStore from "@/stores/sessionStore";
 
 interface CourseDetailPageProps {
   params: Promise<{ courseId: string }>;
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string; added?: string }>;
 }
 
 const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
   const { courseId } = use(params);
-  const { from } = use(searchParams);
+  const { from, added } = use(searchParams);
   const router = useRouter();
   const fromHub = from === "hub";
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // 사이드바 오픈 상태
-  const nickname = useSessionStore((state) => state.nickname); // 로그인 여부 판단
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const nickname = useSessionStore((state) => state.nickname);
 
   const {
     data: course,
@@ -50,7 +49,6 @@ const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
     });
   };
 
-  // 피그마 의도: 무조건 뒤로가기
   const handleBack = () => router.back();
 
   if (isLoading) {
@@ -101,10 +99,19 @@ const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
     );
   }
 
+  const addedPlaceIds =
+    course.status === "CONFIRMED" || !added
+      ? []
+      : added
+          .split(",")
+          .map((id) => Number(id))
+          .filter((id) => !Number.isNaN(id));
+
   return (
     <>
       <CourseTimelineView
         course={course}
+        addedPlaceIds={addedPlaceIds}
         onBack={handleBack}
         onOpenMenu={() => setIsMenuOpen(true)}
         onUseCourse={() => setIsConfirmOpen(true)}
@@ -149,7 +156,6 @@ const CourseDetailPage = ({ params, searchParams }: CourseDetailPageProps) => {
         </div>
       </Modal>
 
-      {/* 동료분이 만든 햄버거 메뉴(사이드바) 완벽 연동 */}
       <Sidebar open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
         {nickname ? <SidebarProfileMenu /> : <SidebarLoginForm />}
       </Sidebar>
