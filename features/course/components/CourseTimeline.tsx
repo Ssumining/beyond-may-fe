@@ -35,7 +35,10 @@ const CourseTimeline = ({
   addedPlaceIds = [],
   onPlaceClick,
 }: CourseTimelineProps) => {
-  const sorted = [...places].sort((a, b) => a.visitOrder - b.visitOrder);
+  // dayNumber → visitOrder 순 정렬 (visitOrder는 day별로 겹치므로 dayNumber 우선)
+  const sorted = [...places].sort(
+    (a, b) => a.dayNumber - b.dayNumber || a.visitOrder - b.visitOrder,
+  );
 
   const getStatus = (placeId: number): TimelineItemStatus => {
     if (visitedPlaceIds.includes(placeId)) return "visited";
@@ -53,10 +56,10 @@ const CourseTimeline = ({
       )}
 
       <AnimatePresence initial={false}>
-        {sorted.map((place) => (
+        {sorted.map((place, index) => (
           <CourseTimelineItem
             key={place.placeId}
-            order={place.visitOrder}
+            order={index + 1}
             name={place.name}
             summary={place.summary}
             status={getStatus(place.placeId)}

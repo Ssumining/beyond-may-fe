@@ -1,13 +1,6 @@
 import type { CoursePlace } from "@/types/course";
 import type { LatLng, MapMarker } from "@/types/map";
 
-/**
- * 코스 장소 배열을 지도 props(마커·경로·중심)로 변환한다.
- * 추천 코스 지도(3.1.1)용 — 방문 상태와 무관하게 visitOrder대로 1..N 핀을 찍는다.
- * (탐험 지도의 '방문 제외 번호매김'과 다른 계산이라 별도 어댑터로 둔다)
- */
-
-/** 좌표 배열의 평균점 (지도 초기 center용, fitBounds 전 임시 중심) */
 const getCenter = (positions: LatLng[]): LatLng => {
   const { lat, lng } = positions.reduce(
     (acc, position) => ({
@@ -27,24 +20,33 @@ export interface CourseMapData {
 }
 
 /**
- * 추천 코스 지도용 변환.
- * visitOrder 순서대로 번호 핀을 찍고, 좌표를 이어 경로선을 만든다.
- * 경로는 현재 장소 좌표 직선 연결이며, 실제 도보 경로는 후속(5번)에서 교체한다.
+ * 추천 코스 지도용 변환 (3.1.1).
+ * dayNumber → visitOrder 순으로 정렬하고, 그 순서대로 1..N 통합 번호를 매긴다.
+ * (visitOrder는 day별로 리셋돼 값이 겹치므로, 전체 순번은 정렬 후 index로 다시 부여)
  */
 export const getCourseMapData = (places: CoursePlace[]): CourseMapData => {
-  const sorted = [...places].sort((a, b) => a.visitOrder - b.visitOrder);
+  const sorted = [...places].sort(
+    (a, b) => a.dayNumber - b.dayNumber || a.visitOrder - b.visitOrder,
+  );
 
-  const markers: MapMarker[] = sorted.map((place) => ({
+  const markers: MapMarker[] = sorted.map((place, index) => ({
     id: String(place.placeId),
     position: { lat: place.latitude, lng: place.longitude },
-    order: place.visitOrder,
+    order: index + 1, // 정렬된 전체 순서대로 1..N (day 넘어가도 이어짐)
     label: place.name,
     category: place.travelMbtiType,
   }));
 
-  const route = markers.map((marker) => marker.position); // sorted → markers
+  // 3.1.1 미리보기: 순서 흐름을 점선으로 연결 (실제 도보 경로는 탐험 지도에서)
+  const route: LatLng[] = sorted.map((place) => ({
+    lat: place.latitude,
+    lng: place.longitude,
+  }));
+
   const center =
-    route.length > 0 ? getCenter(route) : { lat: 35.1595, lng: 126.8526 };
+    markers.length > 0
+      ? getCenter(markers.map((marker) => marker.position))
+      : { lat: 35.1595, lng: 126.8526 };
 
   return { markers, route, center };
 };
