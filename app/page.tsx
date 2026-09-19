@@ -34,7 +34,9 @@ interface HomePageProps {
 const HomePage = ({ searchParams }: HomePageProps) => {
   const { session, home } = use(searchParams);
   const isExplicitHomeVisit = home === "1";
-  const hasExpiredSession = session === "expired";
+  // 만료 안내는 진입 시점에 한 번만 잡는다. URL의 session 쿼리는 아래 effect에서
+  // 지우므로, 새로고침·뒤로가기로 다시 들어와도 안내가 반복되지 않는다.
+  const [hasExpiredSession] = useState(session === "expired");
   const [isMenuOpen, setIsMenuOpen] = useState(hasExpiredSession);
   const [isFinalFrame, setIsFinalFrame] = useState(false);
   const [isServiceShareOpen, setIsServiceShareOpen] = useState(false);
@@ -45,6 +47,17 @@ const HomePage = ({ searchParams }: HomePageProps) => {
   const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
   const preferenceType = useSessionStore((state) => state.preferenceType);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!hasExpiredSession) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("session");
+    window.history.replaceState(
+      null,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, [hasExpiredSession]);
 
   useEffect(() => {
     if (preferenceType && !isLoggedIn && !hasGuardNavigated.current) {
