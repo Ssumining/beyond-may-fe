@@ -11,6 +11,7 @@ import { useQueries } from "@tanstack/react-query";
 import { getTeamVisits } from "@/services/api/record/recordApi";
 import { QUERY_KEYS } from "@/services/constant/queryKey";
 import type { TeamVisit } from "@/types/record";
+import useSessionStore from "@/stores/sessionStore";
 
 type RecordTab = "ongoing" | "completed" | "visits";
 
@@ -26,6 +27,8 @@ const TABS: { id: RecordTab; label: string }[] = [
 
 const RecordPage = ({ searchParams }: RecordPageProps) => {
   const { state, tab } = use(searchParams);
+  const isLoggedIn = useSessionStore((state) => state.isLoggedIn);
+  const setExplorationId = useSessionStore((state) => state.setExplorationId);
   const activeTab: RecordTab = TABS.some(({ id }) => id === tab)
     ? (tab as RecordTab)
     : "ongoing";
@@ -43,6 +46,8 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
   } = useGetExplorationsQuery("COMPLETED");
 
   const ongoingExplorations = isEmpty ? [] : (ongoingData?.explorations ?? []);
+  const activeExploration =
+    isLoggedIn && !isOngoingError ? ongoingExplorations[0] : undefined;
   const completedExplorations = isEmpty
     ? []
     : (completedData?.explorations ?? []);
@@ -89,7 +94,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
 
   return (
     <main className="bg-neutral-01 mx-auto min-h-dvh w-full max-w-[430px] pb-[max(40px,env(safe-area-inset-bottom))]">
-      <AppHeader showMenu={false} centerLabel="여행 기록" />
+      <AppHeader showBack showMenu={false} centerLabel="여행 기록" />
 
       <section className="px-6 pt-6 pb-5">
         <p className="text-primary-08 text-[12px] font-semibold tracking-[0.1em]">
@@ -110,6 +115,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
           <Link
             key={id}
             href={`/record?tab=${id}${stateSuffix}`}
+            replace
             aria-current={activeTab === id ? "page" : undefined}
             className={`relative flex min-h-13 shrink-0 items-center px-3 text-[13px] font-semibold ${
               activeTab === id ? "text-neutral-07" : "text-neutral-04"
@@ -243,8 +249,17 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
               <EmptyRecordState
                 title="아직 완료한 코스가 없습니다"
                 description="팀과 함께 코스의 장소를 밝히면 이곳에 평생 보관돼요."
-                action="여행 시작하기"
-                href="/places"
+                action={activeExploration ? "탐험 계속 하기" : "여행 시작하기"}
+                href={
+                  activeExploration
+                    ? `/explore/${activeExploration.courseId}/map`
+                    : "/places"
+                }
+                onAction={
+                  activeExploration
+                    ? () => setExplorationId(activeExploration.explorationId)
+                    : undefined
+                }
               />
             )}
           {!isCompletedLoading &&
@@ -321,6 +336,7 @@ const RecordPage = ({ searchParams }: RecordPageProps) => {
               description="장소에서 방문을 인증하면 여기에 모여요."
               action="진행 중 코스 보기"
               href="/record?tab=ongoing"
+              replace
             />
           )}
           {!isVisitsLoading && !isVisitsError && visitedPlaces.length > 0 && (
@@ -382,6 +398,8 @@ interface EmptyRecordStateProps {
   description: string;
   action: string;
   href: string;
+  onAction?: () => void;
+  replace?: boolean;
 }
 
 const EmptyRecordState = ({
@@ -389,6 +407,8 @@ const EmptyRecordState = ({
   description,
   action,
   href,
+  onAction,
+  replace,
 }: EmptyRecordStateProps) => (
   <div className="flex flex-col items-center py-20 text-center">
     <div className="border-primary-08 bg-primary-04 text-primary-08 flex h-16 w-14 -rotate-3 items-center justify-center border-4 border-dashed text-[16px] font-bold">
@@ -400,6 +420,8 @@ const EmptyRecordState = ({
     </p>
     <Link
       href={href}
+      replace={replace}
+      onClick={onAction}
       className="bg-neutral-07 text-neutral-01 mt-6 flex min-h-12 w-full items-center justify-center rounded-full px-5 text-[14px] font-semibold"
     >
       {action}

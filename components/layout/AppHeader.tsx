@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/cn";
 import Home from "@/components/ui/icons/Home";
@@ -20,7 +23,9 @@ interface AppHeaderProps {
   showMenu?: boolean;
   /** 홈처럼 좌측 이동 액션이 없는 화면에서는 false로 숨긴다. */
   showHome?: boolean;
-  /** 선형 여정의 명시적 상위 경로. 지정하면 Home 대신 Back을 표시한다. */
+  /** 방문 기록의 이전 화면으로 이동한다. 기록이 없으면 홈으로 이동한다. */
+  showBack?: boolean;
+  /** 명시적 상위 경로. showBack과 함께 쓰면 이전 기록이 없을 때의 복귀 경로다. */
   backHref?: string;
   /** 저장되지 않은 작업 확인처럼 이동 전에 처리가 필요할 때 사용한다. */
   onBack?: () => void;
@@ -53,6 +58,7 @@ const AppHeader = ({
   onOpenMenu,
   showMenu = true,
   showHome = true,
+  showBack = false,
   backHref,
   onBack,
   onHome,
@@ -60,6 +66,12 @@ const AppHeader = ({
   onOpenHelp,
   className,
 }: AppHeaderProps) => {
+  const router = useRouter();
+  const handleBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.replace(backHref ?? "/?home=1");
+  };
+
   return (
     <header
       className={cn(
@@ -67,12 +79,12 @@ const AppHeader = ({
         className,
       )}
     >
-      {onBack ? (
+      {onBack || showBack ? (
         <button
           type="button"
-          onClick={onBack}
+          onClick={onBack ?? handleBack}
           aria-label="이전 화면으로 이동"
-          className="focus-visible:outline-primary-03 flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="focus-visible:outline-primary-03 -ml-2 flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -80,7 +92,7 @@ const AppHeader = ({
         <Link
           href={backHref}
           aria-label="이전 화면으로 이동"
-          className="focus-visible:outline-primary-03 flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="focus-visible:outline-primary-03 -ml-2 flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <ChevronLeft className="h-5 w-5" />
         </Link>

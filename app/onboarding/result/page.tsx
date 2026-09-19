@@ -142,10 +142,15 @@ const ResultPage = () => {
       <main className="bg-neutral-01 relative mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
         <GradientBackground className="opacity-70" />
 
-        {/* 상단 헤더 (Home). 로딩 화면 디자인 기준 */}
+        {/* 기존 사용자는 이전 화면으로, 신규 검사 결과는 이탈 확인 후 이동한다. */}
         <AppHeader
+          showBack={hadSessionOnEnter}
           showMenu={false}
-          onHome={isLoading ? () => setIsLeaveOpen(true) : undefined}
+          onHome={
+            !hadSessionOnEnter && isLoading
+              ? () => setIsLeaveOpen(true)
+              : undefined
+          }
           className="text-neutral-04"
         />
 
@@ -232,6 +237,7 @@ const ResultPage = () => {
   return (
     <main className="bg-neutral-01 mx-auto min-h-[100dvh] w-full max-w-[430px] pb-[max(48px,env(safe-area-inset-bottom))]">
       <AppHeader
+        showBack={hadSessionOnEnter}
         showMenu={false}
         className="text-neutral-04"
         onHome={

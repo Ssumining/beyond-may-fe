@@ -6,7 +6,7 @@ const RecordLoading = () => (
     aria-busy="true"
     aria-label="여행 기록을 불러오는 중"
   >
-    <AppHeader showMenu={false} centerLabel="여행 기록" />
+    <AppHeader showBack showMenu={false} centerLabel="여행 기록" />
     <section className="px-6 pt-7">
       <div className="bg-skeleton-shimmer h-3 w-24 rounded-full" />
       <div className="bg-skeleton-shimmer mt-4 h-9 w-56 rounded-lg" />

@@ -34,7 +34,7 @@ const PlaceDetailContainer = ({
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 bg-black/12 backdrop-blur-xl"
+        className="absolute inset-0 bg-black/25"
         onClick={onClose}
         aria-hidden="true"
       />

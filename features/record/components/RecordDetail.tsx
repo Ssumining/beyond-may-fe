@@ -67,7 +67,8 @@ const RecordDetail = ({ record, visitedPlaces = [] }: RecordDetailProps) => {
     <main className="bg-neutral-01 mx-auto min-h-dvh w-full max-w-[430px] pb-[max(48px,env(safe-area-inset-bottom))]">
       <div className="relative">
         <AppHeader
-          backHref="/record"
+          showBack
+          backHref="/record?tab=completed"
           showMenu={false}
           centerLabel="여행 기록"
           className="absolute inset-x-0 top-0 text-white"

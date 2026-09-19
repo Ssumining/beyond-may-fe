@@ -5,6 +5,7 @@ import { stripHtmlBreaks } from "@/lib/formatText";
 import type { PlaceDetailResponse } from "@/types/place";
 import { cn } from "@/lib/cn";
 import useDialogFocus from "@/hooks/useDialogFocus";
+import Close from "@/components/ui/icons/Close";
 
 interface PlaceDetailSheetProps {
   place: PlaceDetailResponse;
@@ -56,10 +57,20 @@ const PlaceDetailSheet = ({
       aria-label={place.name}
       tabIndex={-1}
       className={cn(
-        "flex max-h-[88dvh] w-full max-w-[430px] flex-col overflow-hidden rounded-t-[24px] bg-white focus:outline-none",
+        "relative flex max-h-[88dvh] w-full max-w-[430px] flex-col overflow-hidden rounded-t-[24px] bg-white focus:outline-none",
         className,
       )}
     >
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="장소 상세 닫기"
+          className="text-neutral-07 focus-visible:outline-primary-03 absolute top-2 right-4 z-10 flex h-11 w-11 cursor-pointer items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          <Close className="h-4 w-4" />
+        </button>
+      )}
       <div className="flex-1 overflow-y-auto">
         {/* 장소 사진 배너 — 가로로 꽉 차게, 여러 장이면 옆으로 스와이프 */}
         <div className="relative">

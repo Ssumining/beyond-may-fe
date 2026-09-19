@@ -15,6 +15,7 @@ interface CourseSummaryPanelProps {
   onConfirmClick?: () => void;
   onShareClick?: () => void;
   onStartClick?: () => void;
+  startLabel?: string;
   onRedesignClick?: () => void;
   isConfirming?: boolean;
   hasConfirmError?: boolean;
@@ -31,6 +32,7 @@ const CourseSummaryPanel = ({
   onConfirmClick,
   onShareClick,
   onStartClick,
+  startLabel = "탐험 시작",
   onRedesignClick,
   isConfirming = false,
   hasConfirmError = false,
@@ -93,7 +95,7 @@ const CourseSummaryPanel = ({
             onClick={onStartClick}
             className="flex-1"
           >
-            탐험 시작
+            {startLabel}
           </Button>
         )}
       </div>

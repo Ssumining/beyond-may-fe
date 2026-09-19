@@ -16,6 +16,7 @@ interface CourseMapViewProps {
   onConfirmClick?: () => void;
   onShareClick?: () => void;
   onStartClick?: () => void;
+  startLabel?: string;
   onRedesignClick?: () => void;
   isConfirming?: boolean;
   hasConfirmError?: boolean;
@@ -33,6 +34,7 @@ const CourseMapView = ({
   onConfirmClick,
   onShareClick,
   onStartClick,
+  startLabel,
   onRedesignClick,
   isConfirming,
   hasConfirmError,
@@ -71,6 +73,7 @@ const CourseMapView = ({
         onConfirmClick={onConfirmClick}
         onShareClick={onShareClick}
         onStartClick={onStartClick}
+        startLabel={startLabel}
         onRedesignClick={onRedesignClick}
         isConfirming={isConfirming}
         hasConfirmError={hasConfirmError}

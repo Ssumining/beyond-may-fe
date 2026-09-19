@@ -1,3 +1,5 @@
+import type { ExplorationStatus } from "./exploration";
+
 /** 코스 진행 상태 — 코스는 DRAFT/CONFIRMED만.
  *  ONGOING·COMPLETED는 exploration 소관 → types/exploration(수민). */
 export type CourseStatus = "DRAFT" | "CONFIRMED";
@@ -81,10 +83,17 @@ export interface ConfirmCourseResponse {
    본문 없음 — 서버에 저장된 현재 추천 세트의 좋아요 장소와 여행 기간으로 생성한다.
    응답은 생성된 DRAFT 코스 전체(CourseResponse)다. */
 
-/* ── 코스 목록 (여행 기록) ──
-   TODO(추후): 실제 목록 응답 스키마 collection 확인 후 정교화. */
+/** 내가 만든 코스 요약. updatedAt DESC, courseId DESC 순서. */
+export interface CourseSummary {
+  courseId: number;
+  title: string;
+  status: CourseStatus;
+  updatedAt: string;
+  explorationId: number | null;
+  explorationStatus: ExplorationStatus | null;
+}
 export interface CourseListResponse {
-  courses: CourseResponse[];
+  courses: CourseSummary[];
 }
 
 /* ── 코스 수정 (3.2 / 9·10번) — collection 실측 기준 ──
