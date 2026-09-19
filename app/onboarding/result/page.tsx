@@ -32,7 +32,8 @@ import ShareCollageCard from "@/features/onboarding/components/ShareCollageCard"
  * 결과 계산을 기다리는 로딩 화면을 먼저 보여주고,
  * 결과 도착 시 유형 카드 + 추천 장소 목록으로 자동 전환.
  *
- * 결과 화면 본문은 흰 배경·검정 텍스트로 고정 (유형별 그라디언트는 공유 카드에서만).
+ * 결과 화면 배경은 결과 유형의 테마 색(GradientBackground theme)으로 그리고,
+ * 본문 카드는 흰 배경·검정 텍스트를 유지한다.
  */
 
 /** 공유 이미지 버전: 화면 그대로(기록형) / 우표 엽서(스토리형, 원본 피그마 목업 기준) */
@@ -235,7 +236,8 @@ const ResultPage = () => {
 
   // 결과 도착: 유형 카드 + 추천 장소 (흰 배경)
   return (
-    <main className="bg-neutral-01 mx-auto min-h-[100dvh] w-full max-w-[430px] pb-[max(48px,env(safe-area-inset-bottom))]">
+    <main className="bg-neutral-01 relative isolate mx-auto min-h-[100dvh] w-full max-w-[430px] pb-[max(48px,env(safe-area-inset-bottom))]">
+      <GradientBackground fixed theme={data.type} />
       <AppHeader
         showBack={hadSessionOnEnter}
         showMenu={false}

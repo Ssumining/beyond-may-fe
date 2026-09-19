@@ -83,11 +83,6 @@ const HomePage = ({ searchParams }: HomePageProps) => {
     [0, 0.5, 1],
     ["65.8%", "36%", "10.6%"],
   );
-  const textColor = useTransform(
-    visualProgress,
-    [0, 0.5, 1],
-    ["#141414", "#BEC2C0", "#BEC2C0"],
-  );
   const startTop = useTransform(
     visualProgress,
     [0, 0.5, 1],
@@ -129,7 +124,10 @@ const HomePage = ({ searchParams }: HomePageProps) => {
         style={{ height: `${FRAME_COUNT}00dvh` }}
       >
         <div className="sticky top-0 h-dvh overflow-hidden">
-          <GradientBackground progress={visualProgress} />
+          <GradientBackground
+            progress={visualProgress}
+            theme={preferenceType ?? "default"}
+          />
 
           <AppHeader
             showHome={false}
@@ -158,15 +156,15 @@ const HomePage = ({ searchParams }: HomePageProps) => {
           </motion.button>
 
           <motion.p
-            style={{ top: subtitleTop, color: textColor }}
-            className="absolute left-[7.7%] text-[20px] leading-none font-medium tracking-[0.12em]"
+            style={{ top: subtitleTop }}
+            className="text-neutral-07 absolute left-[7.7%] text-[20px] leading-none font-medium tracking-[0.12em]"
           >
             광주 동행 지도
           </motion.p>
 
           <motion.h1
-            style={{ top: titleTop, color: textColor }}
-            className="absolute left-[7.2%] text-[64px] leading-[1.18] font-bold tracking-[-0.035em]"
+            style={{ top: titleTop }}
+            className="text-neutral-07 absolute left-[7.2%] text-[64px] leading-[1.18] font-bold tracking-[-0.035em]"
           >
             5월 너머의
             <br />
